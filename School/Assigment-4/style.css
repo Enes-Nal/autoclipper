@@ -1,0 +1,42 @@
+*{
+    background-color: gray;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    
+}
+h1, h2 {
+    color: white;
+}
+
+a{
+
+    color: rgb(253, 212, 106);
+
+}
+
+.accordion {
+    background-color: #eee;
+    color: #444;
+    cursor: pointer;
+    padding: 18px;
+    width: 100%;
+    text-align: left;
+    border: none;
+    outline: none;
+    transition: 0.4s;
+    border-radius: 20px;
+    margin: 2px;
+    
+  }
+  
+
+  .active, .accordion:hover {
+    background-color: #ccc;
+  }
+  .panel {
+    padding:  18px;
+    border-radius: 30px;
+    border: solid white;
+    display: none;
+    overflow: hidden;
+
+  }

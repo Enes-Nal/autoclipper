@@ -1,0 +1,15 @@
+A website for choosing if a person is a male or female
+
+npm install 
+node app.js
+
+To create the table for the database use the following code:
+CREATE TABLE Images (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    correct INT,
+    incorrect INT,
+    total INT,
+    trans BOOLEAN,
+    male BOOLEAN,
+    female BOOLEAN
+);

@@ -1,0 +1,28 @@
+{
+  "name": "transornot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "build:css": "npx tailwindcss -i public/styles/tailwind.css -o public/styles/index.css --watch",
+    "dev": "nodemon index.js",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https:  /github.com/Arosity/TransOrNot.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Arosity/TransOrNot/issues"
+  },
+  "homepage": "https://github.com/Arosity/TransOrNot#readme",
+  "dependencies": {
+    "body-parser": "^1.20.0",
+    "dotenv": "^16.0.2",
+    "ejs": "^3.1.8",
+    "express": "^4.18.1",
+    "mysql": "^2.18.1"
+  }
+}

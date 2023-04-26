@@ -1,0 +1,107 @@
+
+<link href="https://cdn.jsdelivr.net/npm/daisyui@2.46.1/dist/full.css" rel="stylesheet" type="text/css" />
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2/dist/tailwind.min.css" rel="stylesheet" type="text/css" />
+<link rel="stylesheet" href="/output.css">
+
+<div id="wrongalert" class="alert alert-error shadow-lg   justify-center"style="position:absolute; visibility:hidden; ">
+  <div>
+    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+    <span>Wrong Answer</span>
+  </div>
+</div>
+
+<div id="rightalert" class="alert alert-success  shadow-lg justify-center"style="position:absolute; visibility:hidden; ">
+  <div>
+    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+    <span>Correct Answer</span>
+  </div>
+</div>
+
+<!-- <div class="flex h-full items-center justify-center">
+  <div class="card  w-96  bg-base-100 shadow-xl">
+    <figure><img  class="rounded-2xl" id="guessimage" alt="guessimage" />
+      <div class="card-actions justify-center align-bottom absolute inset-x-0 bottom-5 ">
+        <button class="btn btn-success  w-32" onclick="myAnswer(this)" id="mananswer">Male</button>
+        <button class="btn btn-error w-32" onclick="myAnswer(this)" id="womenanswer">Female</button>
+        <button class="btn btn-outline btn-success w-24" id="continue">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5">
+            <path fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM6.75 9.25a.75.75 0 000 1.5h4.59l-2.1 1.95a.75.75 0 001.02 1.1l3.5-3.25a.75.75 0 000-1.1l-3.5-3.25a.75.75 0 10-1.02 1.1l2.1 1.95H6.75z"
+              clip-rule="evenodd" />
+          </svg>
+        </button>
+      </div></figure>
+  </div>
+</div> -->
+<div class="flex h-full items-center justify-center">
+  <div class="card  w-96  bg-base-100 basis-[max(50rem-50vw,theme(spacing.96))]  shadow-xl shrink-0">
+    <figure><img class="rounded-2xl" src="https://g1.img-dpreview.com/5E2188B2342D42BB97B53F87A7083058.jpg"  />
+      <div class="card-actions justify-center align-bottom absolute inset-x-0 bottom-5 ">
+        <button class="btn btn-success  w-32" onclick="myAnswer(this)" id="mananswer">True</button>
+        <button class="btn btn-error w-32" onclick="myAnswer(this)" id="womenanswer">False</button>
+        <button class="btn btn-outline btn-success w-24" id="continue">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5">
+            <path fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM6.75 9.25a.75.75 0 000 1.5h4.59l-2.1 1.95a.75.75 0 001.02 1.1l3.5-3.25a.75.75 0 000-1.1l-3.5-3.25a.75.75 0 10-1.02 1.1l2.1 1.95H6.75z"
+              clip-rule="evenodd" />
+          </svg>
+        </button>
+      </div></figure>
+  </div>
+</div>
+
+<!-- <div  class="mx-auto flex mt-64 w-full max-w-sm flex-col items-center justify-center">
+    <figure><img class="rounded-2xl" src="https://g1.img-dpreview.com/5E2188B2342D42BB97B53F87A7083058.jpg"  />
+      <div class="gap-2 flex -mt-16 items-center justify-center p-1 px-3  ">
+        <button class="btn btn-success w-32">Yes</button>
+        <button class="btn btn-error w-32">No</button>
+    </div>
+        <button class="btn btn-outline btn-success w-24" id="continue">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5">
+            <path fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM6.75 9.25a.75.75 0 000 1.5h4.59l-2.1 1.95a.75.75 0 001.02 1.1l3.5-3.25a.75.75 0 000-1.1l-3.5-3.25a.75.75 0 10-1.02 1.1l2.1 1.95H6.75z"
+              clip-rule="evenodd" />
+          </svg>
+        </button>
+      </figure>
+      </div> -->
+
+
+<!-- <div  class="mx-auto flex w-full max-w-sm flex-col items-center justify-center">
+  <div class="h-682 w-full rounded-lg bg-gray-300 bg-cover bg-center shadow-md" style="background-image: url(https://g1.img-dpreview.com/5E2188B2342D42BB97B53F87A7083058.jpg)"></div>
+    <div class="gap-2 flex -mt-16 items-center justify-center p-1 px-3  ">
+      <button class="btn btn-success w-32">Yes</button>
+      <button class="btn btn-error w-32">No</button>
+  </div>
+</div> -->
+
+
+
+
+
+<!-- <div class="absolute bottom-0 right-10 sm:invisible lg:visible  h-16 w-16">
+  <button class="btn btn-outline btn-success w-24" id="continue">
+
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5">
+      <path fill-rule="evenodd"
+        d="M10 18a8 8 0 100-16 8 8 0 000 16zM6.75 9.25a.75.75 0 000 1.5h4.59l-2.1 1.95a.75.75 0 001.02 1.1l3.5-3.25a.75.75 0 000-1.1l-3.5-3.25a.75.75 0 10-1.02 1.1l2.1 1.95H6.75z"
+        clip-rule="evenodd" />
+    </svg>
+  </button>
+</div>
+<div class="absolute sm:invisible lg:visible bottom-14 right-14 h-16 w-16">
+  <button class="btn btn-outline btn-info w-28">
+    donate
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+      class="w-5 h-5">
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  </button>
+</div>
+<div class="absolute bottom-5 sm:invisible lg:visible left-10 h-16 data-tip=" hello"">
+  <h2 class=" rounded-md text-center font-bold">Difficulty <div id="progresspercent" class="badge badge-s">80%</div>
+  </h2>
+  <progress id="progressbar" class="progress  progress-error w-56" value="40" max="100"></progress>
+</div>
+<script src="/js/index.js"></script> -->
