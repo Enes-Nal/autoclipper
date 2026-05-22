@@ -15,8 +15,8 @@ if ($Uninstall) {
   exit 0
 }
 
-# Enable PlayerDebugMode for CEP 9–11
-foreach ($v in @("CSXS.9", "CSXS.10", "CSXS.11")) {
+# Enable PlayerDebugMode for CEP 9–12
+foreach ($v in @("CSXS.9", "CSXS.10", "CSXS.11", "CSXS.12")) {
   $key = "HKCU:\Software\Adobe\$v"
   if (!(Test-Path $key)) { New-Item -Path $key -Force | Out-Null }
   Set-ItemProperty -Path $key -Name "PlayerDebugMode" -Value "1" -Type String
