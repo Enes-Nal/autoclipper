@@ -10,6 +10,7 @@ const { execSync } = require('child_process');
 // -- UI helpers --
 
 let statusTimer;
+let isRunning = false;
 
 function showStatus(message, type) {
   const el = document.getElementById('status');
@@ -30,7 +31,7 @@ function setButtonEnabled(enabled) {
 
 function writeClipboardImageToFile(destPath) {
   const scriptPath = path.join(os.tmpdir(), 'pasteit_clip.ps1');
-  const escaped = destPath.replace(/\\/g, '\\\\');
+  const escaped = destPath.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
   const script = [
     'Add-Type -AssemblyName System.Windows.Forms',
     'Add-Type -AssemblyName System.Drawing',
@@ -70,6 +71,8 @@ function getProjectPath() {
 // -- Main paste flow --
 
 async function pasteImageToTimeline() {
+  if (isRunning) return;
+  isRunning = true;
   setButtonEnabled(false);
   showStatus('Reading clipboard…');
 
@@ -79,6 +82,7 @@ async function pasteImageToTimeline() {
   } catch (e) {
     showStatus('Save your project first', 'error');
     setButtonEnabled(true);
+    isRunning = false;
     return;
   }
 
@@ -92,12 +96,14 @@ async function pasteImageToTimeline() {
   if (!clipOk) {
     showStatus('No image in clipboard', 'error');
     setButtonEnabled(true);
+    isRunning = false;
     return;
   }
 
-  const escapedPath = filePath.replace(/\\/g, '\\\\');
+  const escapedPath = filePath.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
   csInterface.evalScript('importAndPlace("' + escapedPath + '")', (result) => {
     setButtonEnabled(true);
+    isRunning = false;
     if (result === 'OK') {
       showStatus('Pasted: ' + filename, 'success');
     } else if (result === 'ERROR:no_project') {
