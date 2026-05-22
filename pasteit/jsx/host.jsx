@@ -36,13 +36,11 @@ function importAndPlace(filePath) {
 
   var playheadTime = seq.getPlayerPosition();
   var insertedClip = seq.videoTracks[0].insertClip(importedItem, playheadTime);
+  if (!insertedClip) return "ERROR:clip_placement_failed";
 
-  // Set duration to 5 seconds from the clip's actual start position
-  if (insertedClip) {
-    var endTime = new Time();
-    endTime.seconds = insertedClip.start.seconds + 5.0;
-    insertedClip.end = endTime;
-  }
+  var endTime = new Time();
+  endTime.seconds = insertedClip.start.seconds + 5.0;
+  insertedClip.end = endTime;
 
   return "OK";
 }
