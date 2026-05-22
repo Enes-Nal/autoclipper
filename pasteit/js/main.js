@@ -100,7 +100,7 @@ async function pasteImageToTimeline() {
     return;
   }
 
-  const escapedPath = filePath.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  const escapedPath = filePath.replace(/\\/g, '\\\\');
   csInterface.evalScript('importAndPlace("' + escapedPath + '")', (result) => {
     setButtonEnabled(true);
     isRunning = false;
