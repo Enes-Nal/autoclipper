@@ -35,7 +35,7 @@ function importAndPlace(filePath) {
   if (!importedItem) return "ERROR:item_not_found";
 
   var playheadTime = seq.getPlayerPosition();
-  var insertedClip = seq.videoTracks[0].insertClip(importedItem, playheadTime);
+  var insertedClip = seq.videoTracks[0].overwriteClip(importedItem, playheadTime);
   if (!insertedClip) return "ERROR:clip_placement_failed";
 
   var endTime = new Time();

@@ -31,17 +31,17 @@ function setButtonEnabled(enabled) {
 
 function writeClipboardImageToFile(destPath) {
   const scriptPath = path.join(os.tmpdir(), 'pasteit_clip.ps1');
-  const escaped = destPath.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  const psPath = destPath.replace(/'/g, "''");
   const script = [
     'Add-Type -AssemblyName System.Windows.Forms',
     'Add-Type -AssemblyName System.Drawing',
     '$img = [System.Windows.Forms.Clipboard]::GetImage()',
-    'if ($null -eq $img) { Write-Output "no_image"; exit 1 }',
-    '$img.Save("' + escaped + '", [System.Drawing.Imaging.ImageFormat]::Png)',
-    'Write-Output "ok"'
+    "if ($null -eq $img) { Write-Output 'no_image'; exit 1 }",
+    "$img.Save('" + psPath + "', [System.Drawing.Imaging.ImageFormat]::Png)",
+    "Write-Output 'ok'"
   ].join('\n');
 
-  fs.writeFileSync(scriptPath, script, 'utf8');
+  fs.writeFileSync(scriptPath, '﻿' + script, 'utf8');
 
   try {
     const output = execSync(
@@ -62,7 +62,9 @@ function getProjectPath() {
       if (!result || result === 'EvalScript Err' || result.trim() === '') {
         reject(new Error('no_project_path'));
       } else {
-        resolve(result.trim());
+        let p = result.trim();
+        try { p = decodeURIComponent(p); } catch (e) {}
+        resolve(p);
       }
     });
   });
