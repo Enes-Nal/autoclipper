@@ -1,0 +1,8 @@
+downloads/
+exports/
+temp/
+__pycache__/
+*.pyc
+.env
+fonts/NotoColorEmoji.ttf
+.superpowers/
