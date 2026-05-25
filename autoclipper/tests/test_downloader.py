@@ -17,4 +17,5 @@ def test_parse_progress_non_download_line():
 
 def test_get_job_path():
     p = get_job_path("abc123")
-    assert str(p) == str(Path("downloads") / "abc123.mp4")
+    assert p.name == "abc123.mp4"
+    assert p.parent.name == "downloads"

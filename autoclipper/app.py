@@ -8,8 +8,9 @@ from exporter import export_video
 app = Flask(__name__, static_folder="frontend", static_url_path="")
 CORS(app)
 
-TEMPLATES_DIR = Path("templates")
-EXPORTS_DIR   = Path("exports")
+BASE_DIR      = Path(__file__).parent
+TEMPLATES_DIR = BASE_DIR / "templates"
+EXPORTS_DIR   = BASE_DIR / "exports"
 
 # In-memory job store: job_id -> Queue of SSE event dicts
 _jobs: dict[str, queue.Queue] = {}
