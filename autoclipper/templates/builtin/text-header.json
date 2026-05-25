@@ -1,0 +1,10 @@
+{
+  "name": "Text Header",
+  "format": "9:16",
+  "canvas": { "width": 1080, "height": 1920 },
+  "layers": [
+    { "id": "bar",   "type": "shape", "x": 0, "y": 0,   "width": 1080, "height": 320, "fill": "#000000", "opacity": 1.0 },
+    { "id": "video", "type": "video", "x": 0, "y": 320,  "width": 1080, "height": 1600, "fit": "cover" },
+    { "id": "title", "type": "text",  "x": 40, "y": 60, "width": 1000, "text": "{title}", "font_size": 68, "fill": "#ffffff", "stroke": "#000000", "stroke_width": 4, "text_align": "center" }
+  ]
+}
