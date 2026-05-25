@@ -2,8 +2,8 @@ import subprocess, uuid, os
 from pathlib import Path
 from text_renderer import render_text_layer, has_emoji
 
-EXPORTS_DIR = Path("exports")
-TEMP_DIR = Path("temp")
+EXPORTS_DIR = Path(__file__).parent / "exports"
+TEMP_DIR = Path(__file__).parent / "temp"
 for d in (EXPORTS_DIR, TEMP_DIR):
     d.mkdir(exist_ok=True)
 

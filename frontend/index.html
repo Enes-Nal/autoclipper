@@ -21,7 +21,7 @@ button,input,select{font-family:inherit}
 
 /* ─── LAYOUT ─────────────────────────────────────────── */
 #app{display:flex;height:100%;overflow:hidden}
-#sidebar{width:220px;flex-shrink:0;background:var(--s1);border-right:1px solid var(--b1);display:flex;flex-direction:column;overflow:hidden}
+#sidebar{width:210px;flex-shrink:0;background:var(--s1);border-right:1px solid var(--b1);display:flex;flex-direction:column;overflow:hidden}
 #main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 #topbar{height:52px;background:var(--s1);border-bottom:1px solid var(--b1);display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0}
 #workspace{flex:1;display:flex;overflow:hidden}
@@ -32,59 +32,34 @@ button,input,select{font-family:inherit}
 
 /* ─── SIDEBAR ─────────────────────────────────────────── */
 .sb-logo{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--b1)}
-.sb-logo-icon{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.sb-logo-icon{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff}
 .sb-logo-text{font-size:15px;font-weight:900;letter-spacing:-.4px}
-.new-proj-btn{margin:10px 12px;padding:8px;border-radius:var(--r);border:1px dashed var(--b2);background:transparent;color:var(--sub);cursor:pointer;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;transition:.12s}
-.new-proj-btn:hover{border-color:var(--acc);color:var(--tx);background:var(--accdim)}
-.sb-nav{padding:4px 8px}
-.sbnav-item{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:var(--rs);cursor:pointer;color:var(--sub);font-size:12px;font-weight:500;transition:.1s}
-.sbnav-item:hover{background:var(--s3);color:var(--tx)}
-.sbnav-item.on{background:var(--accdim);color:var(--tx)}
-.sbnav-item .ico{font-size:14px;width:18px;text-align:center}
-.sb-sect{padding:10px 16px 4px;font-size:9px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:1.2px}
-.proj-item{display:flex;align-items:center;gap:8px;padding:6px 8px;margin:1px 8px;border-radius:var(--rs);cursor:pointer;color:var(--sub);font-size:12px;transition:.1s}
-.proj-item:hover{background:var(--s3);color:var(--tx)}
-.proj-item.on{background:var(--accdim);color:var(--tx)}
-.proj-icon{width:8px;height:8px;border-radius:2px;background:var(--acc);flex-shrink:0}
-.proj-name{flex:1;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.proj-count{font-size:10px;color:var(--mut);background:var(--s3);padding:1px 5px;border-radius:10px}
-.sb-bottom{margin-top:auto;border-top:1px solid var(--b1);padding:10px 12px}
-.storage-bar{margin-bottom:10px}
-.storage-lbl{display:flex;justify-content:space-between;font-size:10px;color:var(--sub);margin-bottom:5px}
-.storage-track{height:4px;background:var(--mut);border-radius:2px;overflow:hidden}
-.storage-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--acc),var(--acc2))}
-.storage-dots{display:flex;gap:8px;margin-top:4px}
-.storage-dot{display:flex;align-items:center;gap:4px;font-size:9px;color:var(--sub)}
-.storage-dot span{width:6px;height:6px;border-radius:50%}
-.user-row{display:flex;align-items:center;gap:8px;padding:6px 4px;border-radius:var(--r);cursor:pointer;transition:.1s}
-.user-row:hover{background:var(--s3)}
-.user-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0}
-.user-info{flex:1;overflow:hidden}
-.user-name{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.user-email{font-size:10px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.user-more{color:var(--sub);font-size:12px}
+.new-proj-btn{margin:10px 12px;padding:9px 10px;border-radius:var(--r);border:1px solid var(--acc);background:var(--accdim);color:var(--acc);cursor:pointer;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:7px;transition:.12s}
+.new-proj-btn:hover{background:var(--acc);color:#fff}
+.vid-card{margin:0 12px;padding:10px 12px;border-radius:var(--rs);border:1px solid var(--b1);background:var(--s2)}
+.vid-card-lbl{font-size:9px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:1.1px;margin-bottom:5px;display:flex;align-items:center;gap:5px}
+.vid-card-lbl::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--ok);flex-shrink:0}
+.vid-filename{font-size:11px;color:var(--tx);font-weight:600;word-break:break-all;line-height:1.4}
+.vid-meta{font-size:10px;color:var(--sub);margin-top:3px}
 
 /* ─── TOP BAR ─────────────────────────────────────────── */
-.tb-file{display:flex;align-items:center;gap:6px;color:var(--sub);font-size:13px}
-.tb-file .ico{font-size:15px}
+.tb-file{display:flex;align-items:center;gap:6px;color:var(--sub)}
 .tb-file input{background:transparent;border:none;color:var(--tx);font-family:'Inter',sans-serif;font-size:13px;font-weight:700;outline:none;width:140px}
 .tb-sep{width:1px;height:20px;background:var(--b1);flex-shrink:0}
 .fmt-grp{display:flex;gap:3px;background:var(--bg);border:1px solid var(--b1);border-radius:var(--rs);padding:3px}
 .fmt-btn{padding:3px 11px;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;background:transparent;color:var(--sub);transition:.12s;letter-spacing:.3px}
 .fmt-btn.on{background:var(--acc);color:#fff;box-shadow:0 0 10px rgba(124,92,246,.4)}
-.icon-btn{width:32px;height:32px;border:none;border-radius:var(--rs);background:transparent;color:var(--sub);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:.1s}
+.icon-btn{width:32px;height:32px;border:none;border-radius:var(--rs);background:transparent;color:var(--sub);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.1s}
 .icon-btn:hover{background:var(--s3);color:var(--tx)}
 .tb-right{margin-left:auto;display:flex;align-items:center;gap:6px}
-.btn{padding:6px 13px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;border:none;transition:.12s;white-space:nowrap}
+.btn{padding:6px 12px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;border:none;transition:.12s;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
 .btn-ghost{background:transparent;border:1px solid var(--b1);color:var(--sub)}
 .btn-ghost:hover{border-color:var(--b2);color:var(--tx);background:var(--s3)}
 .btn-primary{background:var(--acc);color:#fff;box-shadow:0 0 14px rgba(124,92,246,.3)}
 .btn-primary:hover{background:#8b6cf6}
 .btn-danger{background:var(--danger);color:#fff}
-.gh-btn{color:var(--sub);font-size:18px;cursor:pointer;opacity:.6;transition:.1s}
-.gh-btn:hover{opacity:1;color:var(--tx)}
 
-/* ─── LEFT PANEL inside workspace ─────────────────────── */
+/* ─── LEFT PANEL ───────────────────────────────────────── */
 #left-panel{width:196px;flex-shrink:0;background:var(--s1);border-right:1px solid var(--b1);display:flex;flex-direction:column;overflow:hidden}
 .lp-tabs{display:flex;border-bottom:1px solid var(--b1)}
 .lp-tab{flex:1;padding:9px 0;text-align:center;font-size:11px;font-weight:700;cursor:pointer;color:var(--sub);border-bottom:2px solid transparent;transition:.12s;text-transform:uppercase;letter-spacing:.4px}
@@ -95,12 +70,12 @@ button,input,select{font-family:inherit}
 .el-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:0 10px}
 .el-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:9px 6px;border-radius:var(--rs);border:1px solid var(--b1);background:var(--s2);cursor:pointer;transition:.14s;font-size:10px;color:var(--sub);font-weight:600;text-align:center}
 .el-btn:hover{border-color:var(--acc);color:var(--tx);background:var(--s3);transform:translateY(-1px);box-shadow:0 4px 12px rgba(124,92,246,.12)}
-.el-ico{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px}
-.ei-v{background:linear-gradient(135deg,#1a3a6e,#0d1a38)}
-.ei-b{background:linear-gradient(135deg,#131828,#080d16)}
+.el-ico{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center}
+.ei-v{background:linear-gradient(135deg,#1a3a6e,#0d1a38);color:#5b8cff}
+.ei-b{background:linear-gradient(135deg,#131828,#080d16);color:#7070a0}
 .ei-t{background:linear-gradient(135deg,#2e1560,#160a30);color:#a78bfa;font-size:15px;font-weight:900}
-.ei-i{background:linear-gradient(135deg,#123220,#06180e)}
-.ei-s{background:linear-gradient(135deg,#280d1a,#130608)}
+.ei-i{background:linear-gradient(135deg,#123220,#06180e);color:#34d399}
+.ei-s{background:linear-gradient(135deg,#280d1a,#130608);color:#f87171}
 .layers-scroll{flex:1;overflow-y:auto;padding:0 10px 10px;border-top:1px solid var(--b1);margin-top:8px}
 .layers-scroll::-webkit-scrollbar{width:3px}
 .layers-scroll::-webkit-scrollbar-thumb{background:var(--mut);border-radius:2px}
@@ -110,7 +85,7 @@ button,input,select{font-family:inherit}
 .lrow.on{background:#1c1640;border-color:var(--acc);color:var(--tx)}
 .ldot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 .lname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.leye{color:var(--mut);font-size:11px;cursor:pointer;padding:2px;border-radius:3px;transition:.1s}
+.leye{color:var(--mut);cursor:pointer;padding:2px;border-radius:3px;transition:.1s;display:flex;align-items:center}
 .leye:hover{color:var(--tx)}
 /* Templates tab */
 .tpl-body{flex:1;overflow-y:auto;padding:0 10px 10px}
@@ -127,7 +102,6 @@ button,input,select{font-family:inherit}
 .tt-bg{position:absolute;inset:0}
 .tt-vid{position:absolute;border-radius:2px}
 .tt-txt{position:absolute;left:0;right:0;text-align:center;font-size:5.5px;font-weight:900;color:#fff;line-height:1.3;padding:0 4px;text-shadow:0 1px 2px #000}
-.tt-logo{position:absolute;bottom:4px;right:4px;font-size:5px;color:rgba(255,255,255,.6);background:rgba(0,0,0,.5);padding:1px 3px;border-radius:2px}
 .tt-bar{position:absolute;left:0;right:0}
 
 /* ─── CANVAS AREA ─────────────────────────────────────── */
@@ -137,7 +111,7 @@ button,input,select{font-family:inherit}
 .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:55px;height:8px;background:#1a1a2e;border-radius:0 0 6px 6px;z-index:10;pointer-events:none}
 #ec{display:block}
 .cvs-toolbar{display:flex;align-items:center;gap:8px;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:6px 12px;font-size:11px;color:var(--sub)}
-.tbar-btn{padding:3px 9px;border-radius:var(--rs);border:none;cursor:pointer;background:transparent;color:var(--sub);font-size:11px;font-weight:500;transition:.1s}
+.tbar-btn{padding:3px 9px;border-radius:var(--rs);border:none;cursor:pointer;background:transparent;color:var(--sub);font-size:11px;font-weight:500;transition:.1s;display:inline-flex;align-items:center;gap:4px}
 .tbar-btn:hover{background:var(--s3);color:var(--tx)}
 #zlbl{min-width:34px;text-align:center;color:var(--tx);font-weight:700}
 .tsep{width:1px;height:14px;background:var(--b1)}
@@ -157,17 +131,14 @@ button,input,select{font-family:inherit}
 .tog{display:flex;flex:1;background:var(--s2);border:1px solid var(--b1);border-radius:var(--rs);padding:2px;gap:2px}
 .togbtn{flex:1;padding:4px 0;border:none;border-radius:4px;cursor:pointer;font-size:10px;font-weight:700;background:transparent;color:var(--sub);transition:.1s}
 .togbtn.on{background:var(--acc);color:#fff}
-/* Alignment */
 .align-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:4px}
-.abtn{height:28px;border:1px solid var(--b1);border-radius:var(--rs);background:var(--s2);cursor:pointer;font-size:12px;color:var(--sub);transition:.1s;display:flex;align-items:center;justify-content:center}
+.abtn{height:28px;border:1px solid var(--b1);border-radius:var(--rs);background:var(--s2);cursor:pointer;color:var(--sub);transition:.1s;display:flex;align-items:center;justify-content:center;font-size:13px}
 .abtn:hover{border-color:var(--acc);color:var(--tx);background:var(--s3)}
-/* Swatches */
 .swatches{display:flex;flex-wrap:wrap;gap:4px;flex:1}
 .sw{width:22px;height:22px;border-radius:5px;cursor:pointer;border:2px solid transparent;transition:.1s;position:relative;flex-shrink:0}
 .sw.on::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:900}
 .sw:hover{transform:scale(1.12)}
 .cinput{width:22px;height:22px;border-radius:5px;border:1px solid var(--b1);cursor:pointer;padding:1px;background:none}
-/* Emoji picker */
 .emo-btn{width:100%;padding:7px 10px;border-radius:var(--rs);border:1px solid var(--b1);background:var(--s2);cursor:pointer;color:var(--tx);font-size:12px;font-weight:600;text-align:left;transition:.1s;display:flex;align-items:center;gap:6px}
 .emo-btn:hover{border-color:var(--acc);background:var(--s3)}
 #emo-popup{position:fixed;z-index:300;background:var(--s1);border:1px solid var(--b2);border-radius:var(--r);padding:10px;width:224px;box-shadow:0 16px 48px rgba(0,0,0,.7);display:none}
@@ -181,24 +152,21 @@ button,input,select{font-family:inherit}
 .ec:hover{background:var(--s3);transform:scale(1.1)}
 .pnote{font-size:10px;color:var(--sub);margin-top:5px;line-height:1.5}
 .no-sel{padding:28px 14px;text-align:center;color:var(--sub);font-size:12px;line-height:1.8}
-.no-sel-ico{font-size:28px;margin-bottom:8px;opacity:.25}
-/* Download modal */
-#dl-modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:400;display:none;align-items:center;justify-content:center}
-#dl-modal.open{display:flex}
+.no-sel-ico{margin-bottom:8px;opacity:.2;display:flex;justify-content:center}
+/* Modals */
+#dl-modal,#exp-modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:400;display:none;align-items:center;justify-content:center}
+#dl-modal.open,#exp-modal.open{display:flex}
 .modal-box{background:var(--s1);border:1px solid var(--b2);border-radius:14px;padding:28px;width:480px;box-shadow:0 24px 64px rgba(0,0,0,.8)}
 .modal-title{font-size:16px;font-weight:800;margin-bottom:6px}
 .modal-sub{font-size:12px;color:var(--sub);margin-bottom:20px}
 .modal-input{width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);color:var(--tx);font-family:'Inter',sans-serif;font-size:13px;padding:10px 12px;outline:none;margin-bottom:12px;transition:.1s}
 .modal-input:focus{border-color:var(--acc)}
 .modal-input::placeholder{color:var(--sub)}
-.modal-row{display:flex;gap:8px;align-items:center}
-.prog-wrap{display:none;align-items:center;gap:8px;flex:1;margin-left:8px}
+.modal-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.prog-wrap{display:none;align-items:center;gap:8px;flex:1;min-width:120px}
 .prog-track{flex:1;height:4px;background:var(--mut);border-radius:2px;overflow:hidden}
 .prog-fill{height:100%;background:var(--acc);width:0;transition:width .3s;border-radius:2px}
 .prog-lbl{font-size:10px;color:var(--sub);white-space:nowrap}
-/* Export modal */
-#exp-modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:400;display:none;align-items:center;justify-content:center}
-#exp-modal.open{display:flex}
 </style>
 </head>
 <body>
@@ -207,44 +175,19 @@ button,input,select{font-family:inherit}
 <!-- ── SIDEBAR ──────────────────────────────────────── -->
 <div id="sidebar">
   <div class="sb-logo">
-    <div class="sb-logo-icon">✂</div>
+    <div class="sb-logo-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="17" height="17"><path stroke-linecap="round" stroke-linejoin="round" d="m7.848 8.25 1.536.887M7.848 8.25a3 3 0 1 1-5.196-3 3 3 0 0 1 5.196 3Zm1.536.887a2.165 2.165 0 0 1 1.083 1.839c.005.351.054.695.14 1.024M9.384 9.137l2.077 1.199M7.848 15.75l1.536-.887m0 0a2.165 2.165 0 0 1 1.083-1.839m-1.083 1.839a3 3 0 1 1-5.197 3 3 3 0 0 1 5.197-3Zm1.536-.887 2.077-1.2m0 0a5.25 5.25 0 0 1 .98-3.31M13.461 11.25a5.25 5.25 0 0 1 .98 3.312m0 0 2.022 1.168M14.441 14.562l2.022 1.168M16.463 15.73a5.25 5.25 0 0 1 .98-3.312M16.463 15.73l-.022-.013a3.75 3.75 0 0 0-2.03-.52h-.083a3.75 3.75 0 0 0-2.03.52M16.463 15.73A5.25 5.25 0 0 1 21 18.75a3 3 0 0 1-5.25 2.25"/></svg>
+    </div>
     <div class="sb-logo-text">autoclipper</div>
   </div>
-  <button class="new-proj-btn" onclick="openDlModal()">+ New Project</button>
-  <div class="sb-nav">
-    <div class="sbnav-item on"><span class="ico">⊞</span>All Projects</div>
-    <div class="sbnav-item"><span class="ico">⬡</span>Templates</div>
-    <div class="sbnav-item"><span class="ico">◷</span>Recent</div>
-    <div class="sbnav-item"><span class="ico">⇌</span>Shared</div>
-    <div class="sbnav-item"><span class="ico">⊘</span>Trash</div>
-  </div>
-  <div class="sb-sect">Projects</div>
-  <div id="proj-list">
-    <div class="proj-item on"><div class="proj-icon"></div><span class="proj-name">Blur Stack</span><span class="proj-count">12</span></div>
-    <div class="proj-item"><div class="proj-icon" style="background:#e879f9"></div><span class="proj-name">Gaming Highlights</span><span class="proj-count">8</span></div>
-    <div class="proj-item"><div class="proj-icon" style="background:#22c55e"></div><span class="proj-name">Podcast Clips</span><span class="proj-count">6</span></div>
-    <div class="proj-item"><div class="proj-icon" style="background:#f59e0b"></div><span class="proj-name">TikTok Edits</span><span class="proj-count">10</span></div>
-    <div class="proj-item"><div class="proj-icon" style="background:#ef4444"></div><span class="proj-name">YouTube Shorts</span><span class="proj-count">7</span></div>
-    <div class="proj-item"><div class="proj-icon" style="background:#6b7280"></div><span class="proj-name">More</span><span class="proj-count">4</span></div>
-  </div>
-  <div class="sb-bottom">
-    <div class="storage-bar">
-      <div class="storage-lbl"><span>Storage</span><span>8.9 GB / 15 GB</span></div>
-      <div class="storage-track"><div class="storage-fill" style="width:59%"></div></div>
-      <div class="storage-dots">
-        <div class="storage-dot"><span style="background:var(--acc)"></span>Projects</div>
-        <div class="storage-dot"><span style="background:var(--acc2)"></span>Templates</div>
-        <div class="storage-dot"><span style="background:#f59e0b"></span>Assets</div>
-      </div>
-    </div>
-    <div class="user-row">
-      <div class="user-avatar">A</div>
-      <div class="user-info">
-        <div class="user-name">Autoclipper</div>
-        <div class="user-email">autoclipper.app</div>
-      </div>
-      <div class="user-more">⌃</div>
-    </div>
+  <button class="new-proj-btn" onclick="openDlModal()">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+    Download Video
+  </button>
+  <div class="vid-card" id="vid-card" style="display:none">
+    <div class="vid-card-lbl">Ready to export</div>
+    <div class="vid-filename" id="vid-filename">—</div>
+    <div class="vid-meta" id="vid-meta"></div>
   </div>
 </div>
 
@@ -254,8 +197,8 @@ button,input,select{font-family:inherit}
   <!-- TOP BAR -->
   <div id="topbar">
     <div class="tb-file">
-      <span class="ico">📄</span>
-      <input id="proj-name-input" value="Blur Stack" />
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="16" height="16" style="color:var(--sub)"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg>
+      <input id="proj-name-input" value="My Template" />
     </div>
     <div class="tb-sep"></div>
     <div class="fmt-grp">
@@ -263,15 +206,32 @@ button,input,select{font-family:inherit}
       <button class="fmt-btn on" id="fmt-916" onclick="setFmt('9:16')">9:16</button>
     </div>
     <div class="tb-sep"></div>
-    <button class="icon-btn" onclick="doUndo()" title="Undo">↩</button>
-    <button class="icon-btn" onclick="doRedo()" title="Redo">↪</button>
+    <button class="icon-btn" onclick="doUndo()" title="Undo">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="17" height="17"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3"/></svg>
+    </button>
+    <button class="icon-btn" onclick="doRedo()" title="Redo">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="17" height="17"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"/></svg>
+    </button>
     <div class="tb-right">
-      <button class="btn btn-ghost" id="del-btn" style="display:none" onclick="delSel()">🗑 Delete</button>
-      <button class="btn btn-ghost" onclick="openDlModal()">⬇ Download</button>
-      <button class="btn btn-ghost" id="export-btn" onclick="openExpModal()">🎬 Export</button>
-      <button class="btn btn-primary" onclick="saveTemplate()">💾 Save Template</button>
-      <button class="icon-btn">⋯</button>
-      <span class="gh-btn" title="GitHub">⌥</span>
+      <button class="btn btn-ghost" id="del-btn" style="display:none" onclick="delSel()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/></svg>
+        Delete
+      </button>
+      <button class="btn btn-ghost" onclick="openDlModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+        Download
+      </button>
+      <button class="btn btn-ghost" id="export-btn" onclick="openExpModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
+        Export
+      </button>
+      <button class="btn btn-primary" onclick="saveTemplate()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z"/></svg>
+        Save Template
+      </button>
+      <button class="icon-btn" title="More">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="17" height="17"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/></svg>
+      </button>
     </div>
   </div>
 
@@ -289,11 +249,26 @@ button,input,select{font-family:inherit}
       <div class="lp-body on" id="body-el">
         <div class="lp-sect" style="padding-top:10px">Add Element</div>
         <div class="el-grid">
-          <div class="el-btn" onclick="addVideo()"><div class="el-ico ei-v">🎬</div>Video</div>
-          <div class="el-btn" onclick="addBlur()"><div class="el-ico ei-b">🌫</div>Blur BG</div>
-          <div class="el-btn" onclick="addText()"><div class="el-ico ei-t">T</div>Text</div>
-          <div class="el-btn" onclick="addImage()"><div class="el-ico ei-i">🖼</div>Image</div>
-          <div class="el-btn" onclick="addShape()"><div class="el-ico ei-s">▬</div>Shape</div>
+          <div class="el-btn" onclick="addVideo()">
+            <div class="el-ico ei-v"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"/></svg></div>
+            Video
+          </div>
+          <div class="el-btn" onclick="addBlur()">
+            <div class="el-ico ei-b"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z"/></svg></div>
+            Blur BG
+          </div>
+          <div class="el-btn" onclick="addText()">
+            <div class="el-ico ei-t">T</div>
+            Text
+          </div>
+          <div class="el-btn" onclick="addImage()">
+            <div class="el-ico ei-i"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"/></svg></div>
+            Image
+          </div>
+          <div class="el-btn" onclick="addShape()">
+            <div class="el-ico ei-s"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 7.125C2.25 6.504 2.754 6 3.375 6h6c.621 0 1.125.504 1.125 1.125v3.75c0 .621-.504 1.125-1.125 1.125h-6a1.125 1.125 0 0 1-1.125-1.125v-3.75ZM14.25 8.625c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125v8.25c0 .621-.504 1.125-1.125 1.125h-5.25a1.125 1.125 0 0 1-1.125-1.125v-8.25ZM3.75 16.125c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125v2.25c0 .621-.504 1.125-1.125 1.125h-5.25a1.125 1.125 0 0 1-1.125-1.125v-2.25Z"/></svg></div>
+            Shape
+          </div>
         </div>
         <div class="layers-scroll">
           <div class="lp-sect">Layers</div>
@@ -304,7 +279,7 @@ button,input,select{font-family:inherit}
       <!-- Templates tab -->
       <div class="lp-body" id="body-tpl">
         <div class="tpl-body">
-          <input class="tpl-search" placeholder="🔍 Search templates…" oninput="filterTpls(this.value)">
+          <input class="tpl-search" placeholder="Search templates…" oninput="filterTpls(this.value)">
           <div class="tpl-grid" id="tpl-grid"></div>
         </div>
       </div>
@@ -325,19 +300,34 @@ button,input,select{font-family:inherit}
           <div class="tsep"></div>
           <button class="tbar-btn" onclick="fitZoom()">Fit</button>
           <div class="tsep"></div>
-          <button class="tbar-btn" onclick="doUndo()">↩</button>
-          <button class="tbar-btn" onclick="doRedo()">↪</button>
+          <button class="tbar-btn" onclick="doUndo()">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="13" height="13"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3"/></svg>
+          </button>
+          <button class="tbar-btn" onclick="doRedo()">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="13" height="13"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"/></svg>
+          </button>
           <div class="tsep"></div>
-          <button class="tbar-btn" onclick="toggleGrid()">⊞ Grid</button>
+          <button class="tbar-btn" onclick="toggleGrid()">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="13" height="13"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z"/></svg>
+            Grid
+          </button>
           <div class="tsep"></div>
-          <button class="tbar-btn" id="snap-btn" style="color:var(--acc)" onclick="toggleSnap()">⊕ Snap ON</button>
+          <button class="tbar-btn" id="snap-btn" style="color:var(--acc)" onclick="toggleSnap()">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="13" height="13"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3.75H6.912a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H15M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859M12 3v8.25m0 0-3-3m3 3 3-3"/></svg>
+            Snap ON
+          </button>
         </div>
       </div>
     </div>
 
     <!-- RIGHT PANEL -->
     <div id="right">
-      <div class="no-sel"><div class="no-sel-ico">✦</div>Select an element<br>to edit its properties<br><br>or click <strong>Add Element</strong></div>
+      <div class="no-sel">
+        <div class="no-sel-ico">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" width="32" height="32"><path stroke-linecap="round" stroke-linejoin="round" d="M15.042 21.672 13.684 16.6m0 0-2.51 2.225.569-9.47 5.227 7.917-3.286-.672ZM12 2.25V4.5m5.834.166-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243-1.59-1.59"/></svg>
+        </div>
+        Select an element<br>to edit its properties<br><br>or add one from the left
+      </div>
     </div>
 
   </div><!-- /workspace -->
@@ -357,7 +347,10 @@ button,input,select{font-family:inherit}
     <div class="modal-sub">Paste any Twitter/X, YouTube, TikTok, or Instagram URL</div>
     <input class="modal-input" id="dl-url" placeholder="https://twitter.com/…" />
     <div class="modal-row">
-      <button class="btn btn-primary" onclick="startDownload()">⬇ Download</button>
+      <button class="btn btn-primary" onclick="startDownload()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+        Download
+      </button>
       <div class="prog-wrap" id="prog-wrap">
         <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
         <span class="prog-lbl" id="prog-lbl">Downloading…</span>
@@ -376,7 +369,10 @@ button,input,select{font-family:inherit}
     <input class="modal-input" id="exp-title" placeholder="Clip title (replaces {title} in template)…" />
     <div id="exp-video-info" style="font-size:11px;color:var(--sub);margin-bottom:12px"></div>
     <div class="modal-row">
-      <button class="btn btn-primary" onclick="startExport()">🎬 Export</button>
+      <button class="btn btn-primary" onclick="startExport()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
+        Export
+      </button>
       <div class="prog-wrap" id="exp-prog-wrap">
         <div class="prog-track"><div class="prog-fill" id="exp-prog-fill"></div></div>
         <span class="prog-lbl" id="exp-prog-lbl">Processing…</span>
@@ -390,6 +386,16 @@ button,input,select{font-family:inherit}
 <input type="file" id="img-pick" accept="image/*" style="display:none" onchange="onImgFile(event)">
 
 <script>
+// ── ICON HELPER ────────────────────────────────────────────────────────────
+const ICONS = {
+  eye: '<path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>',
+  'eye-slash': '<path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88"/>',
+};
+function icon(name, size=16) {
+  const p = ICONS[name] || '';
+  return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="${size}" height="${size}" style="display:block">${p}</svg>`;
+}
+
 // ── STATE ──────────────────────────────────────────────────────────────────
 const FMT = { '9:16':{w:270,h:480}, '1:1':{w:360,h:360} };
 let fmt='9:16', cv, zl=1;
@@ -452,7 +458,6 @@ function initCanvas(f){
   phone.style.borderRadius=f==='9:16'?'28px':'16px';
   document.getElementById('ec').width=w;
   document.getElementById('ec').height=h;
-  if(cv)cv.dispose();
   cv=new fabric.Canvas('ec',{backgroundColor:'#0c0c18',preserveObjectStacking:true});
   window.canvas=cv;
   cv.setWidth(w);cv.setHeight(h);
@@ -471,9 +476,21 @@ function initCanvas(f){
 
 // ── FORMAT ─────────────────────────────────────────────────────────────────
 function setFmt(f){
+  if(fmt===f)return;
+  fmt=f;
+  const {w,h}=FMT[f];
   document.querySelectorAll('.fmt-btn').forEach(b=>b.classList.remove('on'));
   document.getElementById(f==='9:16'?'fmt-916':'fmt-1x1').classList.add('on');
-  initCanvas(f);
+  // Reset zoom then resize canvas (no dispose/recreate)
+  zl=1; cv.setZoom(1);
+  cv.setWidth(w); cv.setHeight(h);
+  const phone=document.getElementById('phone');
+  phone.style.width=w+'px'; phone.style.height=h+'px';
+  phone.style.borderRadius=f==='9:16'?'28px':'16px';
+  // Clear existing content
+  gridLines.forEach(l=>cv.remove(l));gridLines=[];gridOn=false;
+  cv.clear(); cv.backgroundColor='#0c0c18'; cv.renderAll();
+  updZoom(); syncLayers(); saveHist();
 }
 
 // ── SNAPPING ───────────────────────────────────────────────────────────────
@@ -542,7 +559,8 @@ function drawGuides(){
 function toggleSnap(){
   snapOn=!snapOn;
   const b=document.getElementById('snap-btn');
-  b.textContent=snapOn?'⊕ Snap ON':'⊘ Snap OFF';
+  b.querySelector('svg').style.opacity=snapOn?'1':'0.4';
+  b.lastChild.textContent=' Snap '+(snapOn?'ON':'OFF');
   b.style.color=snapOn?'var(--acc)':'var(--sub)';
 }
 
@@ -672,16 +690,25 @@ function syncLayers(){
     const t=obj._type||'shape',label=obj._label||'Element',color=LC[t]||'#888';
     const row=document.createElement('div');
     row.className='lrow'+(obj===active?' on':'');
-    row.innerHTML=`<span class="ldot" style="background:${color}"></span><span class="lname">${label}</span><span class="leye">👁</span>`;
+    const eyeIco=document.createElement('span');
+    eyeIco.className='leye';
+    eyeIco.innerHTML=icon(obj.visible===false?'eye-slash':'eye',14);
+    row.innerHTML=`<span class="ldot" style="background:${color}"></span><span class="lname">${label}</span>`;
+    row.appendChild(eyeIco);
     row.addEventListener('click',()=>{cv.setActiveObject(obj);cv.renderAll();syncLayers();updateProps();});
-    row.querySelector('.leye').addEventListener('click',ev=>{ev.stopPropagation();obj.visible=!obj.visible;cv.renderAll();});
+    eyeIco.addEventListener('click',ev=>{
+      ev.stopPropagation();
+      obj.visible=obj.visible===false;
+      eyeIco.innerHTML=icon(obj.visible===false?'eye-slash':'eye',14);
+      cv.renderAll();
+    });
     list.appendChild(row);
   });
 }
 
 // ── PROPERTIES ─────────────────────────────────────────────────────────────
 function clearProps(){
-  document.getElementById('right').innerHTML='<div class="no-sel"><div class="no-sel-ico">✦</div>Select an element<br>to edit its properties</div>';
+  document.getElementById('right').innerHTML='<div class="no-sel"><div class="no-sel-ico" style="display:flex;justify-content:center"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" width="32" height="32" style="opacity:.2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.042 21.672 13.684 16.6m0 0-2.51 2.225.569-9.47 5.227 7.917-3.286-.672ZM12 2.25V4.5m5.834.166-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243-1.59-1.59"/></svg></div>Select an element<br>to edit its properties</div>';
   document.getElementById('del-btn').style.display='none';
 }
 
@@ -697,12 +724,12 @@ function updateProps(){
   <div class="psec">
     <div class="psec-title">Align</div>
     <div class="align-grid">
-      <button class="abtn" title="Left"    onclick="align('left')">⇤</button>
-      <button class="abtn" title="Center H" onclick="align('cx')">↔</button>
-      <button class="abtn" title="Right"   onclick="align('right')">⇥</button>
-      <button class="abtn" title="Top"     onclick="align('top')">⇡</button>
-      <button class="abtn" title="Center V" onclick="align('cy')">↕</button>
-      <button class="abtn" title="Bottom"  onclick="align('bottom')">⇣</button>
+      <button class="abtn" title="Left"     onclick="align('left')">&#8676;</button>
+      <button class="abtn" title="Center H" onclick="align('cx')">&#8596;</button>
+      <button class="abtn" title="Right"    onclick="align('right')">&#8677;</button>
+      <button class="abtn" title="Top"      onclick="align('top')">&#8593;</button>
+      <button class="abtn" title="Center V" onclick="align('cy')">&#8597;</button>
+      <button class="abtn" title="Bottom"   onclick="align('bottom')">&#8595;</button>
     </div>
   </div>
   <div class="psec">
@@ -738,7 +765,7 @@ function updateProps(){
         <span class="slv">${bl}px</span>
       </div>
     </div>
-    <p class="pnote">Video duplicated, scaled, and blurred on export.</p></div>`;
+    <p class="pnote">Video is duplicated, scaled, and blurred on export.</p></div>`;
   }
 
   if(type==='video'){
@@ -746,9 +773,9 @@ function updateProps(){
     html+=`<div class="psec"><div class="psec-title">Video Layer</div>
     <div class="prow"><span class="plbl">Fit</span>
       <div class="tog">
-        <button class="togbtn ${fit==='contain'?'on':''}" onclick="togOn(this);obj._fit='contain'">Contain</button>
-        <button class="togbtn ${fit==='cover'?'on':''}"   onclick="togOn(this);obj._fit='cover'">Cover</button>
-        <button class="togbtn ${fit==='fill'?'on':''}"    onclick="togOn(this);obj._fit='fill'">Fill</button>
+        <button class="togbtn ${fit==='contain'?'on':''}" onclick="togOn(this);cv.getActiveObject()._fit='contain'">Contain</button>
+        <button class="togbtn ${fit==='cover'?'on':''}"   onclick="togOn(this);cv.getActiveObject()._fit='cover'">Cover</button>
+        <button class="togbtn ${fit==='fill'?'on':''}"    onclick="togOn(this);cv.getActiveObject()._fit='fill'">Fill</button>
       </div>
     </div></div>`;
   }
@@ -766,22 +793,22 @@ function updateProps(){
     </div>
     <div class="prow"><span class="plbl">Weight</span>
       <div class="tog">
-        <button class="togbtn" onclick="togOn(this);sp('fontWeight','400')">Reg</button>
+        <button class="togbtn" onclick="togOn(this);sp('fontWeight','400')">Regular</button>
         <button class="togbtn" onclick="togOn(this);sp('fontWeight','700')">Bold</button>
         <button class="togbtn on" onclick="togOn(this);sp('fontWeight','900')">Black</button>
       </div>
     </div>
     <div class="prow"><span class="plbl">Align</span>
       <div class="tog">
-        <button class="togbtn" onclick="togOn(this);sp('textAlign','left')">←</button>
-        <button class="togbtn on" onclick="togOn(this);sp('textAlign','center')">↔</button>
-        <button class="togbtn" onclick="togOn(this);sp('textAlign','right')">→</button>
+        <button class="togbtn" onclick="togOn(this);sp('textAlign','left')">L</button>
+        <button class="togbtn on" onclick="togOn(this);sp('textAlign','center')">C</button>
+        <button class="togbtn" onclick="togOn(this);sp('textAlign','right')">R</button>
       </div>
     </div>
     <div class="prow"><span class="plbl">Color</span>
       <div class="swatches">
         ${['#ffffff','#000000','#ffdd00','#ff4466','#44ccff','#a78bfa','#ff8800','#22c55e'].map(c=>
-          `<div class="sw${fill===c?' on':''}" style="background:${c};${c==='#ffffff'?'border:1px solid #333':''}" onclick="sp('fill','${c}');document.querySelectorAll('.sw').forEach(s=>s.classList.remove('on'));this.classList.add('on')"></div>`
+          `<div class="sw${fill===c?' on':''}" style="background:${c};${c==='#ffffff'?'border-color:#333':''}" onclick="sp('fill','${c}');document.querySelectorAll('.sw').forEach(s=>s.classList.remove('on'));this.classList.add('on')"></div>`
         ).join('')}
         <input type="color" class="cinput" value="${fill}" oninput="sp('fill',this.value)" title="Custom">
       </div>
@@ -804,7 +831,7 @@ function updateProps(){
 
   if(type==='image'){
     html+=`<div class="psec"><div class="psec-title">Image / Logo</div>
-    <button class="emo-btn" style="margin-top:4px" onclick="addImage()">🖼 Replace Image…</button></div>`;
+    <button class="emo-btn" style="margin-top:4px" onclick="addImage()">Replace Image…</button></div>`;
   }
 
   if(type==='shape'){
@@ -813,7 +840,7 @@ function updateProps(){
     <div class="prow"><span class="plbl">Fill</span>
       <div class="swatches">
         ${['#000000','#ffffff','#0d0d1a','#7c5cf6','#e879f9','#f43f5e','#22c55e','#f59e0b'].map(c=>
-          `<div class="sw${fill===c?' on':''}" style="background:${c};${c==='#ffffff'?'border:1px solid #333':''}" onclick="sp('fill','${c}');document.querySelectorAll('.sw').forEach(s=>s.classList.remove('on'));this.classList.add('on')"></div>`
+          `<div class="sw${fill===c?' on':''}" style="background:${c};${c==='#ffffff'?'border-color:#333':''}" onclick="sp('fill','${c}');document.querySelectorAll('.sw').forEach(s=>s.classList.remove('on'));this.classList.add('on')"></div>`
         ).join('')}
         <input type="color" class="cinput" value="${fill}" oninput="sp('fill',this.value)" title="Custom">
       </div>
@@ -844,12 +871,12 @@ function switchTab(t){
 
 // ── BUILT-IN TEMPLATES ─────────────────────────────────────────────────────
 const BUILTIN_TEMPLATES=[
-  {id:'blur-stack',name:'Blur Stack',thumb:`<div class="tt-bg" style="background:linear-gradient(180deg,#0d1a3a,#060a12)"></div><div class="tt-vid" style="left:0;top:35%;width:100%;height:32%;background:#1a3a6a;opacity:.9"></div><div class="tt-txt" style="top:8%">Your title here 🔥</div><div class="tt-logo">@channel</div>`},
-  {id:'text-header',name:'Text Header',thumb:`<div class="tt-bar" style="top:0;height:28%;background:#000"></div><div class="tt-vid" style="left:0;top:28%;width:100%;height:72%;background:#1a3a2a"></div><div class="tt-txt" style="top:5%">Bold title 💀</div>`},
-  {id:'footer-fade',name:'Footer Fade',thumb:`<div class="tt-vid" style="left:0;top:0;width:100%;height:100%;background:linear-gradient(135deg,#2a1a5a,#0d0a1a)"></div><div class="tt-bar" style="bottom:0;height:32%;background:linear-gradient(transparent,#000)"></div><div class="tt-txt" style="bottom:8%">Clip title 🏆</div>`},
-  {id:'minimal',name:'Minimal',thumb:`<div class="tt-bg" style="background:#000"></div><div class="tt-vid" style="left:5%;top:22%;width:90%;height:54%;background:#1a2a1a;border-radius:4px"></div><div class="tt-txt" style="top:6%">@channel</div>`},
-  {id:'side-blur',name:'Side Blur',thumb:`<div class="tt-bg" style="background:#0d1520"></div><div class="tt-vid" style="left:15%;top:20%;width:70%;height:60%;background:#1a3a5a"></div><div class="tt-txt" style="top:6%">Title 🎮</div>`},
-  {id:'podcast',name:'Podcast',thumb:`<div class="tt-vid" style="left:0;top:0;width:100%;height:100%;background:linear-gradient(135deg,#3a1a0a,#1a0a04)"></div><div class="tt-bar" style="bottom:0;height:26%;background:rgba(0,0,0,.85)"></div><div class="tt-txt" style="bottom:7%">What they said 💬</div>`},
+  {id:'blur-stack', name:'Blur Stack', format:'9:16', thumb:`<div class="tt-bg" style="background:linear-gradient(180deg,#0d1a3a,#060a12)"></div><div class="tt-vid" style="left:0;top:35%;width:100%;height:32%;background:#1a3a6a;opacity:.9"></div><div class="tt-txt" style="top:8%">Your title here 🔥</div>`},
+  {id:'text-header', name:'Text Header', format:'9:16', thumb:`<div class="tt-bar" style="top:0;height:28%;background:#000"></div><div class="tt-vid" style="left:0;top:28%;width:100%;height:72%;background:#1a3a2a"></div><div class="tt-txt" style="top:5%">Bold title 💀</div>`},
+  {id:'footer-fade', name:'Footer Fade', format:'9:16', thumb:`<div class="tt-vid" style="left:0;top:0;width:100%;height:100%;background:linear-gradient(135deg,#2a1a5a,#0d0a1a)"></div><div class="tt-bar" style="bottom:0;height:32%;background:linear-gradient(transparent,#000)"></div><div class="tt-txt" style="bottom:8%">Clip title 🏆</div>`},
+  {id:'minimal', name:'Minimal', format:'9:16', thumb:`<div class="tt-bg" style="background:#000"></div><div class="tt-vid" style="left:5%;top:22%;width:90%;height:54%;background:#1a2a1a;border-radius:4px"></div><div class="tt-txt" style="top:6%">@channel</div>`},
+  {id:'side-blur', name:'Side Blur', format:'1:1', thumb:`<div class="tt-bg" style="background:#0d1520"></div><div class="tt-vid" style="left:15%;top:20%;width:70%;height:60%;background:#1a3a5a"></div><div class="tt-txt" style="top:6%">Title 🎮</div>`},
+  {id:'podcast', name:'Podcast', format:'9:16', thumb:`<div class="tt-vid" style="left:0;top:0;width:100%;height:100%;background:linear-gradient(135deg,#3a1a0a,#1a0a04)"></div><div class="tt-bar" style="bottom:0;height:26%;background:rgba(0,0,0,.85)"></div><div class="tt-txt" style="bottom:7%">What they said 💬</div>`},
 ];
 
 function renderTplGrid(filter=''){
@@ -861,7 +888,10 @@ function filterTpls(v){renderTplGrid(v);}
 renderTplGrid();
 
 function applyBuiltinTpl(id){
-  cv.clear();cv.backgroundColor='#0c0c18';
+  const tpl=BUILTIN_TEMPLATES.find(t=>t.id===id);
+  // Set format first (synchronous resize, no dispose)
+  if(tpl?.format && tpl.format!==fmt) setFmt(tpl.format);
+  cv.clear(); cv.backgroundColor='#0c0c18';
   const map={
     'blur-stack':()=>{addBlur();addVideo();addText();},
     'text-header':()=>{addShape();addVideo();addText();},
@@ -872,12 +902,8 @@ function applyBuiltinTpl(id){
   };
   (map[id]||map['blur-stack'])();
   cv.renderAll();syncLayers();
-  document.getElementById('proj-name-input').value=BUILTIN_TEMPLATES.find(t=>t.id===id)?.name||id;
+  document.getElementById('proj-name-input').value=tpl?.name||id;
   switchTab('el');
-  // Also fetch full template from server and set format
-  fetch(`/api/templates/${id}`).then(r=>r.json()).then(tpl=>{
-    if(tpl.format)setFmt(tpl.format);
-  }).catch(()=>{});
 }
 
 // ── TEMPLATE EXPORT JSON ───────────────────────────────────────────────────
@@ -923,37 +949,51 @@ function closeDlModal(){document.getElementById('dl-modal').classList.remove('op
 
 function startDownload(){
   const url=document.getElementById('dl-url').value.trim();
-  if(!url)return;
+  if(!url){document.getElementById('dl-url').focus();return;}
   const pw=document.getElementById('prog-wrap');
   const pf=document.getElementById('prog-fill');
   const pl=document.getElementById('prog-lbl');
   const st=document.getElementById('dl-status');
-  pw.style.display='flex';pf.style.width='0%';pl.textContent='Starting…';st.textContent='';
+  pw.style.display='flex';pf.style.width='2%';pl.textContent='Starting…';st.textContent='';
+  st.style.color='var(--sub)';
 
   fetch('/api/download',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})})
-    .then(r=>r.json()).then(({job_id,error})=>{
-      if(error){st.textContent='Error: '+error;pw.style.display='none';return;}
+    .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+    .then(({job_id,error})=>{
+      if(error){st.textContent='Error: '+error;st.style.color='var(--danger)';pw.style.display='none';return;}
       const es=new EventSource(`/api/download/${job_id}/progress`);
       es.onmessage=ev=>{
         const msg=JSON.parse(ev.data);
-        if(msg.type==='progress'){pf.style.width=msg.percent+'%';pl.textContent=`${Math.round(msg.percent)}%`;}
-        else if(msg.type==='done'){
-          es.close();pf.style.width='100%';pl.textContent='✓ Done';
+        if(msg.type==='progress'){
+          pf.style.width=msg.percent+'%';
+          pl.textContent=Math.round(msg.percent)+'%';
+        } else if(msg.type==='done'){
+          es.close();pf.style.width='100%';pl.textContent='Done';
           downloadedVideoPath=msg.path;
-          st.textContent=`Downloaded: ${msg.path} (${msg.width}×${msg.height}, ${Math.round(msg.duration)}s)`;
-          setTimeout(closeDlModal,1500);
-        }else if(msg.type==='error'){
-          es.close();st.textContent='Error: '+msg.message;pw.style.display='none';
+          // Show in sidebar
+          const filename=msg.path.split(/[\\/]/).pop();
+          document.getElementById('vid-card').style.display='';
+          document.getElementById('vid-filename').textContent=filename;
+          document.getElementById('vid-meta').textContent=`${msg.width}×${msg.height} · ${Math.round(msg.duration)}s`;
+          st.textContent='Downloaded successfully';st.style.color='var(--ok)';
+          setTimeout(closeDlModal,1200);
+        } else if(msg.type==='error'){
+          es.close();st.textContent='Error: '+msg.message;st.style.color='var(--danger)';pw.style.display='none';
         }
       };
-    }).catch(e=>{st.textContent='Network error: '+e.message;pw.style.display='none';});
+      es.onerror=()=>{
+        es.close();st.textContent='Connection lost — check console';st.style.color='var(--danger)';pw.style.display='none';
+      };
+    })
+    .catch(e=>{st.textContent='Network error: '+e.message;st.style.color='var(--danger)';pw.style.display='none';});
 }
 
 // ── EXPORT ─────────────────────────────────────────────────────────────────
 function openExpModal(){
   if(!downloadedVideoPath){alert('Download a video first.');return;}
   document.getElementById('exp-modal').classList.add('open');
-  document.getElementById('exp-video-info').textContent='Video: '+downloadedVideoPath;
+  const filename=downloadedVideoPath.split(/[\\/]/).pop();
+  document.getElementById('exp-video-info').textContent='Video: '+filename;
   document.getElementById('exp-title').focus();
 }
 
@@ -964,25 +1004,32 @@ function startExport(){
   const pf=document.getElementById('exp-prog-fill');
   const pl=document.getElementById('exp-prog-lbl');
   const st=document.getElementById('exp-status');
-  pw.style.display='flex';pf.style.width='0%';pl.textContent='Starting…';st.textContent='';
+  pw.style.display='flex';pf.style.width='2%';pl.textContent='Starting…';st.textContent='';
+  st.style.color='var(--sub)';
 
   fetch('/api/export',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({video_path:downloadedVideoPath,template:tpl,title})})
-    .then(r=>r.json()).then(({job_id,error})=>{
-      if(error){st.textContent='Error: '+error;pw.style.display='none';return;}
-      let pct=0;
+    .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+    .then(({job_id,error})=>{
+      if(error){st.textContent='Error: '+error;st.style.color='var(--danger)';pw.style.display='none';return;}
+      let pct=2;
       const es=new EventSource(`/api/export/${job_id}/progress`);
       es.onmessage=ev=>{
         const msg=JSON.parse(ev.data);
-        if(msg.type==='progress'){pct=Math.min(pct+2,95);pf.style.width=pct+'%';}
+        if(msg.type==='progress'){pct=Math.min(pct+1,95);pf.style.width=pct+'%';}
         else if(msg.type==='done'){
-          es.close();pf.style.width='100%';pl.textContent='✓ Done';
-          st.innerHTML=`Exported: <a href="/api/exports/${msg.filename}" style="color:var(--acc)" download>Download ${msg.filename}</a>`;
-        }else if(msg.type==='error'){
-          es.close();st.textContent='Error: '+msg.message;pw.style.display='none';
+          es.close();pf.style.width='100%';pl.textContent='Done';
+          st.innerHTML=`Exported: <a href="/api/exports/${msg.filename}" style="color:var(--acc)" download>${msg.filename}</a>`;
+          st.style.color='var(--ok)';
+        } else if(msg.type==='error'){
+          es.close();st.textContent='Error: '+msg.message;st.style.color='var(--danger)';pw.style.display='none';
         }
       };
-    }).catch(e=>{st.textContent='Network error: '+e.message;pw.style.display='none';});
+      es.onerror=()=>{
+        es.close();st.textContent='Export connection lost';st.style.color='var(--danger)';pw.style.display='none';
+      };
+    })
+    .catch(e=>{st.textContent='Network error: '+e.message;st.style.color='var(--danger)';pw.style.display='none';});
 }
 
 // ── INIT ───────────────────────────────────────────────────────────────────

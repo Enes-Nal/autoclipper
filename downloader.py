@@ -1,7 +1,7 @@
 import subprocess, json, re
 from pathlib import Path
 
-DOWNLOADS_DIR = Path("downloads")
+DOWNLOADS_DIR = Path(__file__).parent / "downloads"
 
 def get_job_path(job_id: str) -> Path:
     return DOWNLOADS_DIR / f"{job_id}.mp4"
