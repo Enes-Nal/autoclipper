@@ -420,22 +420,83 @@ function stopVideoLoop(){
   if(_rafId!==null){fabric.util.cancelAnimFrame(_rafId);_rafId=null;}
 }
 
-// ── EMOJI ──────────────────────────────────────────────────────────────────
-const ALL_EMOJI=[
-  '😂','🤣','😭','😅','🥲','😍','😎','🤯','😤','😡','💀','☠️','🤡','👀','👁','🫡',
-  '🔥','💥','✨','⚡','🌊','❄️','💯','🎯','🏆','🥇','👑','💎','💰','🚀','⭐','🌟',
-  '👏','💪','🤝','👍','🙏','🫶','❤️','🧡','💛','💚','💙','💜','🖤','🤍','🩷',
-  '🥊','⚽','🏀','🎮','🕹','🎲','🎬','🎤','🎧','🎵','🎶','😱','🫢','🫣','🤭','😏',
-  '🤔','🧠','👻','👾','🤖','😈','👿','🃏','🎰','‼️','⁉️','❓','❗','✅','❌','⚠️',
-];
-let emoOpen=false;
-function renderEmoGrid(filter=''){
-  document.getElementById('emo-grid').innerHTML=
-    (filter?ALL_EMOJI.filter(e=>e.includes(filter)):ALL_EMOJI)
-    .map(e=>`<span class="ec" onclick="insertEmoji('${e}')">${e}</span>`).join('');
+// ── EMOJI (TWEMOJI) ────────────────────────────────────────────────────────
+const EMOJI_DATA={
+  smileys:[
+    {e:'😀',n:'grinning'},{e:'😂',n:'joy'},{e:'🤣',n:'rofl'},
+    {e:'😭',n:'crying'},{e:'😅',n:'sweat smile'},{e:'😍',n:'heart eyes'},
+    {e:'🥲',n:'smiling tear'},{e:'😎',n:'sunglasses'},{e:'🤯',n:'mind blown'},
+    {e:'😤',n:'triumph'},{e:'😡',n:'angry'},{e:'🥶',n:'cold face'},
+    {e:'😱',n:'scream'},{e:'🤭',n:'hand over mouth'},{e:'😏',n:'smirk'},
+    {e:'🤔',n:'thinking'},{e:'😈',n:'smiling devil'},{e:'💀',n:'skull'},
+    {e:'☠️',n:'skull crossbones'},{e:'👻',n:'ghost'},{e:'🤡',n:'clown'},
+    {e:'🤖',n:'robot'},{e:'👾',n:'alien monster'},{e:'🫠',n:'melting'},
+  ],
+  people:[
+    {e:'👀',n:'eyes'},{e:'👁️',n:'eye'},{e:'🫡',n:'saluting'},
+    {e:'👏',n:'clapping'},{e:'💪',n:'muscle'},{e:'🤝',n:'handshake'},
+    {e:'👍',n:'thumbs up'},{e:'👎',n:'thumbs down'},{e:'🙏',n:'pray'},
+    {e:'🫶',n:'heart hands'},{e:'🤌',n:'pinched fingers'},{e:'✌️',n:'victory'},
+    {e:'🤞',n:'crossed fingers'},{e:'🫵',n:'point at you'},{e:'☝️',n:'index up'},
+    {e:'🧠',n:'brain'},{e:'💅',n:'nail polish'},{e:'🦾',n:'mechanical arm'},
+  ],
+  fire:[
+    {e:'🔥',n:'fire'},{e:'💥',n:'explosion'},{e:'✨',n:'sparkles'},
+    {e:'⚡',n:'lightning'},{e:'🌊',n:'wave'},{e:'❄️',n:'snowflake'},
+    {e:'💯',n:'hundred'},{e:'🎯',n:'bullseye'},{e:'🏆',n:'trophy'},
+    {e:'🥇',n:'gold medal'},{e:'👑',n:'crown'},{e:'💎',n:'diamond'},
+    {e:'💰',n:'money bag'},{e:'🚀',n:'rocket'},{e:'⭐',n:'star'},
+    {e:'🌟',n:'glowing star'},{e:'💫',n:'dizzy'},{e:'🌈',n:'rainbow'},
+  ],
+  objects:[
+    {e:'🥊',n:'boxing glove'},{e:'⚽',n:'soccer'},{e:'🏀',n:'basketball'},
+    {e:'🎮',n:'video game'},{e:'🕹️',n:'joystick'},{e:'🎲',n:'dice'},
+    {e:'🎬',n:'clapper board'},{e:'🎤',n:'microphone'},{e:'🎧',n:'headphones'},
+    {e:'🎵',n:'music note'},{e:'🎶',n:'notes'},{e:'🃏',n:'joker'},
+    {e:'🎰',n:'slot machine'},{e:'📱',n:'phone'},{e:'💻',n:'laptop'},
+    {e:'🎁',n:'gift'},{e:'🍕',n:'pizza'},{e:'☕',n:'coffee'},
+  ],
+  symbols:[
+    {e:'❤️',n:'red heart'},{e:'🧡',n:'orange heart'},{e:'💛',n:'yellow heart'},
+    {e:'💚',n:'green heart'},{e:'💙',n:'blue heart'},{e:'💜',n:'purple heart'},
+    {e:'🖤',n:'black heart'},{e:'🤍',n:'white heart'},{e:'🩷',n:'pink heart'},
+    {e:'‼️',n:'double exclamation'},{e:'⁉️',n:'exclamation question'},
+    {e:'❓',n:'question'},{e:'❗',n:'exclamation'},{e:'✅',n:'check mark'},
+    {e:'❌',n:'cross mark'},{e:'⚠️',n:'warning'},{e:'💤',n:'zzz'},
+    {e:'🆒',n:'cool'},{e:'🔞',n:'no under 18'},{e:'🎉',n:'party popper'},
+  ],
+};
+
+let emoOpen=false, emoActiveCat='smileys', emoSearchVal='';
+
+function twemojiUrl(emoji){
+  const cp=twemoji.convert.toCodePoint(emoji);
+  return `https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/72x72/${cp}.png`;
 }
-function filterEmoji(v){renderEmoGrid(v);}
-renderEmoGrid();
+
+function renderEmoGrid(){
+  const grid=document.getElementById('emo-grid');
+  let list;
+  if(emoSearchVal){
+    list=Object.values(EMOJI_DATA).flat()
+      .filter(({e,n})=>n.toLowerCase().includes(emoSearchVal.toLowerCase()));
+  } else {
+    list=EMOJI_DATA[emoActiveCat]||[];
+  }
+  grid.innerHTML=list.map(({e})=>
+    `<div class="ec" onclick="insertEmoji('${e}')"><img src="${twemojiUrl(e)}" alt="${e}" loading="lazy" onerror="this.parentNode.textContent='${e}'"></div>`
+  ).join('');
+}
+
+function filterEmoji(v){emoSearchVal=v;renderEmoGrid();}
+
+function switchEmoCat(cat){
+  emoActiveCat=cat;emoSearchVal='';
+  document.getElementById('emo-search').value='';
+  document.querySelectorAll('.emo-cat-btn').forEach(b=>b.classList.remove('on'));
+  document.querySelector(`.emo-cat-btn[data-cat="${cat}"]`).classList.add('on');
+  renderEmoGrid();
+}
 
 function toggleEmojiPicker(triggerEl){
   const popup=document.getElementById('emo-popup');
@@ -444,25 +505,35 @@ function toggleEmojiPicker(triggerEl){
   popup.style.left=r.left+'px';
   popup.style.top=(r.bottom+6)+'px';
   popup.classList.add('open');emoOpen=true;
-  document.getElementById('emo-search').value='';renderEmoGrid();
+  document.getElementById('emo-search').value='';
+  emoSearchVal='';renderEmoGrid();
 }
 document.addEventListener('click',e=>{
   if(emoOpen&&!e.target.closest('#emo-popup')&&!e.target.closest('.emo-btn')){
     document.getElementById('emo-popup').classList.remove('open');emoOpen=false;
   }
 });
+
 function insertEmoji(emoji){
-  const obj=cv?.getActiveObject();
-  if(!obj||obj._type!=='text')return;
-  if(obj.isEditing){obj.insertChars(emoji);}
-  else{
-    const pos=(obj===lastTextObj&&lastTextPos!==null)?lastTextPos:obj.text.length;
-    obj.text=obj.text.slice(0,pos)+emoji+obj.text.slice(pos);
-    lastTextPos=pos+[...emoji].length; lastTextObj=obj;
-  }
-  cv.renderAll();
+  const url=twemojiUrl(emoji);
+  fabric.Image.fromURL(url,function(img){
+    const {w,h}=FMT[fmt];
+    const size=Math.round(Math.min(w,h)*0.18);
+    img.set({
+      left:Math.round(w/2-size/2),
+      top:Math.round(h/2-size/2),
+      scaleX:size/img.width,
+      scaleY:size/img.height,
+      _type:'emoji',
+      _label:emoji,
+    });
+    cv.add(img);cv.setActiveObject(img);cv.renderAll();
+    syncLayers();saveHist();
+  },{crossOrigin:'anonymous'});
   document.getElementById('emo-popup').classList.remove('open');emoOpen=false;
 }
+
+renderEmoGrid();
 
 // ── CANVAS INIT ────────────────────────────────────────────────────────────
 function initCanvas(f){
@@ -651,7 +722,7 @@ function toggleGrid(){
 function sc(v){const {w}=FMT[fmt];return Math.round(v*(w/1080));}
 
 // ── ADD ELEMENTS ───────────────────────────────────────────────────────────
-const LC={video:'#5b8cff',blur:'#666',text:'#a78bfa',image:'#34d399',shape:'#f87171'};
+const LC={video:'#5b8cff',blur:'#666',text:'#a78bfa',image:'#34d399',shape:'#f87171',emoji:'#f59e0b'};
 
 function addVideo(){
   const {w,h}=FMT[fmt],is16=fmt==='9:16';
@@ -874,9 +945,9 @@ function updateProps(){
     <div class="prow"><span class="plbl">S.Color</span>
       <input type="color" class="cinput" value="${typeof obj.stroke==='string'?obj.stroke:'#000000'}" oninput="sp('stroke',this.value)" title="Stroke color">
     </div></div>
-    <div class="psec"><div class="psec-title">iOS Emoji</div>
-      <button class="emo-btn" onclick="toggleEmojiPicker(this)">😊 Insert Emoji into Text</button>
-      <p class="pnote">Double-click text on canvas to position cursor, then pick an emoji.</p>
+    <div class="psec"><div class="psec-title">Emoji</div>
+      <button class="emo-btn" onclick="toggleEmojiPicker(this)">😊 Add iOS Emoji to Canvas</button>
+      <p class="pnote">Emoji are added as resizable image layers using Apple-style Twemoji.</p>
     </div>`;
   }
 
