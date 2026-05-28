@@ -471,7 +471,7 @@ let emoOpen=false, emoActiveCat='smileys', emoSearchVal='';
 
 function twemojiUrl(emoji){
   const cp=twemoji.convert.toCodePoint(emoji);
-  return `https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/72x72/${cp}.png`;
+  return `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/${cp}.png`;
 }
 
 function renderEmoGrid(){
@@ -516,8 +516,10 @@ document.addEventListener('click',e=>{
 
 function insertEmoji(emoji){
   const url=twemojiUrl(emoji);
+  const currentFmt=fmt;
   fabric.Image.fromURL(url,function(img){
-    const {w,h}=FMT[fmt];
+    if(!img||!img.width||!img.height)return;
+    const {w,h}=FMT[currentFmt];
     const size=Math.round(Math.min(w,h)*0.18);
     img.set({
       left:Math.round(w/2-size/2),
