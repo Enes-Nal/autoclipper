@@ -6,12 +6,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js" crossorigin="anonymous"></script>
 <style>
 :root{
-  --bg:#0d0d1a;--s1:#111120;--s2:#0e0e1c;--s3:#16162a;
-  --b1:#1c1c32;--b2:#262644;--b3:#32325a;
-  --acc:#7c5cf6;--acc2:#e879f9;--accdim:rgba(124,92,246,.14);
-  --tx:#f0f0fa;--sub:#7070a0;--mut:#2a2a48;
+  --bg:#111113;--s1:#161618;--s2:#1c1c1f;--s3:#222226;
+  --b1:rgba(255,255,255,0.07);--b2:rgba(255,255,255,0.11);--b3:rgba(255,255,255,0.16);
+  --acc:#5865f2;--acc2:#818cf8;--accdim:rgba(88,101,242,.12);
+  --tx:#e8e8ed;--sub:#6e6e80;--mut:rgba(255,255,255,0.06);
   --danger:#f43f5e;--ok:#22c55e;
   --r:8px;--rs:6px;
 }
@@ -48,15 +49,15 @@ button,input,select{font-family:inherit}
 .tb-sep{width:1px;height:20px;background:var(--b1);flex-shrink:0}
 .fmt-grp{display:flex;gap:3px;background:var(--bg);border:1px solid var(--b1);border-radius:var(--rs);padding:3px}
 .fmt-btn{padding:3px 11px;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;background:transparent;color:var(--sub);transition:.12s;letter-spacing:.3px}
-.fmt-btn.on{background:var(--acc);color:#fff;box-shadow:0 0 10px rgba(124,92,246,.4)}
+.fmt-btn.on{background:var(--acc);color:#fff}
 .icon-btn{width:32px;height:32px;border:none;border-radius:var(--rs);background:transparent;color:var(--sub);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.1s}
 .icon-btn:hover{background:var(--s3);color:var(--tx)}
 .tb-right{margin-left:auto;display:flex;align-items:center;gap:6px}
 .btn{padding:6px 12px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;border:none;transition:.12s;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
 .btn-ghost{background:transparent;border:1px solid var(--b1);color:var(--sub)}
 .btn-ghost:hover{border-color:var(--b2);color:var(--tx);background:var(--s3)}
-.btn-primary{background:var(--acc);color:#fff;box-shadow:0 0 14px rgba(124,92,246,.3)}
-.btn-primary:hover{background:#8b6cf6}
+.btn-primary{background:var(--acc);color:#fff}
+.btn-primary:hover{background:#6672f5}
 .btn-danger{background:var(--danger);color:#fff}
 
 /* ─── LEFT PANEL ───────────────────────────────────────── */
@@ -69,13 +70,9 @@ button,input,select{font-family:inherit}
 .lp-sect{font-size:9px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:1.2px;padding:10px 10px 6px}
 .el-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:0 10px}
 .el-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:9px 6px;border-radius:var(--rs);border:1px solid var(--b1);background:var(--s2);cursor:pointer;transition:.14s;font-size:10px;color:var(--sub);font-weight:600;text-align:center}
-.el-btn:hover{border-color:var(--acc);color:var(--tx);background:var(--s3);transform:translateY(-1px);box-shadow:0 4px 12px rgba(124,92,246,.12)}
+.el-btn:hover{border-color:var(--b2);color:var(--tx);background:var(--s3)}
 .el-ico{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center}
-.ei-v{background:linear-gradient(135deg,#1a3a6e,#0d1a38);color:#5b8cff}
-.ei-b{background:linear-gradient(135deg,#131828,#080d16);color:#7070a0}
-.ei-t{background:linear-gradient(135deg,#2e1560,#160a30);color:#a78bfa;font-size:15px;font-weight:900}
-.ei-i{background:linear-gradient(135deg,#123220,#06180e);color:#34d399}
-.ei-s{background:linear-gradient(135deg,#280d1a,#130608);color:#f87171}
+.ei-v,.ei-b,.ei-t,.ei-i,.ei-s{background:var(--s3);color:var(--sub)}
 .layers-scroll{flex:1;overflow-y:auto;padding:0 10px 10px;border-top:1px solid var(--b1);margin-top:8px}
 .layers-scroll::-webkit-scrollbar{width:3px}
 .layers-scroll::-webkit-scrollbar-thumb{background:var(--mut);border-radius:2px}
@@ -95,7 +92,7 @@ button,input,select{font-family:inherit}
 .tpl-search::placeholder{color:var(--sub)}
 .tpl-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .tcard{border:1px solid var(--b1);border-radius:var(--rs);overflow:hidden;cursor:pointer;transition:.12s;background:var(--s2)}
-.tcard:hover{border-color:var(--acc);transform:translateY(-1px);box-shadow:0 6px 16px rgba(124,92,246,.14)}
+.tcard:hover{border-color:var(--b2);background:var(--s3)}
 .tthumb{height:108px;position:relative;overflow:hidden}
 .tcard-name{padding:5px 7px;font-size:10px;font-weight:700;color:var(--sub)}
 .tcard:hover .tcard-name{color:var(--tx)}
@@ -103,11 +100,14 @@ button,input,select{font-family:inherit}
 .tt-vid{position:absolute;border-radius:2px}
 .tt-txt{position:absolute;left:0;right:0;text-align:center;font-size:5.5px;font-weight:900;color:#fff;line-height:1.3;padding:0 4px;text-shadow:0 1px 2px #000}
 .tt-bar{position:absolute;left:0;right:0}
+/* Template video previews */
+.tpl-vid{position:absolute;opacity:0;pointer-events:none;transition:opacity .3s}
+.tpl-vid.visible{opacity:1}
 
 /* ─── CANVAS AREA ─────────────────────────────────────── */
 .cvs-dots{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(circle,#1a1a2e 1px,transparent 1px);background-size:22px 22px;opacity:.4}
 .phone-wrap{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:14px}
-#phone{position:relative;border:2.5px solid #242440;border-radius:28px;overflow:hidden;background:#000;box-shadow:0 0 0 1px #080810,0 0 50px rgba(124,92,246,.1),0 24px 56px rgba(0,0,0,.7)}
+#phone{position:relative;border:1px solid rgba(255,255,255,0.12);border-radius:20px;overflow:hidden;background:#000;box-shadow:0 20px 60px rgba(0,0,0,.5)}
 .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:55px;height:8px;background:#1a1a2e;border-radius:0 0 6px 6px;z-index:10;pointer-events:none}
 #ec{display:block}
 .cvs-toolbar{display:flex;align-items:center;gap:8px;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:6px 12px;font-size:11px;color:var(--sub)}
@@ -141,15 +141,19 @@ button,input,select{font-family:inherit}
 .cinput{width:22px;height:22px;border-radius:5px;border:1px solid var(--b1);cursor:pointer;padding:1px;background:none}
 .emo-btn{width:100%;padding:7px 10px;border-radius:var(--rs);border:1px solid var(--b1);background:var(--s2);cursor:pointer;color:var(--tx);font-size:12px;font-weight:600;text-align:left;transition:.1s;display:flex;align-items:center;gap:6px}
 .emo-btn:hover{border-color:var(--acc);background:var(--s3)}
-#emo-popup{position:fixed;z-index:300;background:var(--s1);border:1px solid var(--b2);border-radius:var(--r);padding:10px;width:224px;box-shadow:0 16px 48px rgba(0,0,0,.7);display:none}
-#emo-popup.open{display:block}
-.emo-search{width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:var(--rs);color:var(--tx);font-family:'Inter',sans-serif;font-size:11px;padding:6px 9px;outline:none;margin-bottom:8px}
+#emo-popup{position:fixed;z-index:300;background:var(--s1);border:1px solid var(--b2);border-radius:var(--r);width:280px;box-shadow:0 20px 60px rgba(0,0,0,.7);display:none;overflow:hidden;flex-direction:column}
+#emo-popup.open{display:flex}
+.emo-cats{display:flex;border-bottom:1px solid var(--b1);padding:4px;gap:2px;flex-shrink:0}
+.emo-cat-btn{flex:1;padding:5px 0;border:none;border-radius:5px;cursor:pointer;background:transparent;font-size:17px;transition:.1s;opacity:.4;line-height:1}
+.emo-cat-btn.on{background:var(--s3);opacity:1}
+.emo-search{margin:6px;background:var(--s2);border:1px solid var(--b1);border-radius:var(--rs);color:var(--tx);font-family:'Inter',sans-serif;font-size:11px;padding:6px 9px;outline:none;flex-shrink:0;width:calc(100% - 12px)}
 .emo-search:focus{border-color:var(--acc)}
-.emo-grid{display:flex;flex-wrap:wrap;gap:2px;max-height:164px;overflow-y:auto}
+.emo-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;max-height:190px;overflow-y:auto;padding:0 6px 6px;flex-shrink:0}
 .emo-grid::-webkit-scrollbar{width:3px}
-.emo-grid::-webkit-scrollbar-thumb{background:var(--mut)}
-.ec{font-size:20px;cursor:pointer;padding:4px;border-radius:5px;transition:.1s;line-height:1}
-.ec:hover{background:var(--s3);transform:scale(1.1)}
+.emo-grid::-webkit-scrollbar-thumb{background:var(--mut);border-radius:2px}
+.ec{width:36px;height:36px;cursor:pointer;padding:4px;border-radius:5px;transition:.1s;display:flex;align-items:center;justify-content:center}
+.ec img{width:28px;height:28px;object-fit:contain}
+.ec:hover{background:var(--s3)}
 .pnote{font-size:10px;color:var(--sub);margin-top:5px;line-height:1.5}
 .no-sel{padding:28px 14px;text-align:center;color:var(--sub);font-size:12px;line-height:1.8}
 .no-sel-ico{margin-bottom:8px;opacity:.2;display:flex;justify-content:center}
@@ -258,7 +262,7 @@ button,input,select{font-family:inherit}
             Blur BG
           </div>
           <div class="el-btn" onclick="addText()">
-            <div class="el-ico ei-t">T</div>
+            <div class="el-ico ei-t"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"/></svg></div>
             Text
           </div>
           <div class="el-btn" onclick="addImage()">
@@ -403,7 +407,7 @@ let gridOn=false, snapOn=true, gridLines=[];
 let hist=[], histIdx=-1, histLock=false;
 let snapLines={x:null,y:null};
 let lastTextPos=null, lastTextObj=null;
-let downloadedVideoPath=null;
+let downloadedVideoPath=null, downloadedVideoURL=null;
 
 // ── EMOJI ──────────────────────────────────────────────────────────────────
 const ALL_EMOJI=[
@@ -471,6 +475,18 @@ function initCanvas(f){
   cv.on('object:moving',onSnap);
   cv.on('object:moved',()=>{snapLines={x:null,y:null};setPhoneGlow(false);cv.requestRenderAll();});
   cv.on('after:render',drawGuides);
+  cv.on('object:added',e=>{
+    if(e.target._type==='text'){
+      e.target.setControlsVisibility({ml:false,mr:false,mt:false,mb:false});
+    }
+  });
+  cv.on('object:scaling',e=>{
+    const obj=e.target;
+    if(obj._type==='text'){
+      const s=Math.max(obj.scaleX,obj.scaleY);
+      obj.scaleX=s; obj.scaleY=s;
+    }
+  });
   zl=1;updZoom();saveHist();
 }
 
@@ -646,6 +662,7 @@ function addText(){
     fontSize:sc(52),fontFamily:'"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji","Inter",sans-serif',
     fontWeight:'900',fill:'#ffffff',stroke:'#000',strokeWidth:sc(3),
     paintFirst:'stroke',textAlign:'center',_type:'text',_label:'Text Block',
+    lockUniScaling:true,
   });
   cv.add(t);cv.setActiveObject(t);cv.renderAll();
 }
@@ -743,7 +760,7 @@ function updateProps(){
     <div class="prow"><span class="plbl">W / H</span>
       <div class="pxy">
         <input class="pin" value="${W}" onchange="ssz('w',+this.value)">
-        <input class="pin" value="${H}" onchange="ssz('h',+this.value)">
+        <input class="pin" value="${H}" onchange="ssz('h',+this.value)" ${type==='text'?'readonly style="opacity:.4;cursor:default"':''}>
       </div>
     </div>
     <div class="prow"><span class="plbl">Opacity</span>
@@ -858,7 +875,7 @@ function updateProps(){
 }
 
 function sp(k,v){const o=cv?.getActiveObject();if(!o)return;o.set(k,v);cv.renderAll();}
-function ssz(ax,v){const o=cv?.getActiveObject();if(!o)return;if(ax==='w')o.scaleX=v/o.width;else o.scaleY=v/o.height;o.setCoords();cv.renderAll();}
+function ssz(ax,v){const o=cv?.getActiveObject();if(!o)return;if(ax==='w'){o.scaleX=v/o.width;if(o._type==='text')o.scaleY=o.scaleX;}else{o.scaleY=v/o.height;if(o._type==='text')o.scaleX=o.scaleY;}o.setCoords();cv.renderAll();}
 function togOn(el){el.closest('.tog').querySelectorAll('.togbtn').forEach(b=>b.classList.remove('on'));el.classList.add('on');}
 
 // ── TABS ───────────────────────────────────────────────────────────────────
@@ -871,20 +888,38 @@ function switchTab(t){
 
 // ── BUILT-IN TEMPLATES ─────────────────────────────────────────────────────
 const BUILTIN_TEMPLATES=[
-  {id:'blur-stack', name:'Blur Stack', format:'9:16', thumb:`<div class="tt-bg" style="background:linear-gradient(180deg,#0d1a3a,#060a12)"></div><div class="tt-vid" style="left:0;top:35%;width:100%;height:32%;background:#1a3a6a;opacity:.9"></div><div class="tt-txt" style="top:8%">Your title here 🔥</div>`},
-  {id:'text-header', name:'Text Header', format:'9:16', thumb:`<div class="tt-bar" style="top:0;height:28%;background:#000"></div><div class="tt-vid" style="left:0;top:28%;width:100%;height:72%;background:#1a3a2a"></div><div class="tt-txt" style="top:5%">Bold title 💀</div>`},
-  {id:'footer-fade', name:'Footer Fade', format:'9:16', thumb:`<div class="tt-vid" style="left:0;top:0;width:100%;height:100%;background:linear-gradient(135deg,#2a1a5a,#0d0a1a)"></div><div class="tt-bar" style="bottom:0;height:32%;background:linear-gradient(transparent,#000)"></div><div class="tt-txt" style="bottom:8%">Clip title 🏆</div>`},
-  {id:'minimal', name:'Minimal', format:'9:16', thumb:`<div class="tt-bg" style="background:#000"></div><div class="tt-vid" style="left:5%;top:22%;width:90%;height:54%;background:#1a2a1a;border-radius:4px"></div><div class="tt-txt" style="top:6%">@channel</div>`},
-  {id:'side-blur', name:'Side Blur', format:'1:1', thumb:`<div class="tt-bg" style="background:#0d1520"></div><div class="tt-vid" style="left:15%;top:20%;width:70%;height:60%;background:#1a3a5a"></div><div class="tt-txt" style="top:6%">Title 🎮</div>`},
-  {id:'podcast', name:'Podcast', format:'9:16', thumb:`<div class="tt-vid" style="left:0;top:0;width:100%;height:100%;background:linear-gradient(135deg,#3a1a0a,#1a0a04)"></div><div class="tt-bar" style="bottom:0;height:26%;background:rgba(0,0,0,.85)"></div><div class="tt-txt" style="bottom:7%">What they said 💬</div>`},
+  {id:'blur-stack', name:'Blur Stack', format:'9:16', cw:1080, ch:1920, vid:{x:0,y:656,w:1080,h:608,fit:'contain'},
+    thumb:`<div class="tt-bg" style="background:linear-gradient(180deg,#0d1a3a,#060a12)"></div><div class="tt-vid" style="left:0;top:35%;width:100%;height:32%;background:#1a3a6a;opacity:.9"></div><div class="tt-txt" style="top:8%">Your title here 🔥</div>`},
+  {id:'text-header', name:'Text Header', format:'9:16', cw:1080, ch:1920, vid:{x:0,y:320,w:1080,h:1600,fit:'cover'},
+    thumb:`<div class="tt-bar" style="top:0;height:28%;background:#000"></div><div class="tt-vid" style="left:0;top:28%;width:100%;height:72%;background:#1a3a2a"></div><div class="tt-txt" style="top:5%">Bold title 💀</div>`},
+  {id:'footer-fade', name:'Footer Fade', format:'9:16', cw:1080, ch:1920, vid:{x:0,y:0,w:1080,h:1920,fit:'cover'},
+    thumb:`<div class="tt-vid" style="left:0;top:0;width:100%;height:100%;background:linear-gradient(135deg,#2a1a5a,#0d0a1a)"></div><div class="tt-bar" style="bottom:0;height:32%;background:linear-gradient(transparent,#000)"></div><div class="tt-txt" style="bottom:8%">Clip title 🏆</div>`},
+  {id:'minimal', name:'Minimal', format:'9:16', cw:1080, ch:1920, vid:{x:54,y:480,w:972,h:960,fit:'contain'},
+    thumb:`<div class="tt-bg" style="background:#000"></div><div class="tt-vid" style="left:5%;top:22%;width:90%;height:54%;background:#1a2a1a;border-radius:4px"></div><div class="tt-txt" style="top:6%">@channel</div>`},
+  {id:'side-blur', name:'Side Blur', format:'1:1', cw:1080, ch:1080, vid:{x:162,y:162,w:756,h:756,fit:'contain'},
+    thumb:`<div class="tt-bg" style="background:#0d1520"></div><div class="tt-vid" style="left:15%;top:20%;width:70%;height:60%;background:#1a3a5a"></div><div class="tt-txt" style="top:6%">Title 🎮</div>`},
+  {id:'podcast', name:'Podcast', format:'9:16', cw:1080, ch:1920, vid:{x:0,y:0,w:1080,h:1920,fit:'cover'},
+    thumb:`<div class="tt-vid" style="left:0;top:0;width:100%;height:100%;background:linear-gradient(135deg,#3a1a0a,#1a0a04)"></div><div class="tt-bar" style="bottom:0;height:26%;background:rgba(0,0,0,.85)"></div><div class="tt-txt" style="bottom:7%">What they said 💬</div>`},
 ];
 
 function renderTplGrid(filter=''){
   const grid=document.getElementById('tpl-grid');
   const list=filter?BUILTIN_TEMPLATES.filter(t=>t.name.toLowerCase().includes(filter.toLowerCase())):BUILTIN_TEMPLATES;
-  grid.innerHTML=list.map(t=>`<div class="tcard" onclick="applyBuiltinTpl('${t.id}')"><div class="tthumb">${t.thumb}</div><div class="tcard-name">${t.name}</div></div>`).join('');
+  grid.innerHTML=list.map(t=>{
+    const v=t.vid;
+    const l=(v.x/t.cw*100).toFixed(1),tp=(v.y/t.ch*100).toFixed(1),w=(v.w/t.cw*100).toFixed(1),h=(v.h/t.ch*100).toFixed(1);
+    const src=downloadedVideoURL?`src="${downloadedVideoURL}"`:'';
+    const vis=downloadedVideoURL?' visible':'';
+    const vidEl=`<video class="tpl-vid${vis}" autoplay muted loop playsinline style="left:${l}%;top:${tp}%;width:${w}%;height:${h}%;object-fit:${v.fit}" ${src}></video>`;
+    return `<div class="tcard" onclick="applyBuiltinTpl('${t.id}')"><div class="tthumb">${t.thumb}${vidEl}</div><div class="tcard-name">${t.name}</div></div>`;
+  }).join('');
+  if(downloadedVideoURL) document.querySelectorAll('.tpl-vid').forEach(v=>{v.play().catch(()=>{});});
 }
 function filterTpls(v){renderTplGrid(v);}
+function updateTplPreviews(url){
+  downloadedVideoURL=url;
+  document.querySelectorAll('.tpl-vid').forEach(v=>{v.src=url;v.classList.add('visible');v.play().catch(()=>{});});
+}
 renderTplGrid();
 
 function applyBuiltinTpl(id){
@@ -970,8 +1005,8 @@ function startDownload(){
         } else if(msg.type==='done'){
           es.close();pf.style.width='100%';pl.textContent='Done';
           downloadedVideoPath=msg.path;
-          // Show in sidebar
           const filename=msg.path.split(/[\\/]/).pop();
+          updateTplPreviews('/api/downloads/'+encodeURIComponent(filename));
           document.getElementById('vid-card').style.display='';
           document.getElementById('vid-filename').textContent=filename;
           document.getElementById('vid-meta').textContent=`${msg.width}×${msg.height} · ${Math.round(msg.duration)}s`;
