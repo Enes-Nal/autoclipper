@@ -108,7 +108,6 @@ button,input,select{font-family:inherit}
 .cvs-dots{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(circle,var(--s3) 1px,transparent 1px);background-size:22px 22px;opacity:.4}
 .phone-wrap{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:14px}
 #phone{position:relative;border:1px solid rgba(255,255,255,0.12);border-radius:20px;overflow:hidden;background:#000;box-shadow:0 20px 60px rgba(0,0,0,.5)}
-.notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:55px;height:8px;background:#1a1a2e;border-radius:0 0 6px 6px;z-index:10;pointer-events:none}
 #ec{display:block}
 .cvs-toolbar{display:flex;align-items:center;gap:8px;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:6px 12px;font-size:11px;color:var(--sub)}
 .tbar-btn{padding:3px 9px;border-radius:var(--rs);border:none;cursor:pointer;background:transparent;color:var(--sub);font-size:11px;font-weight:500;transition:.1s;display:inline-flex;align-items:center;gap:4px}
@@ -530,7 +529,6 @@ function insertEmoji(emoji){
       _label:emoji,
     });
     cv.add(img);cv.setActiveObject(img);cv.renderAll();
-    syncLayers();saveHist();
   },{crossOrigin:'anonymous'});
   document.getElementById('emo-popup').classList.remove('open');emoOpen=false;
 }
@@ -681,7 +679,7 @@ function saveHist(){
 }
 function refreshVideoLayers(){
   const toReplace=cv.getObjects().filter(o=>o._type==='video');
-  if(toReplace.length===0)return;
+  if(toReplace.length===0){stopVideoLoop();return;}
   toReplace.forEach(o=>cv.remove(o));
   addVideo();
 }
@@ -1046,7 +1044,7 @@ function applyBuiltinTpl(id){
   const tpl=BUILTIN_TEMPLATES.find(t=>t.id===id);
   // Set format first (synchronous resize, no dispose)
   if(tpl?.format && tpl.format!==fmt) setFmt(tpl.format);
-  cv.clear(); cv.backgroundColor='#0c0c18';
+  stopVideoLoop(); cv.clear(); cv.backgroundColor='#0c0c18';
   const map={
     'blur-stack':()=>{addBlur();addVideo();addText();},
     'text-header':()=>{addShape();addVideo();addText();},
@@ -1087,6 +1085,7 @@ function canvasToTemplate(){
       font_weight:obj.fontWeight||'900',
     };
     if(t==='image')return{...base,src:obj._src||''};
+    if(t==='emoji')return{...base,src:twemojiUrl(obj._label||''),label:obj._label||''};
     return{...base,fill:obj.fill||'#000000'};
   });
   return{name:document.getElementById('proj-name-input').value||'My Template',format:fmt,canvas:{width:1080,height:fmt==='9:16'?1920:1080},layers};
