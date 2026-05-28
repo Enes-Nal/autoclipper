@@ -412,7 +412,9 @@ let downloadedVideoPath=null, downloadedVideoURL=null;
 let _rafId=null;
 function startVideoLoop(){
   if(_rafId!==null)return;
-  (function tick(){cv.renderAll();_rafId=fabric.util.requestAnimFrame(tick);})();
+  _rafId=-1;
+  function tick(){cv.renderAll();_rafId=fabric.util.requestAnimFrame(tick);}
+  _rafId=fabric.util.requestAnimFrame(tick);
 }
 function stopVideoLoop(){
   if(_rafId!==null){fabric.util.cancelAnimFrame(_rafId);_rafId=null;}
@@ -514,7 +516,7 @@ function setFmt(f){
   phone.style.borderRadius=f==='9:16'?'20px':'12px';
   // Clear existing content
   gridLines.forEach(l=>cv.remove(l));gridLines=[];gridOn=false;
-  cv.clear(); cv.backgroundColor='#0c0c18'; cv.renderAll();
+  stopVideoLoop(); cv.clear(); cv.backgroundColor='#0c0c18'; cv.renderAll();
   updZoom(); syncLayers(); saveHist();
 }
 
@@ -605,11 +607,10 @@ function saveHist(){
   hist=hist.slice(0,histIdx+1);hist.push(j);histIdx=hist.length-1;
 }
 function refreshVideoLayers(){
-  if(!downloadedVideoURL)return;
-  const vidEl=document.getElementById('preview-video');
-  if(vidEl.readyState<1)return;
   const toReplace=cv.getObjects().filter(o=>o._type==='video');
-  if(toReplace.length>0){toReplace.forEach(o=>cv.remove(o));addVideo();}
+  if(toReplace.length===0)return;
+  toReplace.forEach(o=>cv.remove(o));
+  addVideo();
 }
 function doUndo(){
   if(histIdx<=0)return;histIdx--;
@@ -669,6 +670,7 @@ function addVideo(){
     cv.add(img);cv.setActiveObject(img);
     startVideoLoop();
   } else {
+    stopVideoLoop();
     const r=new fabric.Rect({left:0,top:vTop,width:w,height:vh,fill:'#1a1a1d',stroke:'rgba(255,255,255,0.08)',strokeWidth:1,rx:3,ry:3});
     const t=new fabric.Text('[VIDEO]',{left:w/2,top:vTop+vh/2,originX:'center',originY:'center',fontSize:12,fill:'rgba(255,255,255,0.2)',fontFamily:'Inter',fontWeight:'600',selectable:false,evented:false});
     const g=new fabric.Group([r,t],{_type:'video',_label:'Video Layer',_fit:'contain'});
@@ -956,8 +958,11 @@ function updateTplPreviews(url){
   function swapVideoLayer(){
     vidEl.play().catch(()=>{});
     if(!cv)return;
+    histLock=true;
     cv.getObjects().filter(o=>o._type==='video').forEach(o=>cv.remove(o));
-    addVideo();saveHist();
+    addVideo();
+    histLock=false;
+    saveHist();
   }
   if(vidEl.readyState>=1)swapVideoLayer();
   else vidEl.addEventListener('loadedmetadata',swapVideoLayer,{once:true});
