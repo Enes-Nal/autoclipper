@@ -1190,6 +1190,12 @@ renderTplGrid();
 
 function applyBuiltinTpl(id){
   const tpl=BUILTIN_TEMPLATES.find(t=>t.id===id);
+  // Reset history for the new project
+  histLock=true;
+  dbClearProject(acProjectId);
+  acProjectId=generateUUID();
+  localStorage.setItem('acProjectId',acProjectId);
+  hist=[];histIdx=-1;
   // Set format first (synchronous resize, no dispose)
   if(tpl?.format && tpl.format!==fmt) setFmt(tpl.format);
   stopVideoLoop(); cv.clear(); cv.backgroundColor='#0c0c18';
@@ -1202,6 +1208,7 @@ function applyBuiltinTpl(id){
     'podcast':()=>{addVideo();addShape();addText();},
   };
   (map[id]||map['blur-stack'])();
+  histLock=false;
   cv.renderAll();syncLayers();
   document.getElementById('proj-name-input').value=tpl?.name||id;
   switchTab('el');
