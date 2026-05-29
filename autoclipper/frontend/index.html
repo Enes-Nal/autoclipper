@@ -55,7 +55,7 @@ button,input,select{font-family:inherit}
 .tb-sep{width:1px;height:20px;background:var(--b1);flex-shrink:0}
 .fmt-grp{display:flex;gap:2px;background:var(--s2);border:1px solid var(--b1);border-radius:20px;padding:3px}
 .fmt-btn{padding:4px 12px;border:none;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;background:transparent;color:var(--sub);transition:.15s;letter-spacing:.3px}
-.fmt-btn.on{background:var(--acc);color:#09090b}
+.fmt-btn.on{background:var(--acc);color:var(--bg)}
 .fmt-btn:not(.on):hover{color:var(--tx)}
 .icon-btn{width:32px;height:32px;border:none;border-radius:var(--rs);background:transparent;color:var(--sub);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.1s}
 .icon-btn:hover{background:rgba(34,197,94,0.07);color:var(--tx)}
@@ -64,7 +64,7 @@ button,input,select{font-family:inherit}
 .btn-ghost{background:transparent;border:1px solid var(--b1);color:var(--sub)}
 .btn-ghost:hover{border-color:var(--b2);color:var(--tx);background:var(--s3)}
 .btn-primary{background:var(--acc);color:var(--bg)}
-.btn-primary:hover{background:#16a34a}
+.btn-primary:hover{background:var(--acc2)}
 .btn-danger{background:var(--danger);color:#fff}
 
 /* ─── LEFT PANEL ───────────────────────────────────────── */
@@ -143,7 +143,7 @@ button,input,select{font-family:inherit}
 .slv{font-size:10px;color:var(--sub);min-width:32px;text-align:right;font-weight:600}
 .tog{display:flex;flex:1;background:var(--s2);border:1px solid var(--b1);border-radius:var(--rs);padding:2px;gap:2px}
 .togbtn{flex:1;padding:4px 0;border:none;border-radius:4px;cursor:pointer;font-size:10px;font-weight:700;background:transparent;color:var(--sub);transition:.1s}
-.togbtn.on{background:var(--acc);color:#09090b}
+.togbtn.on{background:var(--acc);color:var(--bg)}
 .align-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:4px}
 .abtn{height:28px;border:1px solid var(--b1);border-radius:var(--rs);background:var(--s2);cursor:pointer;color:var(--sub);transition:.1s;display:flex;align-items:center;justify-content:center;font-size:13px}
 .abtn:hover{border-color:var(--acc);color:var(--acc);background:var(--s3)}
@@ -187,6 +187,7 @@ button,input,select{font-family:inherit}
 
 /* ─── ANIMATED ICONS (itshover-style) ───────────────── */
 .hover-icon{display:inline-flex;align-items:center;justify-content:center}
+.gear-path,.pal-path{transform-box:fill-box;transform-origin:center}
 
 /* Editor / pen icon — pen tip dips down then returns */
 @keyframes pen-write{0%{transform:translate(0,0) rotate(0deg)}30%{transform:translate(1px,1px) rotate(-8deg)}60%{transform:translate(-1px,-1px) rotate(4deg)}100%{transform:translate(0,0) rotate(0deg)}}
@@ -201,8 +202,9 @@ button,input,select{font-family:inherit}
 
 /* Undo / redo — sweep arc */
 @keyframes undo-sweep{0%{stroke-dashoffset:0}50%{stroke-dashoffset:20}100%{stroke-dashoffset:0}}
-.icon-btn:hover .undo-path{stroke-dasharray:40;animation:undo-sweep .45s ease-in-out}
-.icon-btn:hover .redo-path{stroke-dasharray:40;animation:undo-sweep .45s ease-in-out reverse}
+.undo-path,.redo-path{stroke-dasharray:40}
+.icon-btn:hover .undo-path{animation:undo-sweep .45s ease-in-out}
+.icon-btn:hover .redo-path{animation:undo-sweep .45s ease-in-out reverse}
 
 /* Gear — rotate */
 @keyframes gear-spin{from{transform:rotate(0deg);transform-box:fill-box;transform-origin:center}to{transform:rotate(360deg);transform-box:fill-box;transform-origin:center}}
