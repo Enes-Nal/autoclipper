@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Cutly</title>
+<link rel="icon" type="image/png" href="logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
@@ -11,7 +12,7 @@
 :root{
   --bg:#111113;--s1:#161618;--s2:#1c1c1f;--s3:#222226;
   --b1:rgba(255,255,255,0.07);--b2:rgba(255,255,255,0.11);--b3:rgba(255,255,255,0.16);
-  --acc:#5865f2;--acc2:#818cf8;--accdim:rgba(88,101,242,.12);
+  --acc:#e8e8ed;--acc2:#9999a8;--accdim:rgba(232,232,237,.07);
   --tx:#e8e8ed;--sub:#6e6e80;--mut:rgba(255,255,255,0.06);
   --danger:#f43f5e;--ok:#22c55e;
   --r:8px;--rs:6px;
@@ -33,7 +34,7 @@ button,input,select{font-family:inherit}
 
 /* ─── SIDEBAR ─────────────────────────────────────────── */
 .sb-logo{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--b1)}
-.sb-logo-icon{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff}
+.sb-logo-icon{width:32px;height:32px;border-radius:8px;overflow:hidden;flex-shrink:0}
 .sb-logo-text{font-size:15px;font-weight:900;letter-spacing:-.4px}
 .new-proj-btn{margin:10px 12px;padding:9px 10px;border-radius:var(--r);border:1px solid var(--acc);background:var(--accdim);color:var(--acc);cursor:pointer;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:7px;transition:.12s}
 .new-proj-btn:hover{background:var(--acc);color:#fff}
@@ -404,9 +405,59 @@ const FMT = { '9:16':{w:270,h:480}, '1:1':{w:360,h:360} };
 let fmt='9:16', cv, zl=1;
 let gridOn=false, snapOn=true, gridLines=[];
 let hist=[], histIdx=-1, histLock=false;
+let db=null, dbAvailable=false, acProjectId='';
 let snapLines={x:null,y:null};
 let lastTextPos=null, lastTextObj=null;
 let downloadedVideoPath=null, downloadedVideoURL=null;
+
+// ── PERSISTENCE ────────────────────────────────────────────────────────────
+function generateUUID(){
+  return crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now().toString(36);
+}
+function openDB(){
+  return new Promise(resolve=>{
+    if(!window.indexedDB){resolve(null);return;}
+    const req=indexedDB.open('autoclipper',1);
+    req.onupgradeneeded=e=>{
+      const store=e.target.result.createObjectStore('history',{keyPath:'id'});
+      store.createIndex('byProject','projectId',{unique:false});
+    };
+    req.onsuccess=e=>resolve(e.target.result);
+    req.onerror=()=>resolve(null);
+  });
+}
+function dbPut(entry){
+  if(!db)return;
+  try{const tx=db.transaction('history','readwrite');tx.objectStore('history').put(entry);}
+  catch(e){console.warn('autoclipper: dbPut failed',e);}
+}
+function dbGetProject(projectId){
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction('history','readonly');
+    const idx=tx.objectStore('history').index('byProject');
+    const req=idx.getAll(projectId);
+    req.onsuccess=()=>resolve(req.result.sort((a,b)=>a.stepIndex-b.stepIndex));
+    req.onerror=()=>reject(req.error);
+  });
+}
+function dbTrimProject(projectId,keepMin,keepMax){
+  if(!db)return;
+  try{
+    const tx=db.transaction('history','readwrite');
+    const idx=tx.objectStore('history').index('byProject');
+    const req=idx.openCursor(IDBKeyRange.only(projectId));
+    req.onsuccess=e=>{
+      const cursor=e.target.result;
+      if(!cursor)return;
+      if(cursor.value.stepIndex<keepMin||cursor.value.stepIndex>keepMax)cursor.delete();
+      cursor.continue();
+    };
+  }catch(e){console.warn('autoclipper: dbTrimProject failed',e);}
+}
+function dbClearProject(projectId){
+  if(!db)return;
+  dbTrimProject(projectId,Infinity,-Infinity);
+}
 
 let _rafId=null;
 function startVideoLoop(){
