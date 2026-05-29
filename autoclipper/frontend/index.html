@@ -816,6 +816,10 @@ function saveHist(){
   if(histLock)return;
   const j=JSON.stringify(cv.toJSON(['_type','_label','_blur','_fit']));
   hist=hist.slice(0,histIdx+1);hist.push(j);histIdx=hist.length-1;
+  if(dbAvailable){
+    dbPut({id:`${acProjectId}:${histIdx}`,projectId:acProjectId,stepIndex:histIdx,snapshot:j});
+    dbTrimProject(acProjectId,Math.max(0,histIdx-49),histIdx);
+  }
 }
 function refreshVideoLayers(){
   const toReplace=cv.getObjects().filter(o=>o._type==='video');
