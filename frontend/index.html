@@ -1342,10 +1342,40 @@ function startExport(){
 }
 
 // ── INIT ───────────────────────────────────────────────────────────────────
-initCanvas('9:16');
-addBlur();
-addVideo();
-addText();
+(async()=>{
+  // 1. Project identity
+  acProjectId=localStorage.getItem('acProjectId')||generateUUID();
+  localStorage.setItem('acProjectId',acProjectId);
+
+  // 2. Open IndexedDB
+  db=await openDB();
+  dbAvailable=db!==null;
+
+  // 3. Load persisted history
+  if(dbAvailable){
+    try{
+      const entries=await dbGetProject(acProjectId);
+      hist=entries.map(e=>e.snapshot);
+      histIdx=hist.length-1;
+    }catch(err){
+      console.warn('autoclipper: failed to load history, starting fresh',err);
+      hist=[];histIdx=-1;
+    }
+  }
+
+  // 4. Initialise canvas
+  initCanvas('9:16');
+
+  // 5. Restore latest state or add default elements
+  if(histIdx>=0){
+    histLock=true;
+    cv.loadFromJSON(hist[histIdx],()=>{
+      cv.renderAll();syncLayers();refreshVideoLayers();histLock=false;
+    });
+  }else{
+    addBlur();addVideo();addText();
+  }
+})();
 </script>
 </body>
 </html>
