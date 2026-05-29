@@ -939,7 +939,10 @@ function delSel(){
   cv.renderAll();
 }
 document.addEventListener('keydown',e=>{
-  if((e.key==='Delete'||e.key==='Backspace')&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName))delSel();
+  const inp=['INPUT','TEXTAREA'].includes(document.activeElement.tagName);
+  if((e.key==='Delete'||e.key==='Backspace')&&!inp)delSel();
+  if(e.ctrlKey&&e.key==='z'&&!inp){e.preventDefault();doUndo();}
+  if(e.ctrlKey&&(e.key==='y'||(e.key==='Z'&&e.shiftKey))&&!inp){e.preventDefault();doRedo();}
 });
 
 // ── LAYERS ─────────────────────────────────────────────────────────────────
