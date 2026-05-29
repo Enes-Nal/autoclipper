@@ -1209,7 +1209,7 @@ function applyBuiltinTpl(id){
   };
   (map[id]||map['blur-stack'])();
   histLock=false;
-  cv.renderAll();syncLayers();
+  cv.renderAll();syncLayers();saveHist();
   document.getElementById('proj-name-input').value=tpl?.name||id;
   switchTab('el');
 }
