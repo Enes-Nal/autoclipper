@@ -1355,7 +1355,8 @@ function startExport(){
   if(dbAvailable){
     try{
       const entries=await dbGetProject(acProjectId);
-      hist=entries.map(e=>e.snapshot);
+      const valid=entries.filter(e=>e&&e.snapshot);
+      hist=valid.map(e=>e.snapshot);
       histIdx=hist.length-1;
     }catch(err){
       console.warn('autoclipper: failed to load history, starting fresh',err);
@@ -1363,19 +1364,25 @@ function startExport(){
     }
   }
 
-  // 4. Initialise canvas
+  // 4. Initialise canvas (histLock prevents saveHist firing during setup)
+  histLock=true;
   initCanvas('9:16');
 
   // 5. Restore latest state or add default elements
   if(histIdx>=0){
-    histLock=true;
     cv.loadFromJSON(hist[histIdx],()=>{
       cv.renderAll();syncLayers();refreshVideoLayers();histLock=false;
     });
   }else{
+    histLock=false;
     addBlur();addVideo();addText();
   }
-})();
+})().catch(err=>{
+  console.error('autoclipper: boot failed, starting fresh',err);
+  histLock=false;
+  if(!cv)initCanvas('9:16');
+  addBlur();addVideo();addText();
+});
 </script>
 </body>
 </html>
