@@ -33,12 +33,17 @@ button,input,select{font-family:inherit}
 #right::-webkit-scrollbar-thumb{background:var(--mut);border-radius:2px}
 
 /* ─── SIDEBAR ─────────────────────────────────────────── */
-.sb-logo{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--b1)}
-.sb-logo-icon{width:32px;height:32px;border-radius:8px;overflow:hidden;flex-shrink:0}
-.sb-logo-text{font-size:15px;font-weight:900;letter-spacing:-.4px}
-.new-proj-btn{margin:10px 12px;padding:9px 10px;border-radius:var(--r);border:1px solid var(--acc);background:var(--accdim);color:var(--acc);cursor:pointer;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:7px;transition:.12s}
+.sb-logo{display:flex;align-items:center;gap:10px;padding:16px;border-bottom:1px solid var(--b1)}
+.sb-logo-icon{width:30px;height:30px;border-radius:8px;overflow:hidden;flex-shrink:0;background:#f0f0f5;display:flex;align-items:center;justify-content:center}
+.sb-logo-text{font-size:14px;font-weight:900;letter-spacing:-.4px;color:var(--tx)}
+.sb-nav{display:flex;flex-direction:column;gap:2px;padding:10px 10px}
+.sb-nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;font-size:12px;font-weight:600;color:var(--sub);cursor:pointer;transition:.15s;user-select:none;position:relative}
+.sb-nav-item:hover{background:rgba(255,255,255,0.05);color:var(--tx)}
+.sb-nav-item.active{background:rgba(34,197,94,0.09);color:var(--acc)}
+.sb-nav-icon{width:16px;height:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.new-proj-btn{margin:4px 10px 10px;padding:9px 10px;border-radius:var(--r);border:1px solid var(--acc);background:var(--accdim);color:var(--acc);cursor:pointer;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:7px;transition:.12s}
 .new-proj-btn:hover{background:var(--acc);color:var(--bg)}
-.vid-card{margin:0 12px;padding:10px 12px;border-radius:var(--rs);border:1px solid var(--b1);background:var(--s2)}
+.vid-card{margin:0 10px;padding:10px 12px;border-radius:var(--r);border:1px solid var(--b1);background:var(--s2)}
 .vid-card-lbl{font-size:9px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:1.1px;margin-bottom:5px;display:flex;align-items:center;gap:5px}
 .vid-card-lbl::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--ok);flex-shrink:0}
 .vid-filename{font-size:11px;color:var(--tx);font-weight:600;word-break:break-all;line-height:1.4}
@@ -185,9 +190,23 @@ button,input,select{font-family:inherit}
 <div id="sidebar">
   <div class="sb-logo">
     <div class="sb-logo-icon">
-      <img src="logo.png" width="32" height="32" style="object-fit:contain;display:block;">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="#09090b" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>
     </div>
     <div class="sb-logo-text">Cutly</div>
+  </div>
+  <div class="sb-nav">
+    <div class="sb-nav-item active" title="Editor">
+      <span class="sb-nav-icon hover-icon" id="nav-icon-editor">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" width="16" height="16"><path class="edit-pen" stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Z"/></svg>
+      </span>
+      Editor
+    </div>
+    <div class="sb-nav-item" title="Templates" onclick="switchTab('tpl')">
+      <span class="sb-nav-icon hover-icon" id="nav-icon-tpl">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" width="16" height="16"><rect class="tpl-rect" x="3" y="3" width="7" height="7" rx="1"/><rect class="tpl-rect" x="14" y="3" width="7" height="7" rx="1"/><rect class="tpl-rect" x="3" y="14" width="7" height="7" rx="1"/><rect class="tpl-rect" x="14" y="14" width="7" height="7" rx="1"/></svg>
+      </span>
+      Templates
+    </div>
   </div>
   <button class="new-proj-btn" onclick="openDlModal()">
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
