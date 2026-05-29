@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>autoclipper</title>
+<title>Cutly</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
@@ -179,9 +179,9 @@ button,input,select{font-family:inherit}
 <div id="sidebar">
   <div class="sb-logo">
     <div class="sb-logo-icon">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="17" height="17"><path stroke-linecap="round" stroke-linejoin="round" d="m7.848 8.25 1.536.887M7.848 8.25a3 3 0 1 1-5.196-3 3 3 0 0 1 5.196 3Zm1.536.887a2.165 2.165 0 0 1 1.083 1.839c.005.351.054.695.14 1.024M9.384 9.137l2.077 1.199M7.848 15.75l1.536-.887m0 0a2.165 2.165 0 0 1 1.083-1.839m-1.083 1.839a3 3 0 1 1-5.197 3 3 3 0 0 1 5.197-3Zm1.536-.887 2.077-1.2m0 0a5.25 5.25 0 0 1 .98-3.31M13.461 11.25a5.25 5.25 0 0 1 .98 3.312m0 0 2.022 1.168M14.441 14.562l2.022 1.168M16.463 15.73a5.25 5.25 0 0 1 .98-3.312M16.463 15.73l-.022-.013a3.75 3.75 0 0 0-2.03-.52h-.083a3.75 3.75 0 0 0-2.03.52M16.463 15.73A5.25 5.25 0 0 1 21 18.75a3 3 0 0 1-5.25 2.25"/></svg>
+      <img src="logo.png" width="32" height="32" style="object-fit:contain;display:block;">
     </div>
-    <div class="sb-logo-text">autoclipper</div>
+    <div class="sb-logo-text">Cutly</div>
   </div>
   <button class="new-proj-btn" onclick="openDlModal()">
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
@@ -473,6 +473,27 @@ function twemojiUrl(emoji){
   return `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/${cp}.png`;
 }
 
+const EMOJI_SET=new Set(Object.values(EMOJI_DATA).flat().map(({e})=>e));
+const TWEMOJI_IMGS=new Map();
+function preloadTwemojiImg(emoji){
+  if(TWEMOJI_IMGS.has(emoji))return;
+  TWEMOJI_IMGS.set(emoji,null);
+  const img=new Image();img.crossOrigin='anonymous';
+  img.onload=()=>{TWEMOJI_IMGS.set(emoji,img);cv&&cv.requestRenderAll();};
+  img.src=twemojiUrl(emoji);
+}
+const _emojiRe=/\p{Extended_Pictographic}/u;
+const _origRC=fabric.Text.prototype._renderChar;
+fabric.Text.prototype._renderChar=function(method,ctx,lineIndex,charIndex,_char,left,top){
+  if(EMOJI_SET.has(_char)||_emojiRe.test(_char)){
+    if(method==='strokeText')return;
+    if(!TWEMOJI_IMGS.has(_char))preloadTwemojiImg(_char);
+    const img=TWEMOJI_IMGS.get(_char);
+    if(img){const sz=this.fontSize;ctx.drawImage(img,left,top-sz,sz,sz);return;}
+  }
+  _origRC.call(this,method,ctx,lineIndex,charIndex,_char,left,top);
+};
+
 function renderEmoGrid(){
   const grid=document.getElementById('emo-grid');
   let list;
@@ -514,26 +535,42 @@ document.addEventListener('click',e=>{
 });
 
 function insertEmoji(emoji){
-  const url=twemojiUrl(emoji);
-  const currentFmt=fmt;
-  fabric.Image.fromURL(url,function(img){
-    if(!img||!img.width||!img.height)return;
-    const {w,h}=FMT[currentFmt];
-    const size=Math.round(Math.min(w,h)*0.18);
-    img.set({
-      left:Math.round(w/2-size/2),
-      top:Math.round(h/2-size/2),
-      scaleX:size/img.width,
-      scaleY:size/img.height,
-      _type:'emoji',
-      _label:emoji,
-    });
-    cv.add(img);cv.setActiveObject(img);cv.renderAll();
-  },{crossOrigin:'anonymous'});
+  preloadTwemojiImg(emoji);
+  let obj=cv?.getActiveObject();
+  if(!obj||obj._type!=='text'){
+    const lo=lastTextObj;
+    if(lo&&cv.getObjects().includes(lo))obj=lo;
+  }
+  if(obj&&obj._type==='text'){
+    const pos=(obj===lastTextObj&&lastTextPos!=null)?lastTextPos:obj.text.length;
+    obj.set('text',obj.text.slice(0,pos)+emoji+obj.text.slice(pos));
+    lastTextPos=pos+[...emoji].length;
+    lastTextObj=obj;
+    cv.setActiveObject(obj);
+    cv.renderAll();saveHist();
+  } else {
+    const url=twemojiUrl(emoji);
+    const currentFmt=fmt;
+    fabric.Image.fromURL(url,function(img){
+      if(!img||!img.width||!img.height)return;
+      const {w,h}=FMT[currentFmt];
+      const size=Math.round(Math.min(w,h)*0.18);
+      img.set({
+        left:Math.round(w/2-size/2),
+        top:Math.round(h/2-size/2),
+        scaleX:size/img.width,
+        scaleY:size/img.height,
+        _type:'emoji',
+        _label:emoji,
+      });
+      cv.add(img);cv.setActiveObject(img);cv.renderAll();
+    },{crossOrigin:'anonymous'});
+  }
   document.getElementById('emo-popup').classList.remove('open');emoOpen=false;
 }
 
 renderEmoGrid();
+Object.values(EMOJI_DATA).flat().forEach(({e})=>preloadTwemojiImg(e));
 
 // ── CANVAS INIT ────────────────────────────────────────────────────────────
 function initCanvas(f){
@@ -556,17 +593,12 @@ function initCanvas(f){
   cv.on('text:editing:exited',e=>{lastTextPos=e.target.selectionStart;lastTextObj=e.target;});
   cv.on('object:moving',onSnap);
   cv.on('object:moved',()=>{snapLines={x:null,y:null};setPhoneGlow(false);cv.requestRenderAll();});
+  cv.on('object:scaling',onSnapScale);
+  cv.on('object:scaled',()=>{snapLines={x:null,y:null};setPhoneGlow(false);cv.requestRenderAll();});
   cv.on('after:render',drawGuides);
   cv.on('object:added',e=>{
     if(e.target._type==='text'){
       e.target.setControlsVisibility({ml:false,mr:false,mt:false,mb:false});
-    }
-  });
-  cv.on('object:scaling',e=>{
-    const obj=e.target;
-    if(obj._type==='text'){
-      const s=Math.max(obj.scaleX,obj.scaleY);
-      obj.scaleX=s; obj.scaleY=s;
     }
   });
   zl=1;updZoom();saveHist();
@@ -653,6 +685,58 @@ function drawGuides(){
     ctx.beginPath();ctx.moveTo(0,py);ctx.lineTo(cv.width,py);ctx.stroke();
   }
   ctx.restore();
+}
+function onSnapScale(e){
+  if(!snapOn)return;
+  const obj=e.target;
+  const corner=e.transform?.corner;
+  if(!corner)return;
+  const {w:cw,h:ch}=FMT[fmt];
+  const movesL=corner==='tl'||corner==='bl'||corner==='ml';
+  const movesR=corner==='tr'||corner==='br'||corner==='mr';
+  const movesT=corner==='tl'||corner==='tr'||corner==='mt';
+  const movesB=corner==='bl'||corner==='br'||corner==='mb';
+  snapLines={x:null,y:null};
+  if(movesL){
+    const fixedR=obj.left+obj.width*obj.scaleX;
+    for(const s of [0,cw]){
+      if(Math.abs(obj.left-s)<SNAP_T){
+        obj.left=s;obj.scaleX=Math.max(0.01,(fixedR-s)/obj.width);
+        snapLines.x=s;break;
+      }
+    }
+  }
+  if(movesR&&snapLines.x===null){
+    const oR=obj.left+obj.width*obj.scaleX;
+    for(const s of [0,cw]){
+      if(Math.abs(oR-s)<SNAP_T){
+        obj.scaleX=Math.max(0.01,(s-obj.left)/obj.width);
+        snapLines.x=s;break;
+      }
+    }
+  }
+  if(movesT){
+    const fixedB=obj.top+obj.height*obj.scaleY;
+    for(const s of [0,ch]){
+      if(Math.abs(obj.top-s)<SNAP_T){
+        obj.top=s;obj.scaleY=Math.max(0.01,(fixedB-s)/obj.height);
+        snapLines.y=s;break;
+      }
+    }
+  }
+  if(movesB&&snapLines.y===null){
+    const oB=obj.top+obj.height*obj.scaleY;
+    for(const s of [0,ch]){
+      if(Math.abs(oB-s)<SNAP_T){
+        obj.scaleY=Math.max(0.01,(s-obj.top)/obj.height);
+        snapLines.y=s;break;
+      }
+    }
+  }
+  if(obj._type==='text'){const sc=Math.max(obj.scaleX,obj.scaleY);obj.scaleX=sc;obj.scaleY=sc;}
+  obj.setCoords();
+  const atEdge=(snapLines.x===0||snapLines.x===cw||snapLines.y===0||snapLines.y===ch);
+  setPhoneGlow(atEdge);
 }
 function toggleSnap(){
   snapOn=!snapOn;
@@ -946,8 +1030,8 @@ function updateProps(){
       <input type="color" class="cinput" value="${typeof obj.stroke==='string'?obj.stroke:'#000000'}" oninput="sp('stroke',this.value)" title="Stroke color">
     </div></div>
     <div class="psec"><div class="psec-title">Emoji</div>
-      <button class="emo-btn" onclick="toggleEmojiPicker(this)">😊 Add iOS Emoji to Canvas</button>
-      <p class="pnote">Emoji are added as resizable image layers using Apple-style Twemoji.</p>
+      <button class="emo-btn" onclick="toggleEmojiPicker(this)">😊 Add Emoji</button>
+      <p class="pnote">Inserts Twemoji at cursor in this text. If no cursor position is saved, appends to end. Without a text selection, adds as a standalone image layer.</p>
     </div>`;
   }
 
