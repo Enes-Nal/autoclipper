@@ -184,6 +184,61 @@ button,input,select{font-family:inherit}
 .prog-track{flex:1;height:4px;background:var(--mut);border-radius:2px;overflow:hidden}
 .prog-fill{height:100%;background:var(--acc);width:0;transition:width .3s;border-radius:2px}
 .prog-lbl{font-size:10px;color:var(--sub);white-space:nowrap}
+
+/* ─── ANIMATED ICONS (itshover-style) ───────────────── */
+.hover-icon{display:inline-flex;align-items:center;justify-content:center}
+
+/* Editor / pen icon — pen tip dips down then returns */
+@keyframes pen-write{0%{transform:translate(0,0) rotate(0deg)}30%{transform:translate(1px,1px) rotate(-8deg)}60%{transform:translate(-1px,-1px) rotate(4deg)}100%{transform:translate(0,0) rotate(0deg)}}
+.sb-nav-item:hover #nav-icon-editor .edit-pen{animation:pen-write .5s ease-in-out}
+
+/* Templates / grid icon — tiles scatter and snap back */
+@keyframes grid-scatter{0%{transform:scale(1)}40%{transform:scale(1.15)}70%{transform:scale(0.95)}100%{transform:scale(1)}}
+.sb-nav-item:hover #nav-icon-tpl .tpl-rect{animation:grid-scatter .4s ease-in-out}
+.sb-nav-item:hover #nav-icon-tpl .tpl-rect:nth-child(2){animation-delay:.06s}
+.sb-nav-item:hover #nav-icon-tpl .tpl-rect:nth-child(3){animation-delay:.03s}
+.sb-nav-item:hover #nav-icon-tpl .tpl-rect:nth-child(4){animation-delay:.09s}
+
+/* Undo / redo — sweep arc */
+@keyframes undo-sweep{0%{stroke-dashoffset:0}50%{stroke-dashoffset:20}100%{stroke-dashoffset:0}}
+.icon-btn:hover .undo-path{stroke-dasharray:40;animation:undo-sweep .45s ease-in-out}
+.icon-btn:hover .redo-path{stroke-dasharray:40;animation:undo-sweep .45s ease-in-out reverse}
+
+/* Gear — rotate */
+@keyframes gear-spin{from{transform:rotate(0deg);transform-box:fill-box;transform-origin:center}to{transform:rotate(360deg);transform-box:fill-box;transform-origin:center}}
+.psec-title:hover .gear-path,.icon-btn:hover .gear-path{animation:gear-spin .7s ease-in-out}
+
+/* Download arrow — drop and rise */
+@keyframes dl-drop{0%{transform:translateY(0)}40%{transform:translateY(3px)}100%{transform:translateY(0)}}
+.new-proj-btn:hover .dl-arrow,.icon-btn:hover .dl-arrow,.btn:hover .dl-arrow{animation:dl-drop .4s ease-in-out}
+
+/* Export arrow — rise */
+@keyframes ex-rise{0%{transform:translateY(0)}40%{transform:translateY(-3px)}100%{transform:translateY(0)}}
+.btn:hover .ex-arrow{animation:ex-rise .4s ease-in-out}
+
+/* Save / bookmark — pulse */
+@keyframes bm-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+.btn:hover .save-path{animation:bm-pulse .35s ease-in-out}
+
+/* Palette / color — spin */
+@keyframes pal-spin{0%{transform:rotate(0deg);transform-box:fill-box;transform-origin:center}100%{transform:rotate(20deg);transform-box:fill-box;transform-origin:center}}
+.psec-title:hover .pal-path{animation:pal-spin .3s ease-out forwards}
+
+/* Text cursor — blink */
+@keyframes cur-blink{0%,100%{opacity:1}50%{opacity:0}}
+.psec-title:hover .cur-path{animation:cur-blink .6s ease-in-out 2}
+
+/* Film / video frames — slide */
+@keyframes film-slide{0%{transform:translateX(0)}50%{transform:translateX(-2px)}100%{transform:translateX(0)}}
+.psec-title:hover .film-path{animation:film-slide .4s ease-in-out}
+
+/* Move / transform — nudge */
+@keyframes move-nudge{0%{transform:translate(0,0)}25%{transform:translate(-1px,-1px)}75%{transform:translate(1px,1px)}100%{transform:translate(0,0)}}
+.psec-title:hover .move-path{animation:move-nudge .4s ease-in-out}
+
+/* Canvas grid toggle — pulse */
+@keyframes grid-pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.tbar-btn:hover .grid-path{animation:grid-pulse .4s ease-in-out}
 </style>
 </head>
 <body>
