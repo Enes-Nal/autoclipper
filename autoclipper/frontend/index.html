@@ -118,11 +118,11 @@ button,input,select{font-family:inherit}
 .tpl-vid.visible{opacity:1}
 
 /* ─── CANVAS AREA ─────────────────────────────────────── */
-.cvs-dots{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(circle,var(--s3) 1px,transparent 1px);background-size:22px 22px;opacity:.4}
+.cvs-dots{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(circle,rgba(255,255,255,0.08) 1px,transparent 1px);background-size:22px 22px}
 .phone-wrap{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:14px}
 #phone{position:relative;border:1px solid rgba(255,255,255,0.12);border-radius:20px;overflow:hidden;background:#000;box-shadow:0 20px 60px rgba(0,0,0,.5)}
 #ec{display:block}
-.cvs-toolbar{display:flex;align-items:center;gap:8px;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:6px 12px;font-size:11px;color:var(--sub)}
+.cvs-toolbar{display:flex;align-items:center;gap:8px;background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:6px 14px;font-size:11px;color:var(--sub);box-shadow:0 4px 20px rgba(0,0,0,0.4)}
 .tbar-btn{padding:3px 9px;border-radius:var(--rs);border:none;cursor:pointer;background:transparent;color:var(--sub);font-size:11px;font-weight:500;transition:.1s;display:inline-flex;align-items:center;gap:4px}
 .tbar-btn:hover{background:var(--s3);color:var(--tx)}
 #zlbl{min-width:34px;text-align:center;color:var(--tx);font-weight:700}
@@ -171,7 +171,7 @@ button,input,select{font-family:inherit}
 .no-sel{padding:28px 14px;text-align:center;color:var(--sub);font-size:12px;line-height:1.8}
 .no-sel-ico{margin-bottom:8px;opacity:.2;display:flex;justify-content:center}
 /* Modals */
-#dl-modal,#exp-modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:400;display:none;align-items:center;justify-content:center}
+#dl-modal,#exp-modal{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:400;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
 #dl-modal.open,#exp-modal.open{display:flex}
 .modal-box{background:var(--s1);border:1px solid var(--b1);border-radius:16px;padding:28px;width:480px;box-shadow:0 24px 80px rgba(0,0,0,.9)}
 .modal-title{font-size:16px;font-weight:800;margin-bottom:6px}
