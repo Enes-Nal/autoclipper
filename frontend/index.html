@@ -428,11 +428,15 @@ function openDB(){
 }
 function dbPut(entry){
   if(!db)return;
-  try{const tx=db.transaction('history','readwrite');tx.objectStore('history').put(entry);}
-  catch(e){console.warn('autoclipper: dbPut failed',e);}
+  try{
+    const tx=db.transaction('history','readwrite');
+    tx.onerror=e=>console.warn('autoclipper: dbPut failed',e.target.error);
+    tx.objectStore('history').put(entry);
+  }catch(e){console.warn('autoclipper: dbPut failed',e);}
 }
 function dbGetProject(projectId){
   return new Promise((resolve,reject)=>{
+    if(!db){resolve([]);return;}
     const tx=db.transaction('history','readonly');
     const idx=tx.objectStore('history').index('byProject');
     const req=idx.getAll(projectId);
@@ -446,6 +450,7 @@ function dbTrimProject(projectId,keepMin,keepMax){
     const tx=db.transaction('history','readwrite');
     const idx=tx.objectStore('history').index('byProject');
     const req=idx.openCursor(IDBKeyRange.only(projectId));
+    req.onerror=e=>{e.preventDefault();console.warn('autoclipper: dbTrimProject cursor error',e.target.error);};
     req.onsuccess=e=>{
       const cursor=e.target.result;
       if(!cursor)return;
