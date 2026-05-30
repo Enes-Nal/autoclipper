@@ -11,6 +11,8 @@ CORS(app)
 BASE_DIR      = Path(__file__).parent
 TEMPLATES_DIR = BASE_DIR / "templates"
 EXPORTS_DIR   = BASE_DIR / "exports"
+UPLOADS_DIR   = BASE_DIR / "uploads"
+UPLOADS_DIR.mkdir(exist_ok=True)
 
 # In-memory job store: job_id -> Queue of SSE event dicts
 _jobs: dict[str, queue.Queue] = {}
@@ -149,9 +151,36 @@ def export_progress(job_id):
     )
 
 
+@app.get("/api/downloads/<filename>")
+def serve_download(filename):
+    return send_from_directory(str((BASE_DIR / "downloads").resolve()), filename)
+
+
 @app.get("/api/exports/<filename>")
 def download_export(filename):
     return send_from_directory(str(EXPORTS_DIR.resolve()), filename, as_attachment=True)
+
+
+ALLOWED_AUDIO_EXTS = {'.mp3', '.wav', '.ogg', '.m4a', '.aac'}
+
+@app.post("/api/upload-audio")
+def upload_audio():
+    f = request.files.get("file")
+    if not f:
+        return jsonify({"error": "file required"}), 400
+    ext = Path(f.filename).suffix.lower()
+    if ext not in ALLOWED_AUDIO_EXTS:
+        return jsonify({"error": f"extension {ext} not allowed"}), 400
+    uid = uuid.uuid4().hex[:8]
+    filename = f"{uid}{ext}"
+    dest = UPLOADS_DIR / filename
+    f.save(str(dest))
+    return jsonify({"path": f"uploads/{filename}"})
+
+
+@app.get("/api/uploads/<filename>")
+def serve_upload(filename):
+    return send_from_directory(str(UPLOADS_DIR.resolve()), filename)
 
 
 if __name__ == "__main__":
