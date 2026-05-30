@@ -183,13 +183,17 @@ def export_video(video_path: str, template: dict, title: str = "",
                  on_progress=None) -> str:
     """Build and run the FFmpeg command. Returns output file path."""
     job_id = uuid.uuid4().hex[:8]
-    layers = [dict(l) for l in template["layers"]]
+    all_layers = [dict(l) for l in template["layers"]]
     cw = template["canvas"]["width"]
     ch = template["canvas"]["height"]
 
-    for l in layers:
+    for l in all_layers:
         if l["type"] == "text":
             l["text"] = l.get("text", "").replace("{title}", title)
+
+    # Separate audio layer (not a canvas/video layer)
+    audio_layer = next((l for l in all_layers if l["type"] == "audio"), None)
+    layers = [l for l in all_layers if l["type"] != "audio"]
 
     extra_inputs, text_pngs, image_inputs = [], {}, {}
     for i, l in enumerate(layers):
@@ -202,18 +206,43 @@ def export_video(video_path: str, template: dict, title: str = "",
             image_inputs[i] = len(extra_inputs) + 1
             extra_inputs.append(l["src"])
 
-    filter_parts, final = build_filter_graph(layers, cw, ch, text_pngs, image_inputs)
+    filter_parts, final_video = build_filter_graph(layers, cw, ch, text_pngs, image_inputs)
+
+    # next free input index = 1 (video) + len(extra_inputs)
+    audio_extra, audio_filter_parts, audio_label = build_audio_cmd_parts(
+        layers, audio_layer, next_input_idx=1 + len(extra_inputs)
+    )
+
     out_path = str(EXPORTS_DIR / f"{job_id}.mp4")
 
     cmd = ["ffmpeg", "-y", "-i", video_path]
     for inp in extra_inputs:
         cmd += ["-i", inp]
-    if filter_parts:
-        cmd += ["-filter_complex", ";".join(filter_parts), "-map", f"[{final}]"]
+
+    # Audio layer input: apply seek/trim at input level when not looping
+    if audio_layer and audio_extra:
+        trim_start = float(audio_layer.get("trim_start", 0.0))
+        trim_end = audio_layer.get("trim_end")
+        loop = bool(audio_layer.get("loop", False))
+        if not loop and (trim_start > 0 or trim_end is not None):
+            if trim_start > 0:
+                cmd += ["-ss", str(trim_start)]
+            if trim_end is not None:
+                cmd += ["-to", str(trim_end)]
+        cmd += ["-i", audio_extra[0]]
+
+    all_filter_parts = filter_parts + audio_filter_parts
+    if all_filter_parts:
+        cmd += ["-filter_complex", ";".join(all_filter_parts), "-map", f"[{final_video}]"]
     else:
         cmd += ["-map", "0:v"]
+
+    if audio_label == "0:a":
+        cmd += ["-map", "0:a?"]
+    else:
+        cmd += ["-map", f"[{audio_label}]"]
+
     cmd += [
-        "-map", "0:a?",
         "-c:v", "libx264", "-preset", "fast", "-crf", "23",
         "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart",
         out_path,
@@ -228,7 +257,6 @@ def export_video(video_path: str, template: dict, title: str = "",
             on_progress(line)
     proc.wait()
     if proc.returncode != 0:
-        # Normalize Windows unsigned exit codes (e.g. 4294967274 → -22)
         code = proc.returncode
         if code > 2**31 - 1:
             code -= 2**32
