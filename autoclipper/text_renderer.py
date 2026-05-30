@@ -50,7 +50,8 @@ def render_text_layer(layer: dict, canvas_w: int, canvas_h: int, output_path: st
 
     # Line height: bounding box of a tall character * 1.2 leading
     bbox = font.getbbox("Ay")
-    line_h = int((bbox[3] - bbox[1]) * 1.2)
+    char_h = bbox[3] - bbox[1]
+    line_h = int(char_h * 1.2)
 
     # Build wrapped lines respecting frame_w
     raw_lines = text.split("\n")
@@ -74,7 +75,8 @@ def render_text_layer(layer: dict, canvas_w: int, canvas_h: int, output_path: st
             lines.append(current)
 
     # Draw each line, clipping at frame_h
-    y_cursor = frame_y
+    # Start cursor so first glyph's top edge is at frame_y
+    y_cursor = frame_y - bbox[1]
     for line in lines:
         if y_cursor + line_h > frame_y + frame_h:
             break
