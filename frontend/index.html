@@ -1233,6 +1233,24 @@ function updateProps(){
         <button class="togbtn ${fit==='fill'?'on':''}"    onclick="togOn(this);cv.getActiveObject()._fit='fill'">Fill</button>
       </div>
     </div></div>`;
+    // ── Audio section ───────────────────────────────────────────────────────
+    const volPct = Math.round((obj._audioVolume??1)*100);
+    const isMuted = obj._audioMuted===true;
+    html+=`<div class="psec">
+      <div class="psec-title">🔊 Audio</div>
+      <div class="prow">
+        <span class="plbl">Volume</span>
+        <div class="slrow" style="gap:6px">
+          <button class="togbtn${isMuted?' on':''}" style="padding:2px 8px;font-size:16px" title="${isMuted?'Unmute':'Mute'}"
+            onclick="toggleVideoMute(this)">
+            ${isMuted?'🔇':'🔊'}
+          </button>
+          <input type="range" class="psl" min="0" max="100" value="${isMuted?0:volPct}" ${isMuted?'disabled':''}
+            oninput="setVideoVolume(this.value);this.nextElementSibling.textContent=this.value+'%'">
+          <span class="slv">${isMuted?'0':volPct}%</span>
+        </div>
+      </div>
+    </div>`;
   }
 
   if(type==='text'){
@@ -1310,6 +1328,26 @@ function updateProps(){
   }
 
   document.getElementById('right').innerHTML=html;
+}
+
+function toggleVideoMute(btn){
+  const obj = cv.getActiveObject();
+  if(!obj) return;
+  obj._audioMuted = !obj._audioMuted;
+  btn.textContent = obj._audioMuted ? '🔇' : '🔊';
+  btn.classList.toggle('on', obj._audioMuted);
+  const slider = btn.nextElementSibling;
+  const lbl = slider.nextElementSibling;
+  slider.disabled = obj._audioMuted;
+  lbl.textContent = obj._audioMuted ? '0%' : Math.round((obj._audioVolume??1)*100)+'%';
+  saveHist();
+}
+
+function setVideoVolume(val){
+  const obj = cv.getActiveObject();
+  if(!obj) return;
+  obj._audioVolume = val/100;
+  saveHist();
 }
 
 function sp(k,v){const o=cv?.getActiveObject();if(!o)return;o.set(k,v);cv.renderAll();}
@@ -1432,7 +1470,9 @@ function canvasToTemplate(){
       opacity:obj.opacity??1,
     };
     if(t==='blur')return{...base,blur:obj._blur??20};
-    if(t==='video')return{...base,fit:obj._fit||'contain'};
+    if(t==='video')return{...base,fit:obj._fit||'contain',
+      volume:obj._audioVolume??1.0,
+      muted:obj._audioMuted===true};
     if(t==='text')return{...base,
       text:obj.text||'{title}',
       font_size:Math.round((obj.fontSize||48)*scale),
@@ -1497,14 +1537,14 @@ async function applySavedTpl(file){
       const vidEl=document.getElementById('preview-video');
       if(downloadedVideoURL&&vidEl.readyState>=1&&vidEl.videoWidth>0){
         const vc2=ensureVideoCanvas(vidEl);
-        const img=new fabric.Image(vc2,{left:lx,top:ly,objectCaching:false,_type:'video',_label:'Video Layer',_fit:layer.fit||'contain',opacity:op});
+        const img=new fabric.Image(vc2,{left:lx,top:ly,objectCaching:false,_type:'video',_label:'Video Layer',_fit:layer.fit||'contain',opacity:op,_audioVolume:layer.volume??1.0,_audioMuted:layer.muted===true});
         const sc2=Math.min(lw/vc2.width,lh/vc2.height);
         img.set({scaleX:sc2,scaleY:sc2,left:lx+(lw-img.getScaledWidth())/2,top:ly+(lh-img.getScaledHeight())/2});
         cv.add(img);startVideoLoop();
       } else {
         const r=new fabric.Rect({left:lx,top:ly,width:lw,height:lh,fill:'#1a1a1d',stroke:'rgba(255,255,255,0.08)',strokeWidth:1,rx:3,ry:3});
         const t2=new fabric.Text('[VIDEO]',{left:lx+lw/2,top:ly+lh/2,originX:'center',originY:'center',fontSize:12,fill:'rgba(255,255,255,0.2)',fontFamily:'Inter',fontWeight:'600',selectable:false,evented:false});
-        cv.add(new fabric.Group([r,t2],{_type:'video',_label:'Video Layer',_fit:layer.fit||'contain'}));
+        cv.add(new fabric.Group([r,t2],{_type:'video',_label:'Video Layer',_fit:layer.fit||'contain',_audioVolume:layer.volume??1.0,_audioMuted:layer.muted===true}));
       }
     } else if(layer.type==='text'){
       const t2=new fabric.IText(layer.text||'{title}',{
