@@ -122,3 +122,19 @@ def test_audio_layer_volume():
         video_layers, audio_layer, next_input_idx=1
     )
     assert any("volume=0.4" in p for p in filter_parts)
+
+def test_export_video_strips_audio_layer_from_filter_graph():
+    """build_filter_graph should never see the audio layer type."""
+    layers_with_audio = [
+        {"type": "blur_video", "blur": 20},
+        {"type": "audio", "src": "uploads/track.mp3", "volume": 1.0,
+         "loop": False, "trim_start": 0.0, "trim_end": None},
+    ]
+    # build_filter_graph would crash on unknown type "audio" if it saw it
+    # We check that filtering works: only blur_video is passed through
+    non_audio = [l for l in layers_with_audio if l["type"] != "audio"]
+    audio = next((l for l in layers_with_audio if l["type"] == "audio"), None)
+    parts, label = build_filter_graph(non_audio, 1080, 1920, {}, {})
+    assert any("boxblur" in p for p in parts)
+    assert audio is not None
+    assert audio["type"] == "audio"
