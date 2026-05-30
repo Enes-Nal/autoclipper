@@ -232,8 +232,15 @@ def export_video(video_path: str, template: dict, title: str = "",
         cmd += ["-i", audio_extra[0]]
 
     all_filter_parts = filter_parts + audio_filter_parts
-    if all_filter_parts:
+    if filter_parts and audio_filter_parts:
+        # Both video and audio filters: final_video is a filter label
         cmd += ["-filter_complex", ";".join(all_filter_parts), "-map", f"[{final_video}]"]
+    elif filter_parts:
+        # Video filters only: final_video is a filter label
+        cmd += ["-filter_complex", ";".join(filter_parts), "-map", f"[{final_video}]"]
+    elif audio_filter_parts:
+        # Audio filters only: final_video is a raw stream specifier, not a label
+        cmd += ["-filter_complex", ";".join(audio_filter_parts), "-map", "0:v"]
     else:
         cmd += ["-map", "0:v"]
 
