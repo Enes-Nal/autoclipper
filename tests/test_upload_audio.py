@@ -28,3 +28,6 @@ def test_upload_audio_success(client, tmp_path, monkeypatch):
     assert 'path' in body
     assert body['path'].startswith('uploads/')
     assert body['path'].endswith('.mp3')
+    saved_files = list(tmp_path.iterdir())
+    assert len(saved_files) == 1
+    assert saved_files[0].suffix == '.mp3'
