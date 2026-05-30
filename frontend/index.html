@@ -1074,6 +1074,12 @@ function addShape(){
 
 // ── DELETE ─────────────────────────────────────────────────────────────────
 function delSel(){
+  // If no canvas object is active but audio layer props are showing, delete audio layer
+  if(!cv?.getActiveObject() && audioLayer){
+    removeAudioLayer();
+    clearProps();
+    return;
+  }
   const o=cv?.getActiveObject();if(!o)return;
   if(o.type==='activeSelection'){o.forEachObject(x=>cv.remove(x));cv.discardActiveObject();}
   else cv.remove(o);
@@ -1347,6 +1353,43 @@ function setVideoVolume(val){
   const obj = cv.getActiveObject();
   if(!obj) return;
   obj._audioVolume = val/100;
+  saveHist();
+}
+
+function showAudioLayerProps(){
+  if(!audioLayer) return;
+  document.getElementById('del-btn').style.display='';
+  const volPct = Math.round((audioLayer.volume??1)*100);
+  const loop = audioLayer.loop===true;
+  document.getElementById('right').innerHTML=`
+    <div class="psec">
+      <div class="psec-title">🎵 Audio Layer</div>
+      <div class="prow"><span class="plbl">File</span>
+        <span style="font-size:11px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${audioLayer.src.split('/').pop()}</span>
+      </div>
+      <div class="prow"><span class="plbl">Volume</span>
+        <div class="slrow">
+          <input type="range" class="psl" min="0" max="100" value="${volPct}"
+            oninput="audioLayer.volume=this.value/100;this.nextElementSibling.textContent=this.value+'%';saveHist()">
+          <span class="slv">${volPct}%</span>
+        </div>
+      </div>
+      <div class="prow"><span class="plbl">End</span>
+        <div class="tog">
+          <button class="togbtn${!loop?' on':''}" onclick="setAudioLoop(false,this)">Trim</button>
+          <button class="togbtn${loop?' on':''}"  onclick="setAudioLoop(true,this)">Loop</button>
+        </div>
+      </div>
+      <div class="prow">
+        <button class="btn btn-ghost" style="width:100%;margin-top:4px" onclick="openTrimmerModal()">✂️ Edit Trim / Preview…</button>
+      </div>
+    </div>`;
+}
+
+function setAudioLoop(val, btn){
+  if(!audioLayer) return;
+  audioLayer.loop = val;
+  togOn(btn);
   saveHist();
 }
 
