@@ -13,6 +13,7 @@ TEMPLATES_DIR = BASE_DIR / "templates"
 EXPORTS_DIR   = BASE_DIR / "exports"
 UPLOADS_DIR   = BASE_DIR / "uploads"
 UPLOADS_DIR.mkdir(exist_ok=True)
+ALLOWED_AUDIO_EXTS = {'.mp3', '.wav', '.ogg', '.m4a', '.aac'}
 
 # In-memory job store: job_id -> Queue of SSE event dicts
 _jobs: dict[str, queue.Queue] = {}
@@ -161,13 +162,13 @@ def download_export(filename):
     return send_from_directory(str(EXPORTS_DIR.resolve()), filename, as_attachment=True)
 
 
-ALLOWED_AUDIO_EXTS = {'.mp3', '.wav', '.ogg', '.m4a', '.aac'}
-
 @app.post("/api/upload-audio")
 def upload_audio():
     f = request.files.get("file")
     if not f:
         return jsonify({"error": "file required"}), 400
+    if not f.filename:
+        return jsonify({"error": "no filename provided"}), 400
     ext = Path(f.filename).suffix.lower()
     if ext not in ALLOWED_AUDIO_EXTS:
         return jsonify({"error": f"extension {ext} not allowed"}), 400
