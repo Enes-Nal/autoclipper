@@ -96,3 +96,25 @@ def test_render_text_layer_alignment():
 
     assert results["left"] < results["center"], "Left should start before center"
     assert results["center"] < results["right"], "Center should start before right"
+
+def test_render_text_layer_wide_word_does_not_crash():
+    """A single word wider than the frame should render without crashing."""
+    layer = {
+        "type": "text",
+        "x": 0, "y": 0,
+        "width": 10,   # narrower than any real word
+        "height": 200,
+        "text": "Superlongwordthatcannotfit",
+        "font_size": 48, "fill": "#ffffff",
+        "stroke": "#000000", "stroke_width": 0,
+        "text_align": "left",
+    }
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
+        path = f.name
+    try:
+        render_text_layer(layer, 1080, 1920, path)
+        with Image.open(path) as img:
+            assert img.size == (1080, 1920)
+            assert img.mode == "RGBA"
+    finally:
+        os.unlink(path)

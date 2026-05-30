@@ -56,6 +56,9 @@ def render_text_layer(layer: dict, canvas_w: int, canvas_h: int, output_path: st
     raw_lines = text.split("\n")
     lines = []
     for raw in raw_lines:
+        if not raw:          # blank line (e.g. from \n\n)
+            lines.append("")
+            continue
         words = raw.split(" ")
         current = ""
         for word in words:
@@ -65,6 +68,7 @@ def render_text_layer(layer: dict, canvas_w: int, canvas_h: int, output_path: st
             else:
                 if current:
                     lines.append(current)
+                # Word is wider than frame — keep it; it will overflow rather than be lost
                 current = word
         if current:
             lines.append(current)
@@ -80,7 +84,7 @@ def render_text_layer(layer: dict, canvas_w: int, canvas_h: int, output_path: st
         elif align == "right":
             x_cursor = frame_x + frame_w - line_w
         else:  # center
-            x_cursor = frame_x + (frame_w - line_w) / 2
+            x_cursor = int(frame_x + (frame_w - line_w) / 2)
         draw.text(
             (x_cursor, y_cursor), line, font=font, fill=fill,
             stroke_width=stroke_w, stroke_fill=stroke,
