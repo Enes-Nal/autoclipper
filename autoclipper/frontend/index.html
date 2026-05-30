@@ -259,6 +259,12 @@ button,input,select{font-family:inherit}
 .trimmer-loop-row{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--sub)}
 .trimmer-loop-row .tog{margin-left:auto}
 .trimmer-actions{display:flex;justify-content:flex-end;gap:8px}
+#audio-strip{display:none;background:var(--s1);border-top:1px solid var(--b1);padding:8px 14px;align-items:center;gap:10px;flex-shrink:0;width:100%;box-sizing:border-box}
+#audio-strip.visible{display:flex}
+#strip-canvas{flex:1;height:32px;border-radius:4px;background:var(--s3);display:block;min-width:0}
+.strip-vol{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.strip-vol label{font-size:10px;color:var(--sub)}
+#strip-vol-slider{width:70px;accent-color:var(--acc)}
 </style>
 </head>
 <body>
@@ -419,6 +425,16 @@ button,input,select{font-family:inherit}
           </button>
         </div>
       </div>
+    <!-- AUDIO PREVIEW STRIP -->
+    <div id="audio-strip">
+      <button class="tbar-btn" id="strip-play-btn" onclick="stripTogglePlay()" style="flex-shrink:0">▶</button>
+      <canvas id="strip-canvas"></canvas>
+      <div class="strip-vol">
+        <button class="tbar-btn" id="strip-mute-btn" onclick="stripToggleMute()" style="font-size:14px">🔊</button>
+        <input type="range" id="strip-vol-slider" min="0" max="100" value="80" oninput="stripSetVolume(this.value)">
+        <label>preview only</label>
+      </div>
+    </div>
     </div>
 
     <!-- RIGHT PANEL -->
@@ -475,6 +491,7 @@ button,input,select{font-family:inherit}
   </div>
 </div>
 <audio id="trimmer-audio" style="display:none"></audio>
+<audio id="strip-audio" style="display:none"></audio>
 
 <!-- DOWNLOAD MODAL -->
 <div id="dl-modal">
@@ -549,13 +566,119 @@ let audioLayer=null; // {type:'audio',src,volume,loop,trim_start,trim_end}
 function getAudioLayer(){ return audioLayer; }
 function setAudioLayer(data){ audioLayer=data; syncLayers(); updatePreviewStrip(); }
 function removeAudioLayer(){ audioLayer=null; syncLayers(); updatePreviewStrip(); }
-function updatePreviewStrip(){ /* stub — implemented in Task 9 */ }
+async function updatePreviewStrip(){
+  const strip = document.getElementById('audio-strip');
+  const stripAudio = document.getElementById('strip-audio');
+  if(!strip||!stripAudio) return;
+
+  if(!audioLayer){
+    strip.classList.remove('visible');
+    stripAudio.src='';
+    _stripWaveform=null;
+    return;
+  }
+
+  strip.classList.add('visible');
+  stripAudio.src = '/api/' + audioLayer.src;
+  stripAudio.volume = _stripMuted ? 0 : _stripVolume;
+  stripAudio.load();
+
+  // Decode waveform for strip
+  try {
+    const resp = await fetch('/api/' + audioLayer.src);
+    const buf = await resp.arrayBuffer();
+    const actx = new AudioContext();
+    const decoded = await actx.decodeAudioData(buf);
+    const raw = decoded.getChannelData(0);
+    const W = document.getElementById('strip-canvas').offsetWidth || 400;
+    const samples = Math.max(1, Math.floor(W));
+    const blockSize = Math.max(1, Math.floor(raw.length / samples));
+    _stripWaveform = new Float32Array(samples);
+    for(let i=0;i<samples;i++){
+      let peak=0;
+      const off=i*blockSize;
+      for(let j=0;j<blockSize;j++) peak=Math.max(peak,Math.abs(raw[off+j]||0));
+      _stripWaveform[i]=peak;
+    }
+    await actx.close();
+    drawStripWaveform();
+  } catch(e) {
+    console.warn('Strip waveform decode failed', e);
+  }
+}
+
+function drawStripWaveform(){
+  const canvas = document.getElementById('strip-canvas');
+  if(!canvas) return;
+  const ctx2 = canvas.getContext('2d');
+  const W = canvas.width = canvas.offsetWidth || 1;
+  const H = canvas.height = 32;
+  ctx2.clearRect(0,0,W,H);
+
+  if(_stripWaveform){
+    const barW = W / _stripWaveform.length;
+    ctx2.fillStyle = 'rgba(167,139,250,0.4)';
+    for(let i=0;i<_stripWaveform.length;i++){
+      const bh = Math.max(2, _stripWaveform[i]*H);
+      ctx2.fillRect(i*barW, (H-bh)/2, Math.max(1,barW-1), bh);
+    }
+  }
+
+  const stripAudio = document.getElementById('strip-audio');
+  if(stripAudio && stripAudio.duration){
+    const pt = (stripAudio.currentTime||0) / stripAudio.duration;
+    if(isFinite(pt)){
+      ctx2.fillStyle='#ffffff';
+      ctx2.fillRect(pt*W-1,0,2,H);
+    }
+  }
+}
+
+function stripTogglePlay(){
+  const vidEl = document.getElementById('preview-video');
+  const stripAudio = document.getElementById('strip-audio');
+  const btn = document.getElementById('strip-play-btn');
+  if(!audioLayer || !stripAudio || !vidEl) return;
+
+  if(vidEl.paused){
+    vidEl.play().catch(()=>{});
+    stripAudio.currentTime = vidEl.currentTime;
+    stripAudio.play().catch(()=>{});
+    btn.textContent='⏸';
+    function raf(){ drawStripWaveform(); _stripRAF=requestAnimationFrame(raf); }
+    _stripRAF=requestAnimationFrame(raf);
+  } else {
+    vidEl.pause();
+    stripAudio.pause();
+    btn.textContent='▶';
+    if(_stripRAF){ cancelAnimationFrame(_stripRAF); _stripRAF=null; }
+  }
+}
+
+function stripToggleMute(){
+  _stripMuted = !_stripMuted;
+  const stripAudio = document.getElementById('strip-audio');
+  const btn = document.getElementById('strip-mute-btn');
+  if(stripAudio) stripAudio.volume = _stripMuted ? 0 : _stripVolume;
+  if(btn) btn.textContent = _stripMuted ? '🔇' : '🔊';
+}
+
+function stripSetVolume(val){
+  _stripVolume = val/100;
+  const stripAudio = document.getElementById('strip-audio');
+  if(stripAudio && !_stripMuted) stripAudio.volume = _stripVolume;
+}
 // Trimmer modal state
 let _trimmerDraft = null; // working copy of audioLayer during edit
 let _trimmerWaveform = null; // Float32Array of normalised peak data
 let _trimmerDuration = 0;
 let _trimmerDragging = null; // 'start' | 'end' | null
 let _trimmerRAF = null;
+// Preview strip state
+let _stripVolume = 0.8;
+let _stripMuted = false;
+let _stripWaveform = null;
+let _stripRAF = null;
 
 // ── PERSISTENCE ────────────────────────────────────────────────────────────
 function generateUUID(){
@@ -1009,6 +1132,19 @@ function refreshVideoLayers(){
   toReplace.forEach(o=>cv.remove(o));
   addVideo();
 }
+// Keep strip audio in sync with video preview
+document.addEventListener('DOMContentLoaded', ()=>{
+  const vidEl = document.getElementById('preview-video');
+  if(vidEl){
+    vidEl.addEventListener('timeupdate', ()=>{
+      const stripAudio = document.getElementById('strip-audio');
+      if(!stripAudio || !stripAudio.src || !audioLayer) return;
+      if(Math.abs(stripAudio.currentTime - vidEl.currentTime) > 0.3){
+        stripAudio.currentTime = vidEl.currentTime;
+      }
+    });
+  }
+});
 function doUndo(){
   if(histIdx<=0||histLock)return;histIdx--;
   histLock=true;cv.loadFromJSON(hist[histIdx],()=>{try{cv.renderAll();syncLayers();refreshVideoLayers();}finally{histLock=false;}});
