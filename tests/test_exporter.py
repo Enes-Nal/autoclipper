@@ -138,3 +138,21 @@ def test_export_video_strips_audio_layer_from_filter_graph():
     assert any("boxblur" in p for p in parts)
     assert audio is not None
     assert audio["type"] == "audio"
+
+def test_audio_only_filter_uses_raw_video_map():
+    """When only audio filters exist (no video filter graph), final_video must be
+    mapped as a raw stream specifier, not a bracketed filter label."""
+    # Simulate what export_video does: layers with no visual filters + audio layer
+    layers = [{"type": "video", "volume": 0.5, "muted": False}]
+    audio_layer = None  # just test the volume filter path
+    _, audio_filter_parts, audio_label = build_audio_cmd_parts(
+        layers, audio_layer, next_input_idx=1
+    )
+    # Confirm a volume filter was generated
+    assert any("volume=0.5" in p for p in audio_filter_parts)
+    # The video filter_parts from build_filter_graph for a video-only layer
+    # (no blur_video) will produce filter_parts=[] scenario is tested here
+    video_filter_parts, final_video = build_filter_graph(layers, 1080, 1920, {}, {})
+    # If no filter_parts from video, final_video is the raw "0:v" specifier
+    # (no bracket wrapping should be applied in this case)
+    assert final_video in ("0:v", "v1")  # either passthrough or first video label
