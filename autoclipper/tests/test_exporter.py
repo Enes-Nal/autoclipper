@@ -1,4 +1,4 @@
-from exporter import build_filter_graph
+from exporter import build_filter_graph, build_audio_cmd_parts
 
 def test_blur_video_layer():
     parts, label = build_filter_graph(
@@ -38,3 +38,36 @@ def test_text_layer_uses_png_overlay():
     parts, label = build_filter_graph(layers, 1080, 1920, text_pngs, {})
     assert any("overlay" in p for p in parts), "Text must use overlay, not drawtext"
     assert not any("drawtext" in p for p in parts), "drawtext must not be used"
+
+
+def test_audio_passthrough_when_no_changes():
+    """No audio layer, default volume → no filter, passthrough label."""
+    video_layers = [{"type": "video", "volume": 1.0, "muted": False}]
+    audio_layer = None
+    extra_inputs, filter_parts, audio_label = build_audio_cmd_parts(
+        video_layers, audio_layer, next_input_idx=1
+    )
+    assert extra_inputs == []
+    assert filter_parts == []
+    assert audio_label == "0:a"   # plain passthrough
+
+
+def test_audio_volume_filter():
+    """Video layer with volume=0.5 → volume filter applied."""
+    video_layers = [{"type": "video", "volume": 0.5, "muted": False}]
+    audio_layer = None
+    extra_inputs, filter_parts, audio_label = build_audio_cmd_parts(
+        video_layers, audio_layer, next_input_idx=1
+    )
+    assert any("volume=0.5" in p for p in filter_parts)
+    assert audio_label != "0:a"
+
+
+def test_audio_muted():
+    """Muted video layer → volume=0 filter."""
+    video_layers = [{"type": "video", "volume": 1.0, "muted": True}]
+    audio_layer = None
+    extra_inputs, filter_parts, audio_label = build_audio_cmd_parts(
+        video_layers, audio_layer, next_input_idx=1
+    )
+    assert any("volume=0" in p for p in filter_parts)

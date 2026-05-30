@@ -56,7 +56,7 @@ def build_filter_graph(layers: list, cw: int, ch: int,
             scaled = lbl()
             if fit == "contain":
                 parts.append(
-                    f"[{raw}]scale={w}:{h}:force_original_aspect_ratio=decrease,"
+                    f"[{raw}]scale={w}:{h}:force_original_aspect_ratio=decrease:force_divisible_by=2,"
                     f"pad={w}:{h}:(ow-iw)/2:(oh-ih)/2:color=black[{scaled}]"
                 )
             elif fit == "cover":
@@ -102,6 +102,81 @@ def build_filter_graph(layers: list, cw: int, ch: int,
     return parts, current or "0:v"
 
 
+def build_audio_cmd_parts(
+    layers: list,
+    audio_layer,
+    next_input_idx: int,
+):
+    """
+    Build FFmpeg audio filter parts for video layer volume/mute and an optional
+    audio layer (music track).
+
+    Returns:
+        extra_inputs  – additional file paths to pass as -i arguments
+        filter_parts  – filter_complex fragment strings (no semicolons)
+        audio_label   – the label/stream to use for -map audio output,
+                        e.g. "0:a", "va1", or "aout"
+    """
+    extra_inputs = []
+    filter_parts = []
+    n = [0]
+
+    def albl():
+        n[0] += 1
+        return f"a{n[0]}"
+
+    # ── Step 1: Video audio volume/mute ──────────────────────────────────────
+    video_vol = 1.0
+    video_muted = False
+    for l in layers:
+        if l.get("type") == "video":
+            video_vol = float(l.get("volume", 1.0))
+            video_muted = bool(l.get("muted", False))
+            break
+
+    effective_vol = 0.0 if video_muted else video_vol
+    if effective_vol != 1.0:
+        out = albl()
+        filter_parts.append(f"[0:a]volume={effective_vol}[{out}]")
+        vid_audio_label = out
+    else:
+        vid_audio_label = "0:a"
+
+    # ── Step 2: Audio layer (music track) ───────────────────────────────────
+    if audio_layer is None:
+        return extra_inputs, filter_parts, vid_audio_label
+
+    src = audio_layer.get("src", "")
+    music_vol = float(audio_layer.get("volume", 1.0))
+    loop = bool(audio_layer.get("loop", False))
+
+    music_input_idx = next_input_idx + len(extra_inputs)
+    extra_inputs.append(src)
+
+    raw_music = f"{music_input_idx}:a"
+    cur_label = raw_music
+
+    if loop:
+        looped = albl()
+        filter_parts.append(
+            f"[{raw_music}]aloop=loop=-1:size=2147483647[{looped}]"
+        )
+        cur_label = looped
+
+    if music_vol != 1.0:
+        volout = albl()
+        filter_parts.append(f"[{cur_label}]volume={music_vol}[{volout}]")
+        cur_label = volout
+
+    mixed = albl()
+    filter_parts.append(
+        f"[{vid_audio_label}][{cur_label}]"
+        f"amix=inputs=2:duration=first:dropout_transition=0[{mixed}]"
+    )
+
+    return extra_inputs, filter_parts, mixed
+
+
 def export_video(video_path: str, template: dict, title: str = "",
                  on_progress=None) -> str:
     """Build and run the FFmpeg command. Returns output file path."""
@@ -142,20 +217,21 @@ def export_video(video_path: str, template: dict, title: str = "",
         out_path,
     ]
 
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
     stderr_lines = []
-    for line in proc.stdout:
+    for line in proc.stderr:
+        line = line.rstrip()
+        stderr_lines.append(line)
         if on_progress:
-            on_progress(line.strip())
-    stderr_lines = proc.stderr.read().splitlines()
+            on_progress(line)
     proc.wait()
     if proc.returncode != 0:
         # Normalize Windows unsigned exit codes (e.g. 4294967274 → -22)
         code = proc.returncode
         if code > 2**31 - 1:
             code -= 2**32
-        last_err = next((l for l in reversed(stderr_lines) if l.strip()), str(proc.returncode))
-        raise RuntimeError(f"FFmpeg exited {code}: {last_err}")
+        last_err = "\n".join(stderr_lines[-30:]) or str(proc.returncode)
+        raise RuntimeError(f"FFmpeg exited {code}:\n{last_err}")
 
     for p in extra_inputs:
         if "temp" in p:
