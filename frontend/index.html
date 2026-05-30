@@ -154,7 +154,7 @@ button,input,select{font-family:inherit}
 .cinput{width:22px;height:22px;border-radius:5px;border:1px solid var(--b1);cursor:pointer;padding:1px;background:none}
 .emo-btn{width:100%;padding:7px 10px;border-radius:var(--rs);border:1px solid var(--b1);background:var(--s2);cursor:pointer;color:var(--tx);font-size:12px;font-weight:600;text-align:left;transition:.1s;display:flex;align-items:center;gap:6px}
 .emo-btn:hover{border-color:var(--acc);background:var(--s3)}
-#emo-popup{position:fixed;z-index:300;background:var(--s1);border:1px solid var(--b2);border-radius:var(--r);width:280px;box-shadow:0 20px 60px rgba(0,0,0,.7);display:none;overflow:hidden;flex-direction:column}
+#emo-popup{position:fixed;z-index:500;background:var(--s1);border:1px solid var(--b2);border-radius:var(--r);width:280px;box-shadow:0 20px 60px rgba(0,0,0,.7);display:none;overflow:hidden;flex-direction:column}
 #emo-popup.open{display:flex}
 .emo-cats{display:flex;border-bottom:1px solid var(--b1);padding:4px;gap:2px;flex-shrink:0}
 .emo-cat-btn{flex:1;padding:5px 0;border:none;border-radius:5px;cursor:pointer;background:transparent;font-size:17px;transition:.1s;opacity:.4;line-height:1}
@@ -453,7 +453,10 @@ button,input,select{font-family:inherit}
   <div class="modal-box">
     <div class="modal-title">Export Clip</div>
     <div class="modal-sub">Set a title and export using the current template</div>
-    <input class="modal-input" id="exp-title" placeholder="Clip title (replaces {title} in template)…" />
+    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+      <input class="modal-input" id="exp-title" placeholder="Clip title (replaces {title} in template)…" style="margin-bottom:0;flex:1" />
+      <button class="btn btn-ghost" onclick="toggleEmojiPickerForInput(this,'exp-title')" title="Add emoji" style="flex-shrink:0;padding:6px 10px;font-size:16px">😊</button>
+    </div>
     <div id="exp-video-info" style="font-size:11px;color:var(--sub);margin-bottom:12px"></div>
     <div class="modal-row">
       <button class="btn btn-primary" onclick="startExport()">
@@ -493,6 +496,11 @@ let db=null, dbAvailable=false, acProjectId='';
 let snapLines={x:null,y:null};
 let lastTextPos=null, lastTextObj=null;
 let downloadedVideoPath=null, downloadedVideoURL=null;
+let audioLayer=null; // {type:'audio',src,volume,loop,trim_start,trim_end}
+function getAudioLayer(){ return audioLayer; }
+function setAudioLayer(data){ audioLayer=data; syncLayers(); updatePreviewStrip(); }
+function removeAudioLayer(){ audioLayer=null; syncLayers(); updatePreviewStrip(); }
+function updatePreviewStrip(){ /* stub — implemented in Task 9 */ }
 
 // ── PERSISTENCE ────────────────────────────────────────────────────────────
 function generateUUID(){
@@ -549,10 +557,32 @@ function dbClearProject(projectId){
 }
 
 let _rafId=null;
+// Offscreen canvas used as Fabric.Image source for video.
+// fabric.Image._renderFill reads element.naturalWidth||element.width;
+// <video> returns 0 for both, so we proxy through a canvas whose .width/.height are correct.
+let _videoCanvas=null, _videoCtx=null;
+function ensureVideoCanvas(vidEl){
+  if(!_videoCanvas){
+    _videoCanvas=document.createElement('canvas');
+    _videoCtx=_videoCanvas.getContext('2d');
+  }
+  if(_videoCanvas.width!==vidEl.videoWidth||_videoCanvas.height!==vidEl.videoHeight){
+    _videoCanvas.width=vidEl.videoWidth||1;
+    _videoCanvas.height=vidEl.videoHeight||1;
+  }
+  if(vidEl.readyState>=2)_videoCtx.drawImage(vidEl,0,0,_videoCanvas.width,_videoCanvas.height);
+  return _videoCanvas;
+}
 function startVideoLoop(){
   if(_rafId!==null)return;
   _rafId=-1;
-  function tick(){cv.renderAll();_rafId=fabric.util.requestAnimFrame(tick);}
+  const vidEl=document.getElementById('preview-video');
+  function tick(){
+    if(_videoCanvas&&_videoCtx&&vidEl.readyState>=2)
+      _videoCtx.drawImage(vidEl,0,0,_videoCanvas.width,_videoCanvas.height);
+    cv.renderAll();
+    _rafId=fabric.util.requestAnimFrame(tick);
+  }
   _rafId=fabric.util.requestAnimFrame(tick);
 }
 function stopVideoLoop(){
@@ -606,7 +636,7 @@ const EMOJI_DATA={
   ],
 };
 
-let emoOpen=false, emoActiveCat='smileys', emoSearchVal='';
+let emoOpen=false, emoActiveCat='smileys', emoSearchVal='', emoTargetInput=null;
 
 function twemojiUrl(emoji){
   const cp=twemoji.convert.toCodePoint(emoji);
@@ -660,7 +690,7 @@ function switchEmoCat(cat){
 
 function toggleEmojiPicker(triggerEl){
   const popup=document.getElementById('emo-popup');
-  if(emoOpen){popup.classList.remove('open');emoOpen=false;return;}
+  if(emoOpen){popup.classList.remove('open');emoOpen=false;emoTargetInput=null;return;}
   const r=triggerEl.getBoundingClientRect();
   popup.style.left=r.left+'px';
   popup.style.top=(r.bottom+6)+'px';
@@ -668,14 +698,26 @@ function toggleEmojiPicker(triggerEl){
   document.getElementById('emo-search').value='';
   emoSearchVal='';renderEmoGrid();
 }
+function toggleEmojiPickerForInput(triggerEl,inputId){
+  emoTargetInput=document.getElementById(inputId);
+  toggleEmojiPicker(triggerEl);
+}
 document.addEventListener('click',e=>{
-  if(emoOpen&&!e.target.closest('#emo-popup')&&!e.target.closest('.emo-btn')){
-    document.getElementById('emo-popup').classList.remove('open');emoOpen=false;
+  if(emoOpen&&!e.target.closest('#emo-popup')&&!e.target.closest('.emo-btn')&&!e.target.closest('[onclick*="toggleEmojiPicker"]')){
+    document.getElementById('emo-popup').classList.remove('open');emoOpen=false;emoTargetInput=null;
   }
 });
 
 function insertEmoji(emoji){
   preloadTwemojiImg(emoji);
+  document.getElementById('emo-popup').classList.remove('open');emoOpen=false;
+  if(emoTargetInput){
+    const inp=emoTargetInput;emoTargetInput=null;
+    const s=inp.selectionStart??inp.value.length,end=inp.selectionEnd??inp.value.length;
+    inp.value=inp.value.slice(0,s)+emoji+inp.value.slice(end);
+    const pos=s+[...emoji].length;inp.setSelectionRange(pos,pos);inp.focus();
+    return;
+  }
   let obj=cv?.getActiveObject();
   if(!obj||obj._type!=='text'){
     const lo=lastTextObj;
@@ -706,7 +748,6 @@ function insertEmoji(emoji){
       cv.add(img);cv.setActiveObject(img);cv.renderAll();
     },{crossOrigin:'anonymous'});
   }
-  document.getElementById('emo-popup').classList.remove('open');emoOpen=false;
 }
 
 renderEmoGrid();
@@ -959,12 +1000,13 @@ function addVideo(){
   const vh=is16?Math.round(h*.32):Math.round(h*.6);
   const vTop=Math.round((h-vh)/2);
   const vidEl=document.getElementById('preview-video');
-  if(downloadedVideoURL&&vidEl.readyState>=1){
-    const img=new fabric.Image(vidEl,{
+  if(downloadedVideoURL&&vidEl.readyState>=1&&vidEl.videoWidth>0){
+    const vc=ensureVideoCanvas(vidEl);
+    const img=new fabric.Image(vc,{
       left:0,top:vTop,objectCaching:false,
       _type:'video',_label:'Video Layer',_fit:'contain',
     });
-    const sx=w/(vidEl.videoWidth||w),sy=vh/(vidEl.videoHeight||vh);
+    const sx=w/vc.width,sy=vh/vc.height;
     const s=Math.min(sx,sy);
     img.set({scaleX:s,scaleY:s});
     img.set({left:Math.round((w-img.getScaledWidth())/2),top:Math.round(vTop+(vh-img.getScaledHeight())/2)});
@@ -1348,7 +1390,8 @@ function canvasToTemplate(){
     if(t==='emoji')return{...base,src:twemojiUrl(obj._label||''),label:obj._label||''};
     return{...base,fill:obj.fill||'#000000'};
   });
-  return{name:document.getElementById('proj-name-input').value||'My Template',format:fmt,canvas:{width:1080,height:fmt==='9:16'?1920:1080},layers};
+  const allLayers = audioLayer ? [...layers, {...audioLayer}] : layers;
+  return{name:document.getElementById('proj-name-input').value||'My Template',format:fmt,canvas:{width:1080,height:fmt==='9:16'?1920:1080},layers:allLayers};
 }
 
 function saveTemplate(){
@@ -1381,6 +1424,9 @@ async function applySavedTpl(file){
   const{w}=FMT[fmt];
   const s=w/1080;
 
+  // Restore audio layer (not a canvas object)
+  audioLayer = (tpl.layers||[]).find(l=>l.type==='audio') || null;
+
   for(const layer of(tpl.layers||[])){
     const lx=layer.x*s,ly=layer.y*s,lw=layer.width*s,lh=layer.height*s,op=layer.opacity??1;
     if(layer.type==='blur_video'){
@@ -1393,10 +1439,10 @@ async function applySavedTpl(file){
       cv.add(r);cv.sendToBack(r);
     } else if(layer.type==='video'){
       const vidEl=document.getElementById('preview-video');
-      if(downloadedVideoURL&&vidEl.readyState>=1){
-        const img=new fabric.Image(vidEl,{left:lx,top:ly,objectCaching:false,_type:'video',_label:'Video Layer',_fit:layer.fit||'contain',opacity:op});
-        const sx=lw/(vidEl.videoWidth||lw),sy=lh/(vidEl.videoHeight||lh);
-        const sc2=Math.min(sx,sy);
+      if(downloadedVideoURL&&vidEl.readyState>=1&&vidEl.videoWidth>0){
+        const vc2=ensureVideoCanvas(vidEl);
+        const img=new fabric.Image(vc2,{left:lx,top:ly,objectCaching:false,_type:'video',_label:'Video Layer',_fit:layer.fit||'contain',opacity:op});
+        const sc2=Math.min(lw/vc2.width,lh/vc2.height);
         img.set({scaleX:sc2,scaleY:sc2,left:lx+(lw-img.getScaledWidth())/2,top:ly+(lh-img.getScaledHeight())/2});
         cv.add(img);startVideoLoop();
       } else {
