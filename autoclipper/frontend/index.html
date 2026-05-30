@@ -588,20 +588,23 @@ async function updatePreviewStrip(){
     const resp = await fetch('/api/' + audioLayer.src);
     const buf = await resp.arrayBuffer();
     const actx = new AudioContext();
-    const decoded = await actx.decodeAudioData(buf);
-    const raw = decoded.getChannelData(0);
-    const W = document.getElementById('strip-canvas').offsetWidth || 400;
-    const samples = Math.max(1, Math.floor(W));
-    const blockSize = Math.max(1, Math.floor(raw.length / samples));
-    _stripWaveform = new Float32Array(samples);
-    for(let i=0;i<samples;i++){
-      let peak=0;
-      const off=i*blockSize;
-      for(let j=0;j<blockSize;j++) peak=Math.max(peak,Math.abs(raw[off+j]||0));
-      _stripWaveform[i]=peak;
+    try {
+      const decoded = await actx.decodeAudioData(buf);
+      const raw = decoded.getChannelData(0);
+      const W = document.getElementById('strip-canvas').offsetWidth || 400;
+      const samples = Math.max(1, Math.floor(W));
+      const blockSize = Math.max(1, Math.floor(raw.length / samples));
+      _stripWaveform = new Float32Array(samples);
+      for(let i=0;i<samples;i++){
+        let peak=0;
+        const off=i*blockSize;
+        for(let j=0;j<blockSize;j++) peak=Math.max(peak,Math.abs(raw[off+j]||0));
+        _stripWaveform[i]=peak;
+      }
+      drawStripWaveform();
+    } finally {
+      await actx.close();
     }
-    await actx.close();
-    drawStripWaveform();
   } catch(e) {
     console.warn('Strip waveform decode failed', e);
   }
@@ -1118,8 +1121,9 @@ function align(type){
 // ── HISTORY ────────────────────────────────────────────────────────────────
 function saveHist(){
   if(histLock)return;
-  const j=JSON.stringify(cv.toJSON(['_type','_label','_blur','_fit']));
-  hist=hist.slice(0,histIdx+1);hist.push(j);histIdx=hist.length-1;
+  const entry={canvas:JSON.stringify(cv.toJSON(['_type','_label','_blur','_fit'])),audioLayer:audioLayer?{...audioLayer}:null};
+  const j=JSON.stringify(entry);
+  hist=hist.slice(0,histIdx+1);hist.push(entry);histIdx=hist.length-1;
   if(hist.length>50){hist=hist.slice(hist.length-50);histIdx=hist.length-1;}
   if(dbAvailable){
     dbPut({id:`${acProjectId}:${histIdx}`,projectId:acProjectId,stepIndex:histIdx,snapshot:j});
@@ -1147,11 +1151,19 @@ document.addEventListener('DOMContentLoaded', ()=>{
 });
 function doUndo(){
   if(histIdx<=0||histLock)return;histIdx--;
-  histLock=true;cv.loadFromJSON(hist[histIdx],()=>{try{cv.renderAll();syncLayers();refreshVideoLayers();}finally{histLock=false;}});
+  histLock=true;
+  const entry=hist[histIdx];
+  const canvasJSON=entry&&entry.canvas!=null?entry.canvas:entry;
+  audioLayer=entry&&entry.audioLayer!=null?entry.audioLayer:null;
+  cv.loadFromJSON(canvasJSON,()=>{try{cv.renderAll();syncLayers();refreshVideoLayers();updatePreviewStrip();}finally{histLock=false;}});
 }
 function doRedo(){
   if(histIdx>=hist.length-1||histLock)return;histIdx++;
-  histLock=true;cv.loadFromJSON(hist[histIdx],()=>{try{cv.renderAll();syncLayers();refreshVideoLayers();}finally{histLock=false;}});
+  histLock=true;
+  const entry=hist[histIdx];
+  const canvasJSON=entry&&entry.canvas!=null?entry.canvas:entry;
+  audioLayer=entry&&entry.audioLayer!=null?entry.audioLayer:null;
+  cv.loadFromJSON(canvasJSON,()=>{try{cv.renderAll();syncLayers();refreshVideoLayers();updatePreviewStrip();}finally{histLock=false;}});
 }
 
 // ── ZOOM ───────────────────────────────────────────────────────────────────
@@ -1601,21 +1613,24 @@ async function openTrimmerModal(){
     const resp = await fetch('/api/' + audioLayer.src);
     const buf = await resp.arrayBuffer();
     const ctx = new AudioContext();
-    const decoded = await ctx.decodeAudioData(buf);
-    _trimmerDuration = decoded.duration;
-    const raw = decoded.getChannelData(0);
-    const W = document.getElementById('trimmer-canvas').offsetWidth || 520;
-    const samples = Math.floor(W);
-    const blockSize = Math.max(1, Math.floor(raw.length / samples));
-    _trimmerWaveform = new Float32Array(samples);
-    for(let i=0;i<samples;i++){
-      let peak=0;
-      const off=i*blockSize;
-      for(let j=0;j<blockSize;j++) peak=Math.max(peak,Math.abs(raw[off+j]||0));
-      _trimmerWaveform[i]=peak;
+    try {
+      const decoded = await ctx.decodeAudioData(buf);
+      _trimmerDuration = decoded.duration;
+      const raw = decoded.getChannelData(0);
+      const W = document.getElementById('trimmer-canvas').offsetWidth || 520;
+      const samples = Math.floor(W);
+      const blockSize = Math.max(1, Math.floor(raw.length / samples));
+      _trimmerWaveform = new Float32Array(samples);
+      for(let i=0;i<samples;i++){
+        let peak=0;
+        const off=i*blockSize;
+        for(let j=0;j<blockSize;j++) peak=Math.max(peak,Math.abs(raw[off+j]||0));
+        _trimmerWaveform[i]=peak;
+      }
+      drawTrimmerWaveform();
+    } finally {
+      await ctx.close();
     }
-    await ctx.close();
-    drawTrimmerWaveform();
   } catch(e) {
     console.warn('Waveform decode failed', e);
   }
@@ -2077,7 +2092,9 @@ function startExport(){
     try{
       const entries=await dbGetProject(acProjectId);
       const valid=entries.filter(e=>e&&e.snapshot);
-      hist=valid.map(e=>e.snapshot);
+      hist=valid.map(e=>{
+        try{const p=JSON.parse(e.snapshot);return(p&&p.canvas!=null)?p:e.snapshot;}catch{return e.snapshot;}
+      });
       histIdx=hist.length-1;
     }catch(err){
       console.warn('autoclipper: failed to load history, starting fresh',err);
@@ -2091,8 +2108,11 @@ function startExport(){
 
   // 5. Restore latest state or add default elements
   if(histIdx>=0){
-    cv.loadFromJSON(hist[histIdx],()=>{
-      try{cv.renderAll();syncLayers();refreshVideoLayers();}finally{histLock=false;}
+    const _bootEntry=hist[histIdx];
+    const _bootCanvas=_bootEntry&&_bootEntry.canvas!=null?_bootEntry.canvas:_bootEntry;
+    audioLayer=_bootEntry&&_bootEntry.audioLayer!=null?_bootEntry.audioLayer:null;
+    cv.loadFromJSON(_bootCanvas,()=>{
+      try{cv.renderAll();syncLayers();refreshVideoLayers();updatePreviewStrip();}finally{histLock=false;}
     });
   }else{
     histLock=false;
