@@ -71,3 +71,54 @@ def test_audio_muted():
         video_layers, audio_layer, next_input_idx=1
     )
     assert any("volume=0" in p for p in filter_parts)
+
+
+def test_audio_layer_amix():
+    """Audio layer present → amix filter included, extra input returned."""
+    video_layers = [{"type": "video", "volume": 1.0, "muted": False}]
+    audio_layer = {
+        "type": "audio",
+        "src": "uploads/fake.mp3",
+        "volume": 1.0,
+        "loop": False,
+        "trim_start": 0.0,
+        "trim_end": None,
+    }
+    extra_inputs, filter_parts, audio_label = build_audio_cmd_parts(
+        video_layers, audio_layer, next_input_idx=1
+    )
+    assert "uploads/fake.mp3" in extra_inputs
+    assert any("amix" in p for p in filter_parts)
+    assert audio_label != "0:a"
+
+def test_audio_layer_loop():
+    """Loop flag → aloop filter present."""
+    video_layers = [{"type": "video", "volume": 1.0, "muted": False}]
+    audio_layer = {
+        "type": "audio",
+        "src": "uploads/fake.mp3",
+        "volume": 1.0,
+        "loop": True,
+        "trim_start": 0.0,
+        "trim_end": None,
+    }
+    extra_inputs, filter_parts, audio_label = build_audio_cmd_parts(
+        video_layers, audio_layer, next_input_idx=1
+    )
+    assert any("aloop" in p for p in filter_parts)
+
+def test_audio_layer_volume():
+    """Music track volume applied."""
+    video_layers = [{"type": "video", "volume": 1.0, "muted": False}]
+    audio_layer = {
+        "type": "audio",
+        "src": "uploads/fake.mp3",
+        "volume": 0.4,
+        "loop": False,
+        "trim_start": 0.0,
+        "trim_end": None,
+    }
+    extra_inputs, filter_parts, audio_label = build_audio_cmd_parts(
+        video_layers, audio_layer, next_input_idx=1
+    )
+    assert any("volume=0.4" in p for p in filter_parts)

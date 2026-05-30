@@ -146,7 +146,9 @@ def build_audio_cmd_parts(
     if audio_layer is None:
         return extra_inputs, filter_parts, vid_audio_label
 
-    src = audio_layer.get("src", "")
+    src = audio_layer.get("src") or ""
+    if not src:
+        raise ValueError("audio_layer must have a non-empty 'src'")
     music_vol = float(audio_layer.get("volume", 1.0))
     loop = bool(audio_layer.get("loop", False))
 
