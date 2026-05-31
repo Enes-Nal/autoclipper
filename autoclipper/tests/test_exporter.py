@@ -218,6 +218,7 @@ def test_build_filter_graph_with_mask():
     mask_inputs = {1: 2}
     parts, label = build_filter_graph(layers, 1080, 1920, {}, {}, mask_inputs)
     assert any("alphamerge" in p for p in parts)
+    assert any("format=rgba" in p for p in parts)  # base must be RGBA before alphamerge
     assert any("overlay" in p for p in parts)
 
 def test_build_filter_graph_no_mask_unchanged():

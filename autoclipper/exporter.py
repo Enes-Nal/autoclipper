@@ -98,9 +98,12 @@ def build_filter_graph(layers: list, cw: int, ch: int,
             if i in mask_inputs:
                 mask_idx = mask_inputs[i]
                 mask_scaled = lbl()
+                scaled_rgba = lbl()
                 masked = lbl()
                 parts.append(f"[{mask_idx}:v]scale={w}:{h}[{mask_scaled}]")
-                parts.append(f"[{scaled}][{mask_scaled}]alphamerge[{masked}]")
+                # alphamerge requires the base input to have an alpha channel
+                parts.append(f"[{scaled}]format=rgba[{scaled_rgba}]")
+                parts.append(f"[{scaled_rgba}][{mask_scaled}]alphamerge[{masked}]")
                 composited = masked
 
             if current:
