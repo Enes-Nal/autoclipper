@@ -139,6 +139,56 @@ def test_export_video_strips_audio_layer_from_filter_graph():
     assert audio is not None
     assert audio["type"] == "audio"
 
+from pathlib import Path
+from exporter import render_mask_png
+
+def test_render_mask_png_rect(tmp_path):
+    """rect fills the entire image with white."""
+    from PIL import Image
+    p = str(tmp_path / "mask.png")
+    render_mask_png("rect", 100, 80, 0, [], p)
+    img = Image.open(p).convert("L")
+    assert img.size == (100, 80)
+    # All pixels should be white (255)
+    assert img.getpixel((50, 40)) == 255
+    assert img.getpixel((0, 0)) == 255
+
+def test_render_mask_png_rounded_rect(tmp_path):
+    """rounded_rect: centre is white, extreme corners are black."""
+    from PIL import Image
+    p = str(tmp_path / "mask_rr.png")
+    render_mask_png("rounded_rect", 100, 100, 20, [], p)
+    img = Image.open(p).convert("L")
+    assert img.getpixel((50, 50)) == 255   # centre: white
+    assert img.getpixel((0, 0)) == 0       # extreme corner: black
+
+def test_render_mask_png_circle(tmp_path):
+    """circle: centre is white, corners are black."""
+    from PIL import Image
+    p = str(tmp_path / "mask_c.png")
+    render_mask_png("circle", 100, 100, 0, [], p)
+    img = Image.open(p).convert("L")
+    assert img.getpixel((50, 50)) == 255   # centre
+    assert img.getpixel((0, 0)) == 0       # corner
+
+def test_render_mask_png_polygon(tmp_path):
+    """polygon: points inside the polygon are white."""
+    from PIL import Image
+    p = str(tmp_path / "mask_poly.png")
+    # Unit square normalised → fills entire 100x100 canvas
+    points = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]]
+    render_mask_png("polygon", 100, 100, 0, points, p)
+    img = Image.open(p).convert("L")
+    assert img.getpixel((50, 50)) == 255
+
+def test_render_mask_png_none_produces_black(tmp_path):
+    """Unknown/none shape produces an all-black PNG (no mask)."""
+    from PIL import Image
+    p = str(tmp_path / "mask_none.png")
+    render_mask_png("none", 100, 100, 0, [], p)
+    img = Image.open(p).convert("L")
+    assert img.getpixel((50, 50)) == 0
+
 def test_audio_only_filter_uses_raw_video_map():
     """When only audio filters exist (no video filter graph), final_video must be
     mapped as a raw stream specifier, not a bracketed filter label."""

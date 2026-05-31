@@ -7,6 +7,30 @@ TEMP_DIR = Path(__file__).parent / "temp"
 for d in (EXPORTS_DIR, TEMP_DIR):
     d.mkdir(exist_ok=True)
 
+def render_mask_png(shape: str, w: int, h: int, radius: int,
+                    points: list, path: str) -> None:
+    """
+    Render a white-on-black mask PNG at w×h pixels.
+    shape: "rect" | "rounded_rect" | "circle" | "polygon"
+    radius: corner radius in pixels (rounded_rect only)
+    points: normalised [[x,y],...] vertices (polygon only, 0-1 relative to w/h)
+    path: output file path
+    """
+    from PIL import Image, ImageDraw
+    img = Image.new("L", (w, h), 0)
+    draw = ImageDraw.Draw(img)
+    if shape == "rect":
+        draw.rectangle([0, 0, w - 1, h - 1], fill=255)
+    elif shape == "rounded_rect":
+        draw.rounded_rectangle([0, 0, w - 1, h - 1], radius=max(0, radius), fill=255)
+    elif shape == "circle":
+        draw.ellipse([0, 0, w - 1, h - 1], fill=255)
+    elif shape == "polygon" and points:
+        pts = [(int(p[0] * w), int(p[1] * h)) for p in points]
+        draw.polygon(pts, fill=255)
+    img.save(path)
+
+
 def build_filter_graph(layers: list, cw: int, ch: int,
                        text_pngs: dict, image_inputs: dict) -> tuple[list, str]:
     """
