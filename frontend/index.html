@@ -147,6 +147,21 @@ button,input,select{font-family:inherit}
 .psec{padding:11px 12px;margin:6px 8px;border-radius:10px;border:1px solid var(--b1);background:var(--s2)}
 .psec-title{font-size:9px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:9px;display:flex;align-items:center;gap:6px}
 .psec-title-icon{width:14px;height:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+/* itshover animated icon animations */
+@keyframes ih-wave-pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.25);opacity:0.55}}
+@keyframes ih-wave-outer{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.35);opacity:0.4}}
+@keyframes ih-vinyl-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes ih-vinyl-dot{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}
+@keyframes ih-layers-slide{0%,100%{transform:translateX(0)}50%{transform:translateX(-6px)}}
+@keyframes ih-volx-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-1.5px)}75%{transform:translateX(1.5px)}}
+@keyframes ih-volx-x{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+.ih-vol:hover .ih-wi{animation:ih-wave-pulse .6s ease-in-out;transform-origin:16px 12px}
+.ih-vol:hover .ih-wo{animation:ih-wave-outer .7s ease-in-out .1s;transform-origin:19.364px 12px}
+.ih-volx:hover .ih-spk{animation:ih-volx-shake .3s ease-in-out}
+.ih-volx:hover .ih-xmk{animation:ih-volx-x .4s ease-out;transform-origin:19px 12px}
+.ih-vinyl:hover .ih-vdisc{animation:ih-vinyl-spin 3s linear infinite;transform-origin:50% 50%}
+.ih-vinyl:hover .ih-vdot{animation:ih-vinyl-dot 1s ease-in-out infinite}
+.ih-layers:hover .ih-ltop{animation:ih-layers-slide .4s cubic-bezier(0.4,0,0.2,1)}
 .mask-shape-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:4px}
 .msbtn{padding:6px 4px;border-radius:6px;border:1px solid var(--b1);background:var(--s2);color:var(--sub);font-size:10px;cursor:pointer;text-align:center;transition:.12s}
 .msbtn.on{border-color:var(--acc);color:var(--acc);background:var(--accdim)}
@@ -425,7 +440,7 @@ button,input,select{font-family:inherit}
           <div class="lp-sect">Layers</div>
           <div id="layer-list"></div>
           <div id="audio-layer-row" style="display:none"></div>
-          <button id="add-audio-btn" onclick="triggerAudioUpload()">🎵 Add Audio</button>
+          <button id="add-audio-btn" onclick="triggerAudioUpload()"><svg class="ih-vinyl" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path class="ih-vdisc" d="M16 3.937a9 9 0 1 0 5 8.063" style="transform-origin:50% 50%"/><path class="ih-vdot" d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M20 4m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M20 4l-3.5 10l-2.5 2"/></svg> Add Audio</button>
           <input type="file" id="audio-pick" accept=".mp3,.wav,.ogg,.m4a,.aac" style="display:none" onchange="onAudioFile(event)">
         </div>
       </div>
@@ -631,6 +646,16 @@ let db=null, dbAvailable=false, acProjectId='';
 let snapLines={x:null,y:null};
 let lastTextPos=null, lastTextObj=null;
 let downloadedVideoPath=null, downloadedVideoURL=null;
+
+// ── itshover SVG icon helpers ──────────────────────────────────────────────
+// Icons from https://www.itshover.com/icons — ported to vanilla SVG + CSS animations
+function icoVol(sz=12){return`<svg class="ih-vol" xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="cursor:pointer;display:block"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path class="ih-wi" d="M16 9a5 5 0 0 1 0 6" style="transform-origin:16px 12px"/><path class="ih-wo" d="M19.364 18.364a9 9 0 0 0 0-12.728" style="transform-origin:19.364px 12px"/></svg>`;}
+function icoVolX(sz=12){return`<svg class="ih-volx" xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="cursor:pointer;display:block"><path class="ih-spk" d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><g class="ih-xmk" style="transform-origin:19px 12px"><line x1="22" x2="16" y1="9" y2="15"/><line x1="16" x2="22" y1="9" y2="15"/></g></svg>`;}
+function icoVinyl(sz=12){return`<svg class="ih-vinyl" xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="cursor:pointer;display:block"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path class="ih-vdisc" d="M16 3.937a9 9 0 1 0 5 8.063" style="transform-origin:50% 50%"/><path class="ih-vdot" d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M20 4m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M20 4l-3.5 10l-2.5 2"/></svg>`;}
+function icoLayers(sz=12){return`<svg class="ih-layers" xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}" viewBox="0 0 120 120" fill="none" style="cursor:pointer;display:block;overflow:visible"><rect class="ih-ltop" x="44" y="22" width="56" height="36" rx="10" fill="currentColor"/><rect x="20" y="62" width="64" height="40" rx="12" fill="currentColor"/></svg>`;}
+function icoTrash(sz=12){return`<svg xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;}
+function icoCut(sz=12){return`<svg xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>`;}
+// ─────────────────────────────────────────────────────────────────────────────
 let audioLayer=null; // {type:'audio',src,volume,loop,trim_start,trim_end}
 // Polygon drawing state
 let _polygonDrawing = false;
@@ -1456,10 +1481,10 @@ function syncLayers(){
     const fname = audioLayer.src.split('/').pop();
     audioRowEl.style.display = '';
     audioRowEl.innerHTML = `<div class="lrow-audio" id="audio-lrow-inner" onclick="showAudioLayerProps()">
-      <span style="font-size:14px">🎵</span>
+      ${icoVinyl(14)}
       <span class="lname" title="${fname}">${fname}</span>
-      <button class="ledit" onclick="event.stopPropagation();openTrimmerModal()">Edit ✂️</button>
-      <span class="leye" onclick="event.stopPropagation();removeAudioLayer()" title="Remove" style="cursor:pointer;font-size:14px;color:var(--sub)">🗑️</span>
+      <button class="ledit" onclick="event.stopPropagation();openTrimmerModal()">${icoCut(10)} Edit</button>
+      <span class="leye" onclick="event.stopPropagation();removeAudioLayer()" title="Remove" style="cursor:pointer;color:var(--sub)">${icoTrash(14)}</span>
     </div>`;
     if (addAudioBtn) addAudioBtn.style.display = 'none';
   } else {
@@ -1574,13 +1599,13 @@ function updateProps(){
     const volPct = Math.round((obj._audioVolume??1)*100);
     const isMuted = obj._audioMuted===true;
     html+=`<div class="psec">
-      <div class="psec-title">🔊 Audio</div>
+      <div class="psec-title">${icoVol(12)} Audio</div>
       <div class="prow">
         <span class="plbl">Volume</span>
         <div class="slrow" style="gap:6px">
-          <button class="togbtn${isMuted?' on':''}" style="padding:2px 8px;font-size:16px" title="${isMuted?'Unmute':'Mute'}"
+          <button class="togbtn${isMuted?' on':''}" style="padding:4px 8px;line-height:0" title="${isMuted?'Unmute':'Mute'}"
             onclick="toggleVideoMute(this)">
-            ${isMuted?'🔇':'🔊'}
+            ${isMuted?icoVolX(14):icoVol(14)}
           </button>
           <input type="range" class="psl" min="0" max="100" value="${isMuted?0:volPct}" ${isMuted?'disabled':''}
             oninput="setVideoVolume(this.value);this.nextElementSibling.textContent=this.value+'%'">
@@ -1592,7 +1617,7 @@ function updateProps(){
     const mshape = obj._maskShape||'none';
     const mrad = obj._maskRadius??20;
     html+=`<div class="psec">
-      <div class="psec-title">✂️ Mask</div>
+      <div class="psec-title">${icoLayers(12)} Mask</div>
       <div class="mask-shape-grid">
         <button class="msbtn${mshape==='none'?' on':''}"         onclick="setMaskShape('none')">None</button>
         <button class="msbtn${mshape==='rect'?' on':''}"         onclick="setMaskShape('rect')">Rect</button>
@@ -1701,7 +1726,7 @@ function toggleVideoMute(btn){
   const obj = cv.getActiveObject();
   if(!obj) return;
   obj._audioMuted = !obj._audioMuted;
-  btn.textContent = obj._audioMuted ? '🔇' : '🔊';
+  btn.innerHTML = obj._audioMuted ? icoVolX(14) : icoVol(14);
   btn.classList.toggle('on', obj._audioMuted);
   const slider = btn.nextElementSibling;
   const lbl = slider.nextElementSibling;
@@ -1724,7 +1749,7 @@ function showAudioLayerProps(){
   const loop = audioLayer.loop===true;
   document.getElementById('right').innerHTML=`
     <div class="psec">
-      <div class="psec-title">🎵 Audio Layer</div>
+      <div class="psec-title">${icoVinyl(12)} Audio Layer</div>
       <div class="prow"><span class="plbl">File</span>
         <span style="font-size:11px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${audioLayer.src.split('/').pop()}</span>
       </div>
@@ -1742,7 +1767,7 @@ function showAudioLayerProps(){
         </div>
       </div>
       <div class="prow">
-        <button class="btn btn-ghost" style="width:100%;margin-top:4px" onclick="openTrimmerModal()">✂️ Edit Trim / Preview…</button>
+        <button class="btn btn-ghost" style="width:100%;margin-top:4px;display:flex;align-items:center;gap:6px;justify-content:center" onclick="openTrimmerModal()">${icoCut(12)} Edit Trim / Preview…</button>
       </div>
     </div>`;
 }
