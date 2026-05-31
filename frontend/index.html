@@ -147,6 +147,10 @@ button,input,select{font-family:inherit}
 .psec{padding:11px 12px;margin:6px 8px;border-radius:10px;border:1px solid var(--b1);background:var(--s2)}
 .psec-title{font-size:9px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:9px;display:flex;align-items:center;gap:6px}
 .psec-title-icon{width:14px;height:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.mask-shape-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:4px}
+.msbtn{padding:6px 4px;border-radius:6px;border:1px solid var(--b1);background:var(--s2);color:var(--sub);font-size:10px;cursor:pointer;text-align:center;transition:.12s}
+.msbtn.on{border-color:var(--acc);color:var(--acc);background:var(--accdim)}
+.msbtn:hover:not(.on){background:var(--s3);color:var(--tx)}
 .prow{display:flex;align-items:center;gap:8px;margin-bottom:7px}
 .plbl{font-size:10px;color:var(--sub);width:48px;flex-shrink:0;font-weight:500}
 .pin{flex:1;background:var(--s2);border:1px solid var(--b1);color:var(--tx);font-family:'Inter',sans-serif;font-size:11px;font-weight:500;border-radius:var(--rs);padding:5px 8px;outline:none;transition:.1s}
@@ -1538,6 +1542,36 @@ function updateProps(){
         </div>
       </div>
     </div>`;
+    // ── Mask section ────────────────────────────────────────────────────────
+    const mshape = obj._maskShape||'none';
+    const mrad = obj._maskRadius??20;
+    html+=`<div class="psec">
+      <div class="psec-title">✂️ Mask</div>
+      <div class="mask-shape-grid">
+        <button class="msbtn${mshape==='none'?' on':''}"         onclick="setMaskShape('none')">None</button>
+        <button class="msbtn${mshape==='rect'?' on':''}"         onclick="setMaskShape('rect')">Rect</button>
+        <button class="msbtn${mshape==='rounded_rect'?' on':''}" onclick="setMaskShape('rounded_rect')">Rounded</button>
+        <button class="msbtn${mshape==='circle'?' on':''}"       onclick="setMaskShape('circle')">Circle</button>
+      </div>
+      <div class="mask-shape-grid" style="grid-template-columns:1fr;margin-top:4px">
+        <button class="msbtn${mshape==='polygon'?' on':''}"      onclick="setMaskShape('polygon')">Polygon (draw)</button>
+      </div>
+      ${mshape==='rounded_rect'?`
+      <div class="prow" style="margin-top:6px"><span class="plbl">Radius</span>
+        <div class="slrow">
+          <input type="range" class="psl" min="0" max="200" value="${mrad}"
+            oninput="setMaskRadius(+this.value);this.nextElementSibling.textContent=this.value+'px'">
+          <span class="slv">${mrad}px</span>
+        </div>
+      </div>`:''}
+      ${mshape==='polygon'?`
+      <div class="prow" style="margin-top:6px;gap:6px">
+        <button class="btn btn-ghost" style="flex:1" onclick="startPolygonDraw()">
+          ${(obj._maskPoints||[]).length>=3?'Redraw':'Draw'} Polygon
+        </button>
+        ${(obj._maskPoints||[]).length>=3?`<button class="btn btn-ghost" onclick="clearPolygonMask()">Clear</button>`:''}
+      </div>`:''}
+    </div>`;
   }
 
   if(type==='text'){
@@ -1697,6 +1731,34 @@ function applyMaskClipPath(obj) {
   }
   obj.clipPath = cp || null;
   cv.renderAll();
+}
+
+function setMaskShape(shape){
+  const obj = cv.getActiveObject();
+  if(!obj) return;
+  obj._maskShape = shape;
+  if(shape !== 'polygon') obj._maskPoints = [];
+  applyMaskClipPath(obj);
+  updateProps(); // re-render panel to show/hide radius/polygon controls
+  saveHist();
+}
+
+function setMaskRadius(val){
+  const obj = cv.getActiveObject();
+  if(!obj) return;
+  obj._maskRadius = val;
+  applyMaskClipPath(obj);
+  saveHist();
+}
+
+function clearPolygonMask(){
+  const obj = cv.getActiveObject();
+  if(!obj) return;
+  obj._maskPoints = [];
+  obj.clipPath = null;
+  cv.renderAll();
+  updateProps();
+  saveHist();
 }
 
 // ── AUDIO TRIMMER MODAL ─────────────────────────────────────────────────────
