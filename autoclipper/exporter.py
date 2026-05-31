@@ -253,7 +253,20 @@ def export_video(video_path: str, template: dict, title: str = "",
             image_inputs[i] = len(extra_inputs) + 1
             extra_inputs.append(l["src"])
 
-    filter_parts, final_video = build_filter_graph(layers, cw, ch, text_pngs, image_inputs)
+    # Mask pre-processing: render mask PNGs for masked video layers
+    mask_inputs = {}
+    for i, l in enumerate(layers):
+        shape = l.get("mask", {}).get("shape", "none")
+        if shape != "none":
+            p = str(TEMP_DIR / f"{job_id}_mask{i}.png")
+            lw, lh = l.get("width", cw), l.get("height", ch)
+            radius = l.get("mask", {}).get("radius", 20)
+            points = l.get("mask", {}).get("points", [])
+            render_mask_png(shape, lw, lh, radius, points, p)
+            mask_inputs[i] = len(extra_inputs) + 1
+            extra_inputs.append(p)
+
+    filter_parts, final_video = build_filter_graph(layers, cw, ch, text_pngs, image_inputs, mask_inputs)
 
     # next free input index = 1 (video) + len(extra_inputs)
     audio_extra, audio_filter_parts, audio_label = build_audio_cmd_parts(

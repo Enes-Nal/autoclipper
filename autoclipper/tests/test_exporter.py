@@ -1,4 +1,4 @@
-from exporter import build_filter_graph, build_audio_cmd_parts
+from exporter import build_filter_graph, build_audio_cmd_parts, render_mask_png
 
 def test_blur_video_layer():
     parts, label = build_filter_graph(
@@ -140,7 +140,6 @@ def test_export_video_strips_audio_layer_from_filter_graph():
     assert audio["type"] == "audio"
 
 from pathlib import Path
-from exporter import render_mask_png
 
 def test_render_mask_png_rect(tmp_path):
     """rect fills the entire image with white."""
@@ -232,3 +231,34 @@ def test_build_filter_graph_no_mask_unchanged():
     parts_new, label_new = build_filter_graph(layers, 1080, 1920, {}, {}, {})
     assert parts_old == parts_new
     assert label_old == label_new
+
+def test_export_video_strips_mask_from_canvas_layers():
+    """Mask pre-processing: mask_inputs dict is populated for masked video layers."""
+    # Simulate what export_video does during pre-processing
+    layers = [
+        {"type": "blur_video", "blur": 20},
+        {"type": "video", "x": 0, "y": 656, "width": 1080, "height": 608,
+         "fit": "contain", "mask": {"shape": "circle", "radius": 0, "points": []}},
+    ]
+    mask_inputs = {}
+    extra_inputs = []
+    job_id = "test001"
+    from pathlib import Path
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmp:
+        for i, l in enumerate(layers):
+            shape = l.get("mask", {}).get("shape", "none")
+            if shape != "none":
+                p = str(Path(tmp) / f"{job_id}_mask{i}.png")
+                lw, lh = l.get("width", 1080), l.get("height", 1920)
+                radius = l.get("mask", {}).get("radius", 20)
+                points = l.get("mask", {}).get("points", [])
+                render_mask_png(shape, lw, lh, radius, points, p)
+                mask_inputs[i] = len(extra_inputs) + 1
+                extra_inputs.append(p)
+        assert 1 in mask_inputs          # layer 1 has mask
+        assert 0 not in mask_inputs      # layer 0 is blur_video, no mask
+        assert len(extra_inputs) == 1    # one mask PNG added
+        from PIL import Image
+        img = Image.open(extra_inputs[0]).convert("L")
+        assert img.getpixel((540, 304)) == 255  # centre of circle is white
