@@ -443,8 +443,9 @@ button,input,select{font-family:inherit}
     <div id="canvas-area">
       <div class="cvs-dots"></div>
       <div class="phone-wrap">
-        <div id="phone">
+        <div id="phone" style="position:relative">
           <canvas id="ec"></canvas>
+          <canvas id="poly-overlay" style="position:absolute;top:0;left:0;pointer-events:none;display:none"></canvas>
         </div>
         <div class="cvs-toolbar">
           <button class="tbar-btn" onclick="doZoom(-.15)">−</button>
@@ -1237,6 +1238,50 @@ document.addEventListener('DOMContentLoaded', ()=>{
       }
     });
   }
+
+  const polyOverlay = document.getElementById('poly-overlay');
+
+  polyOverlay.addEventListener('mousemove', e => {
+    if(!_polygonDrawing) return;
+    const rect = e.target.getBoundingClientRect();
+    drawPolyOverlay(e.clientX - rect.left, e.clientY - rect.top);
+  });
+
+  polyOverlay.addEventListener('click', e => {
+    if(!_polygonDrawing || !_polygonTarget) return;
+    const overlay = document.getElementById('poly-overlay');
+    const rect = overlay.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+
+    // Check if click is close to the first point (close polygon)
+    if(_polygonPoints.length >= 3){
+      const first = _polygonPoints[0];
+      if(Math.hypot(cx - first.x, cy - first.y) < 12){
+        // Close polygon — normalise points relative to layer
+        const obj = _polygonTarget;
+        const ow = obj.getScaledWidth();
+        const oh = obj.getScaledHeight();
+        const phone = document.getElementById('phone');
+        const normPts = _polygonPoints.map(p => {
+          const fabX = p.x / phone.offsetWidth * FMT[fmt].w;
+          const fabY = p.y / phone.offsetHeight * FMT[fmt].h;
+          return [
+            Math.max(0, Math.min(1, (fabX - obj.left) / ow)),
+            Math.max(0, Math.min(1, (fabY - obj.top)  / oh)),
+          ];
+        });
+        obj._maskPoints = normPts;
+        applyMaskClipPath(obj);
+        stopPolygonDraw();
+        updateProps();
+        saveHist();
+        return;
+      }
+    }
+    _polygonPoints.push({x: cx, y: cy});
+    drawPolyOverlay(cx, cy);
+  });
 });
 function doUndo(){
   if(histIdx<=0||histLock)return;histIdx--;
@@ -1376,6 +1421,7 @@ document.addEventListener('keydown',e=>{
   const mod=e.ctrlKey||e.metaKey;
   if(mod&&e.key.toLowerCase()==='z'&&!e.shiftKey&&!inp&&!fabricEditing){e.preventDefault();doUndo();}
   if(mod&&(e.key.toLowerCase()==='y'||(e.key.toLowerCase()==='z'&&e.shiftKey))&&!inp&&!fabricEditing){e.preventDefault();doRedo();}
+  if(e.key === 'Escape' && _polygonDrawing){ stopPolygonDraw(); updateProps(); }
 });
 
 // ── LAYERS ─────────────────────────────────────────────────────────────────
@@ -1759,6 +1805,81 @@ function clearPolygonMask(){
   cv.renderAll();
   updateProps();
   saveHist();
+}
+
+function startPolygonDraw(){
+  const obj = cv.getActiveObject();
+  if(!obj) return;
+  _polygonDrawing = true;
+  _polygonPoints = [];
+  _polygonTarget = obj;
+  const phone = document.getElementById('phone');
+  const overlay = document.getElementById('poly-overlay');
+  overlay.width = phone.offsetWidth;
+  overlay.height = phone.offsetHeight;
+  overlay.style.display = 'block';
+  overlay.style.pointerEvents = 'auto';
+  overlay.style.cursor = 'crosshair';
+  cv.defaultCursor = 'crosshair';
+  cv.hoverCursor = 'crosshair';
+  cv.selection = false;
+  cv.forEachObject(o => { o.selectable = false; o.evented = false; });
+}
+
+function stopPolygonDraw(){
+  _polygonDrawing = false;
+  _polygonPoints = [];
+  _polygonTarget = null;
+  const overlay = document.getElementById('poly-overlay');
+  overlay.style.display = 'none';
+  overlay.style.pointerEvents = 'none';
+  overlay.style.cursor = '';
+  const ctx = overlay.getContext('2d');
+  ctx.clearRect(0, 0, overlay.width, overlay.height);
+  cv.defaultCursor = 'default';
+  cv.hoverCursor = 'move';
+  cv.selection = true;
+  cv.forEachObject(o => { o.selectable = true; o.evented = true; });
+}
+
+function drawPolyOverlay(mouseX, mouseY){
+  const overlay = document.getElementById('poly-overlay');
+  const ctx = overlay.getContext('2d');
+  ctx.clearRect(0, 0, overlay.width, overlay.height);
+  if(_polygonPoints.length === 0) return;
+
+  ctx.strokeStyle = '#a78bfa';
+  ctx.fillStyle = 'rgba(167,139,250,0.15)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([]);
+
+  ctx.beginPath();
+  ctx.moveTo(_polygonPoints[0].x, _polygonPoints[0].y);
+  for(let i = 1; i < _polygonPoints.length; i++){
+    ctx.lineTo(_polygonPoints[i].x, _polygonPoints[i].y);
+  }
+  if(mouseX !== null) ctx.lineTo(mouseX, mouseY);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  if(mouseX !== null && _polygonPoints.length > 0){
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(_polygonPoints[_polygonPoints.length-1].x, _polygonPoints[_polygonPoints.length-1].y);
+    ctx.lineTo(mouseX, mouseY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  _polygonPoints.forEach((pt, idx) => {
+    ctx.beginPath();
+    ctx.arc(pt.x, pt.y, idx === 0 ? 6 : 4, 0, Math.PI * 2);
+    ctx.fillStyle = idx === 0 ? '#ffffff' : '#a78bfa';
+    ctx.fill();
+    ctx.strokeStyle = '#a78bfa';
+    ctx.stroke();
+  });
 }
 
 // ── AUDIO TRIMMER MODAL ─────────────────────────────────────────────────────
