@@ -16,6 +16,15 @@
   --tx:#f0f0f5;--sub:#52526a;--mut:rgba(255,255,255,0.06);
   --danger:#f43f5e;--ok:#22c55e;
   --r:10px;--rs:7px;
+  /* transitions-dev */
+  --dropdown-open-dur:250ms;--dropdown-close-dur:150ms;
+  --dropdown-pre-scale:0.97;--dropdown-closing-scale:0.99;
+  --dropdown-ease:cubic-bezier(0.22,1,0.36,1);
+  --modal-open-dur:250ms;--modal-close-dur:150ms;
+  --modal-scale:0.96;--modal-scale-close:0.96;
+  --modal-ease:cubic-bezier(0.22,1,0.36,1);
+  --icon-swap-dur:200ms;--icon-swap-blur:2px;
+  --icon-swap-start-scale:0.25;--icon-swap-ease:ease-in-out;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;font-size:13px;background:var(--bg);color:var(--tx)}
@@ -160,8 +169,7 @@ button,input,select{font-family:inherit}
 .cinput{width:22px;height:22px;border-radius:5px;border:1px solid var(--b1);cursor:pointer;padding:1px;background:none}
 .emo-btn{width:100%;padding:7px 10px;border-radius:var(--rs);border:1px solid var(--b1);background:var(--s2);cursor:pointer;color:var(--tx);font-size:12px;font-weight:600;text-align:left;transition:.1s;display:flex;align-items:center;gap:6px}
 .emo-btn:hover{border-color:var(--acc);background:var(--s3)}
-#emo-popup{position:fixed;z-index:500;background:var(--s1);border:1px solid var(--b2);border-radius:var(--r);width:280px;box-shadow:0 20px 60px rgba(0,0,0,.7);display:none;overflow:hidden;flex-direction:column}
-#emo-popup.open{display:flex}
+#emo-popup{position:fixed;z-index:500;background:var(--s1);border:1px solid var(--b2);border-radius:var(--r);width:280px;box-shadow:0 20px 60px rgba(0,0,0,.7);display:flex;overflow:hidden;flex-direction:column}
 .emo-cats{display:flex;border-bottom:1px solid var(--b1);padding:4px;gap:2px;flex-shrink:0}
 .emo-cat-btn{flex:1;padding:5px 0;border:none;border-radius:5px;cursor:pointer;background:transparent;font-size:17px;transition:.1s;opacity:.4;line-height:1}
 .emo-cat-btn.on{background:var(--s3);opacity:1}
@@ -180,6 +188,28 @@ button,input,select{font-family:inherit}
 #dl-modal,#exp-modal{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:400;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
 #dl-modal.open,#exp-modal.open{display:flex}
 .modal-box{background:var(--s1);border:1px solid var(--b1);border-radius:16px;padding:28px;width:480px;box-shadow:0 24px 80px rgba(0,0,0,.9)}
+
+/* ── transitions-dev ─────────────────────────────────────── */
+.t-dropdown{transform-origin:top left;transform:scale(var(--dropdown-pre-scale));opacity:0;pointer-events:none;transition:transform var(--dropdown-open-dur) var(--dropdown-ease),opacity var(--dropdown-open-dur) var(--dropdown-ease);will-change:transform,opacity}
+.t-dropdown[data-origin="top-right"]{transform-origin:top right}
+.t-dropdown[data-origin="top-center"]{transform-origin:top center}
+.t-dropdown[data-origin="bottom-left"]{transform-origin:bottom left}
+.t-dropdown[data-origin="bottom-center"]{transform-origin:bottom center}
+.t-dropdown[data-origin="bottom-right"]{transform-origin:bottom right}
+.t-dropdown.is-open{transform:scale(1);opacity:1;pointer-events:auto}
+.t-dropdown.is-closing{transform:scale(var(--dropdown-closing-scale));opacity:0;pointer-events:none;transition:transform var(--dropdown-close-dur) var(--dropdown-ease),opacity var(--dropdown-close-dur) var(--dropdown-ease)}
+@media(prefers-reduced-motion:reduce){.t-dropdown{transition:none!important}}
+
+.t-icon-swap{position:relative;display:inline-grid}
+.t-icon-swap .t-icon{grid-area:1/1;transition:opacity var(--icon-swap-dur) var(--icon-swap-ease),filter var(--icon-swap-dur) var(--icon-swap-ease),transform var(--icon-swap-dur) var(--icon-swap-ease);will-change:opacity,filter,transform}
+.t-icon-swap[data-state="a"] .t-icon[data-icon="a"],.t-icon-swap[data-state="b"] .t-icon[data-icon="b"]{opacity:1;filter:blur(0);transform:scale(1)}
+.t-icon-swap[data-state="a"] .t-icon[data-icon="b"],.t-icon-swap[data-state="b"] .t-icon[data-icon="a"]{opacity:0;filter:blur(var(--icon-swap-blur));transform:scale(var(--icon-swap-start-scale))}
+@media(prefers-reduced-motion:reduce){.t-icon-swap .t-icon{transition:none!important}}
+
+.t-modal{transform-origin:center;transform:scale(var(--modal-scale));opacity:0;pointer-events:none;transition:transform var(--modal-open-dur) var(--modal-ease),opacity var(--modal-open-dur) var(--modal-ease);will-change:transform,opacity}
+.t-modal.is-open{transform:scale(1);opacity:1;pointer-events:auto}
+.t-modal.is-closing{transform:scale(var(--modal-scale-close));opacity:0;pointer-events:none;transition:transform var(--modal-close-dur) var(--modal-ease),opacity var(--modal-close-dur) var(--modal-ease)}
+@media(prefers-reduced-motion:reduce){.t-modal{transition:none!important}}
 .modal-title{font-size:16px;font-weight:800;margin-bottom:6px}
 .modal-sub{font-size:12px;color:var(--sub);margin-bottom:20px}
 .modal-input{width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);color:var(--tx);font-family:'Inter',sans-serif;font-size:13px;padding:10px 12px;outline:none;margin-bottom:12px;transition:.1s}
@@ -247,7 +277,12 @@ button,input,select{font-family:inherit}
 /* Canvas grid toggle — pulse */
 @keyframes grid-pulse{0%,100%{opacity:1}50%{opacity:0.5}}
 .tbar-btn:hover .grid-path{animation:grid-pulse .4s ease-in-out}
-#trimmer-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center}
+
+/* Volume waves — ripple outward */
+@keyframes vol-wave{0%{opacity:.4;transform:scale(1)}50%{opacity:1;transform:scale(1.06)}100%{opacity:.4;transform:scale(1)}}
+.tbar-btn:hover .vol-wave1,.icon-btn:hover .vol-wave1{animation:vol-wave .55s ease-in-out;transform-box:fill-box;transform-origin:center}
+.tbar-btn:hover .vol-wave2,.icon-btn:hover .vol-wave2{animation:vol-wave .55s ease-in-out .12s;transform-box:fill-box;transform-origin:center}
+#trimmer-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
 #trimmer-modal.open{display:flex}
 .trimmer-box{background:var(--s2);border-radius:12px;padding:20px;width:560px;max-width:95vw;display:flex;flex-direction:column;gap:12px}
 .trimmer-header{display:flex;align-items:center;gap:10px}
@@ -427,10 +462,31 @@ button,input,select{font-family:inherit}
       </div>
     <!-- AUDIO PREVIEW STRIP -->
     <div id="audio-strip">
-      <button class="tbar-btn" id="strip-play-btn" onclick="stripTogglePlay()" style="flex-shrink:0">▶</button>
+      <button class="tbar-btn" id="strip-play-btn" onclick="stripTogglePlay()" style="flex-shrink:0">
+        <span class="t-icon-swap" id="strip-play-icon" data-state="a">
+          <span class="t-icon" data-icon="a">▶</span>
+          <span class="t-icon" data-icon="b">⏸</span>
+        </span>
+      </button>
       <canvas id="strip-canvas"></canvas>
       <div class="strip-vol">
-        <button class="tbar-btn" id="strip-mute-btn" onclick="stripToggleMute()" style="font-size:14px">🔊</button>
+        <button class="tbar-btn" id="strip-mute-btn" onclick="stripToggleMute()">
+          <span class="t-icon-swap" id="strip-mute-icon" data-state="a">
+            <span class="t-icon" data-icon="a">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="15" height="15" style="display:block">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.009 9.009 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z"/>
+                <path class="vol-wave1" stroke-linecap="round" stroke-linejoin="round" d="M16.463 8.288a5.25 5.25 0 0 1 0 7.424"/>
+                <path class="vol-wave2" stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 0 1 0 12.728"/>
+              </svg>
+            </span>
+            <span class="t-icon" data-icon="b">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="15" height="15" style="display:block">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 9.75 19.5 12m0 0 2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25"/>
+              </svg>
+            </span>
+          </span>
+        </button>
         <input type="range" id="strip-vol-slider" min="0" max="100" value="80" oninput="stripSetVolume(this.value)">
         <label>preview only</label>
       </div>
@@ -452,7 +508,7 @@ button,input,select{font-family:inherit}
 </div><!-- /app -->
 
 <!-- EMOJI POPUP -->
-<div id="emo-popup">
+<div id="emo-popup" class="t-dropdown" data-origin="top-left">
   <div class="emo-cats">
     <button class="emo-cat-btn on" data-cat="smileys" onclick="switchEmoCat('smileys')" title="Smileys">😀</button>
     <button class="emo-cat-btn" data-cat="people" onclick="switchEmoCat('people')" title="People">👋</button>
@@ -466,9 +522,15 @@ button,input,select{font-family:inherit}
 
 <!-- AUDIO TRIMMER MODAL -->
 <div id="trimmer-modal">
-  <div class="trimmer-box">
+  <div class="trimmer-box t-modal">
     <div class="trimmer-header">
-      <button class="btn btn-ghost" id="trimmer-play-btn" onclick="trimmerTogglePlay()" style="padding:5px 12px">&#9654; Play</button>
+      <button class="btn btn-ghost" id="trimmer-play-btn" onclick="trimmerTogglePlay()" style="padding:5px 12px;gap:6px">
+        <span class="t-icon-swap" id="trimmer-play-icon" data-state="a">
+          <span class="t-icon" data-icon="a">&#9654;</span>
+          <span class="t-icon" data-icon="b">⏸</span>
+        </span>
+        <span id="trimmer-play-label">Play</span>
+      </button>
       <span class="trimmer-filename" id="trimmer-filename">track.mp3</span>
       <span class="trimmer-time" id="trimmer-time">0:00 / 0:00</span>
     </div>
@@ -495,7 +557,7 @@ button,input,select{font-family:inherit}
 
 <!-- DOWNLOAD MODAL -->
 <div id="dl-modal">
-  <div class="modal-box">
+  <div class="modal-box t-modal">
     <div class="modal-title">Download Video</div>
     <div class="modal-sub">Paste any Twitter/X, YouTube, TikTok, or Instagram URL</div>
     <input class="modal-input" id="dl-url" placeholder="https://twitter.com/…" />
@@ -516,7 +578,7 @@ button,input,select{font-family:inherit}
 
 <!-- EXPORT MODAL -->
 <div id="exp-modal">
-  <div class="modal-box">
+  <div class="modal-box t-modal">
     <div class="modal-title">Export Clip</div>
     <div class="modal-sub">Set a title and export using the current template</div>
     <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
@@ -533,7 +595,7 @@ button,input,select{font-family:inherit}
         <div class="prog-track"><div class="prog-fill" id="exp-prog-fill"></div></div>
         <span class="prog-lbl" id="exp-prog-lbl">Processing…</span>
       </div>
-      <button class="btn btn-ghost" style="margin-left:auto" onclick="document.getElementById('exp-modal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-ghost" style="margin-left:auto" onclick="closeExpModal()">Cancel</button>
     </div>
     <div id="exp-status" style="margin-top:10px;font-size:11px;color:var(--sub)"></div>
   </div>
@@ -547,6 +609,8 @@ button,input,select{font-family:inherit}
 const ICONS = {
   eye: '<path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>',
   'eye-slash': '<path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88"/>',
+  'speaker-wave': '<path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 0 1 0 12.728M16.463 8.288a5.25 5.25 0 0 1 0 7.424M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.009 9.009 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z"/>',
+  'speaker-x-mark': '<path stroke-linecap="round" stroke-linejoin="round" d="M17.25 9.75 19.5 12m0 0 2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6 4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z"/>',
 };
 function icon(name, size=16) {
   const p = ICONS[name] || '';
@@ -563,6 +627,10 @@ let snapLines={x:null,y:null};
 let lastTextPos=null, lastTextObj=null;
 let downloadedVideoPath=null, downloadedVideoURL=null;
 let audioLayer=null; // {type:'audio',src,volume,loop,trim_start,trim_end}
+// Polygon drawing state
+let _polygonDrawing = false;
+let _polygonPoints = [];   // canvas-space [{x,y},...] being drawn
+let _polygonTarget = null; // Fabric object currently being masked
 function getAudioLayer(){ return audioLayer; }
 function setAudioLayer(data){ audioLayer=data; syncLayers(); updatePreviewStrip(); }
 function removeAudioLayer(){ audioLayer=null; syncLayers(); updatePreviewStrip(); }
@@ -647,13 +715,13 @@ function stripTogglePlay(){
     vidEl.play().catch(()=>{});
     stripAudio.currentTime = vidEl.currentTime;
     stripAudio.play().catch(()=>{});
-    btn.textContent='⏸';
+    document.getElementById('strip-play-icon').dataset.state='b';
     function raf(){ drawStripWaveform(); _stripRAF=requestAnimationFrame(raf); }
     _stripRAF=requestAnimationFrame(raf);
   } else {
     vidEl.pause();
     stripAudio.pause();
-    btn.textContent='▶';
+    document.getElementById('strip-play-icon').dataset.state='a';
     if(_stripRAF){ cancelAnimationFrame(_stripRAF); _stripRAF=null; }
   }
 }
@@ -661,9 +729,9 @@ function stripTogglePlay(){
 function stripToggleMute(){
   _stripMuted = !_stripMuted;
   const stripAudio = document.getElementById('strip-audio');
-  const btn = document.getElementById('strip-mute-btn');
   if(stripAudio) stripAudio.volume = _stripMuted ? 0 : _stripVolume;
-  if(btn) btn.textContent = _stripMuted ? '🔇' : '🔊';
+  const muteIcon = document.getElementById('strip-mute-icon');
+  if(muteIcon) muteIcon.dataset.state = _stripMuted ? 'b' : 'a';
 }
 
 function stripSetVolume(val){
@@ -871,11 +939,19 @@ function switchEmoCat(cat){
 
 function toggleEmojiPicker(triggerEl){
   const popup=document.getElementById('emo-popup');
-  if(emoOpen){popup.classList.remove('open');emoOpen=false;emoTargetInput=null;return;}
+  const closeMs=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dropdown-close-dur'))||150;
+  if(emoOpen){
+    popup.classList.remove('is-open');
+    popup.classList.add('is-closing');
+    setTimeout(()=>popup.classList.remove('is-closing'),closeMs);
+    emoOpen=false;emoTargetInput=null;return;
+  }
   const r=triggerEl.getBoundingClientRect();
   popup.style.left=r.left+'px';
   popup.style.top=(r.bottom+6)+'px';
-  popup.classList.add('open');emoOpen=true;
+  popup.classList.remove('is-closing');
+  popup.classList.add('is-open');
+  emoOpen=true;
   document.getElementById('emo-search').value='';
   emoSearchVal='';renderEmoGrid();
 }
@@ -885,13 +961,22 @@ function toggleEmojiPickerForInput(triggerEl,inputId){
 }
 document.addEventListener('click',e=>{
   if(emoOpen&&!e.target.closest('#emo-popup')&&!e.target.closest('.emo-btn')&&!e.target.closest('[onclick*="toggleEmojiPicker"]')){
-    document.getElementById('emo-popup').classList.remove('open');emoOpen=false;emoTargetInput=null;
+    const popup=document.getElementById('emo-popup');
+    const closeMs=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dropdown-close-dur'))||150;
+    popup.classList.remove('is-open');
+    popup.classList.add('is-closing');
+    setTimeout(()=>popup.classList.remove('is-closing'),closeMs);
+    emoOpen=false;emoTargetInput=null;
   }
 });
 
 function insertEmoji(emoji){
   preloadTwemojiImg(emoji);
-  document.getElementById('emo-popup').classList.remove('open');emoOpen=false;
+  const _epop=document.getElementById('emo-popup');
+  const _ecms=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dropdown-close-dur'))||150;
+  _epop.classList.remove('is-open');_epop.classList.add('is-closing');
+  setTimeout(()=>_epop.classList.remove('is-closing'),_ecms);
+  emoOpen=false;
   if(emoTargetInput){
     const inp=emoTargetInput;emoTargetInput=null;
     const s=inp.selectionStart??inp.value.length,end=inp.selectionEnd??inp.value.length;
@@ -1121,7 +1206,7 @@ function align(type){
 // ── HISTORY ────────────────────────────────────────────────────────────────
 function saveHist(){
   if(histLock)return;
-  const entry={canvas:JSON.stringify(cv.toJSON(['_type','_label','_blur','_fit'])),audioLayer:audioLayer?{...audioLayer}:null};
+  const entry={canvas:JSON.stringify(cv.toJSON(['_type','_label','_blur','_fit','_isTitle','_audioVolume','_audioMuted'])),audioLayer:audioLayer?{...audioLayer}:null};
   const j=JSON.stringify(entry);
   hist=hist.slice(0,histIdx+1);hist.push(entry);histIdx=hist.length-1;
   if(hist.length>50){hist=hist.slice(hist.length-50);histIdx=hist.length-1;}
@@ -1208,6 +1293,7 @@ function addVideo(){
     const img=new fabric.Image(vc,{
       left:0,top:vTop,objectCaching:false,
       _type:'video',_label:'Video Layer',_fit:'contain',
+      _audioVolume:1.0,_audioMuted:false,
     });
     const sx=w/vc.width,sy=vh/vc.height;
     const s=Math.min(sx,sy);
@@ -1242,7 +1328,7 @@ function addText(){
     fontSize:sc(52),fontFamily:'"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji","Inter",sans-serif',
     fontWeight:'900',fill:'#ffffff',stroke:'#000',strokeWidth:sc(3),
     paintFirst:'stroke',textAlign:'center',_type:'text',_label:'Text Block',
-    lockUniScaling:true,
+    lockUniScaling:true,_isTitle:true,
   });
   cv.add(t);cv.setActiveObject(t);cv.renderAll();
 }
@@ -1300,14 +1386,15 @@ function syncLayers(){
     row.className='lrow'+(obj===active?' on':'');
     const eyeIco=document.createElement('span');
     eyeIco.className='leye';
-    eyeIco.innerHTML=icon(obj.visible===false?'eye-slash':'eye',14);
+    const _hidden=obj.visible===false;
+    eyeIco.innerHTML=`<span class="t-icon-swap" data-state="${_hidden?'b':'a'}"><span class="t-icon" data-icon="a">${icon('eye',14)}</span><span class="t-icon" data-icon="b">${icon('eye-slash',14)}</span></span>`;
     row.innerHTML=`<span class="ldot" style="background:${color}"></span><span class="lname">${label}</span>`;
     row.appendChild(eyeIco);
     row.addEventListener('click',()=>{cv.setActiveObject(obj);cv.renderAll();syncLayers();updateProps();});
     eyeIco.addEventListener('click',ev=>{
       ev.stopPropagation();
       obj.visible=obj.visible===false;
-      eyeIco.innerHTML=icon(obj.visible===false?'eye-slash':'eye',14);
+      eyeIco.querySelector('.t-icon-swap').dataset.state=obj.visible===false?'b':'a';
       cv.renderAll();
     });
     list.appendChild(row);
@@ -1587,6 +1674,31 @@ function setAudioLoop(val, btn){
   saveHist();
 }
 
+// ── VIDEO MASKING ───────────────────────────────────────────────────────────
+function applyMaskClipPath(obj) {
+  const shape = obj._maskShape || 'none';
+  if (shape === 'none') { obj.clipPath = null; cv.renderAll(); return; }
+  const w = obj.getScaledWidth();
+  const h = obj.getScaledHeight();
+  const r = (obj._maskRadius ?? 20) * (w / 1080); // scale radius to canvas size
+  let cp;
+  if (shape === 'rect') {
+    cp = new fabric.Rect({width: w, height: h, left: -w/2, top: -h/2});
+  } else if (shape === 'rounded_rect') {
+    cp = new fabric.Rect({width: w, height: h, left: -w/2, top: -h/2, rx: r, ry: r});
+  } else if (shape === 'circle') {
+    cp = new fabric.Ellipse({rx: w/2, ry: h/2, left: -w/2, top: -h/2});
+  } else if (shape === 'polygon') {
+    const pts = (obj._maskPoints || []).map(p => ({
+      x: p[0] * w - w/2,
+      y: p[1] * h - h/2,
+    }));
+    cp = pts.length >= 3 ? new fabric.Polygon(pts) : null;
+  }
+  obj.clipPath = cp || null;
+  cv.renderAll();
+}
+
 // ── AUDIO TRIMMER MODAL ─────────────────────────────────────────────────────
 function fmtTime(s){
   if(!isFinite(s)||s<0) return '—';
@@ -1597,7 +1709,15 @@ function fmtTime(s){
 async function openTrimmerModal(){
   if(!audioLayer) return;
   _trimmerDraft = {...audioLayer};
-  document.getElementById('trimmer-modal').classList.add('open');
+  const _toverlay=document.getElementById('trimmer-modal');
+  const _tbox=_toverlay.querySelector('.t-modal');
+  _toverlay.classList.add('open');
+  _tbox.classList.remove('is-closing');
+  _tbox.classList.add('is-open');
+  const _tpicon=document.getElementById('trimmer-play-icon');
+  if(_tpicon){_tpicon.dataset.state='a';}
+  const _tplbl=document.getElementById('trimmer-play-label');
+  if(_tplbl){_tplbl.textContent='Play';}
   document.getElementById('trimmer-filename').textContent = audioLayer.src.split('/').pop();
 
   const audioEl = document.getElementById('trimmer-audio');
@@ -1649,7 +1769,12 @@ function closeTrimmerModal(){
   document.removeEventListener('mousemove', onTrimmerMouseMove);
   document.removeEventListener('mouseup', onTrimmerMouseUp);
   if(_trimmerRAF){ cancelAnimationFrame(_trimmerRAF); _trimmerRAF=null; }
-  document.getElementById('trimmer-modal').classList.remove('open');
+  const _tcoverlay=document.getElementById('trimmer-modal');
+  const _tcbox=_tcoverlay.querySelector('.t-modal');
+  const _tcms=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--modal-close-dur'))||150;
+  _tcbox.classList.remove('is-open');
+  _tcbox.classList.add('is-closing');
+  setTimeout(()=>{_tcbox.classList.remove('is-closing');_tcoverlay.classList.remove('open');},_tcms);
   _trimmerDraft=null; _trimmerWaveform=null; _trimmerDuration=0;
 }
 
@@ -1714,12 +1839,14 @@ function trimmerTogglePlay(){
   if(audioEl.paused){
     audioEl.currentTime = _trimmerDraft?.trim_start||0;
     audioEl.play().catch(()=>{});
-    btn.textContent = '⏸ Pause';
+    document.getElementById('trimmer-play-icon').dataset.state='b';
+    document.getElementById('trimmer-play-label').textContent='Pause';
     function raf(){ if(!audioEl.paused){ drawTrimmerWaveform(); _trimmerRAF=requestAnimationFrame(raf);} }
     _trimmerRAF = requestAnimationFrame(raf);
   } else {
     audioEl.pause();
-    btn.textContent = '▶ Play';
+    document.getElementById('trimmer-play-icon').dataset.state='a';
+    document.getElementById('trimmer-play-label').textContent='Play';
     if(_trimmerRAF){ cancelAnimationFrame(_trimmerRAF); _trimmerRAF=null; }
   }
 }
@@ -1883,9 +2010,14 @@ function canvasToTemplate(){
     if(t==='blur')return{...base,blur:obj._blur??20};
     if(t==='video')return{...base,fit:obj._fit||'contain',
       volume:obj._audioVolume??1.0,
-      muted:obj._audioMuted===true};
+      muted:obj._audioMuted===true,
+      mask:{
+        shape:obj._maskShape||'none',
+        radius:obj._maskRadius??20,
+        points:obj._maskPoints||[],
+      }};
     if(t==='text')return{...base,
-      text:obj.text||'{title}',
+      text:obj._isTitle?'{title}':(obj.text||'{title}'),
       font_size:Math.round((obj.fontSize||48)*scale),
       fill:obj.fill||'#ffffff',
       stroke:obj.stroke||'#000000',
@@ -1948,24 +2080,29 @@ async function applySavedTpl(file){
       const vidEl=document.getElementById('preview-video');
       if(downloadedVideoURL&&vidEl.readyState>=1&&vidEl.videoWidth>0){
         const vc2=ensureVideoCanvas(vidEl);
-        const img=new fabric.Image(vc2,{left:lx,top:ly,objectCaching:false,_type:'video',_label:'Video Layer',_fit:layer.fit||'contain',opacity:op,_audioVolume:layer.volume??1.0,_audioMuted:layer.muted===true});
+        const img=new fabric.Image(vc2,{left:lx,top:ly,objectCaching:false,_type:'video',_label:'Video Layer',_fit:layer.fit||'contain',opacity:op,_audioVolume:layer.volume??1.0,_audioMuted:layer.muted===true,_maskShape:(layer.mask||{}).shape||'none',_maskRadius:(layer.mask||{}).radius??20,_maskPoints:(layer.mask||{}).points||[]});
+        if(img._maskShape!=='none') applyMaskClipPath(img);
         const sc2=Math.min(lw/vc2.width,lh/vc2.height);
         img.set({scaleX:sc2,scaleY:sc2,left:lx+(lw-img.getScaledWidth())/2,top:ly+(lh-img.getScaledHeight())/2});
         cv.add(img);startVideoLoop();
       } else {
         const r=new fabric.Rect({left:lx,top:ly,width:lw,height:lh,fill:'#1a1a1d',stroke:'rgba(255,255,255,0.08)',strokeWidth:1,rx:3,ry:3});
         const t2=new fabric.Text('[VIDEO]',{left:lx+lw/2,top:ly+lh/2,originX:'center',originY:'center',fontSize:12,fill:'rgba(255,255,255,0.2)',fontFamily:'Inter',fontWeight:'600',selectable:false,evented:false});
-        cv.add(new fabric.Group([r,t2],{_type:'video',_label:'Video Layer',_fit:layer.fit||'contain',_audioVolume:layer.volume??1.0,_audioMuted:layer.muted===true}));
+        const grp=new fabric.Group([r,t2],{_type:'video',_label:'Video Layer',_fit:layer.fit||'contain',_audioVolume:layer.volume??1.0,_audioMuted:layer.muted===true,_maskShape:(layer.mask||{}).shape||'none',_maskRadius:(layer.mask||{}).radius??20,_maskPoints:(layer.mask||{}).points||[]});
+        if(grp._maskShape!=='none') applyMaskClipPath(grp);
+        cv.add(grp);
       }
     } else if(layer.type==='text'){
-      const t2=new fabric.IText(layer.text||'{title}',{
+      const isTitle=layer.text==='{title}'||layer._isTitle===true;
+      const displayText=isTitle?'Your title here 🔥':(layer.text||'Your title here 🔥');
+      const t2=new fabric.IText(displayText,{
         left:lx,top:ly,width:lw,
         fontSize:(layer.font_size||48)*s,
         fontFamily:'"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji","Inter",sans-serif',
         fontWeight:layer.font_weight||'900',fill:layer.fill||'#ffffff',
         stroke:layer.stroke||'#000',strokeWidth:(layer.stroke_width||0)*s,
         paintFirst:'stroke',textAlign:layer.text_align||'center',
-        _type:'text',_label:'Text Block',opacity:op,lockUniScaling:true,
+        _type:'text',_label:'Text Block',opacity:op,lockUniScaling:true,_isTitle:isTitle,
       });
       cv.add(t2);
     } else if(layer.type==='shape'){
@@ -1989,8 +2126,22 @@ async function applySavedTpl(file){
 }
 
 // ── DOWNLOAD ───────────────────────────────────────────────────────────────
-function openDlModal(){document.getElementById('dl-modal').classList.add('open');document.getElementById('dl-url').focus();}
-function closeDlModal(){document.getElementById('dl-modal').classList.remove('open');}
+function openDlModal(){
+  const overlay=document.getElementById('dl-modal');
+  const box=overlay.querySelector('.t-modal');
+  overlay.classList.add('open');
+  box.classList.remove('is-closing');
+  box.classList.add('is-open');
+  document.getElementById('dl-url').focus();
+}
+function closeDlModal(){
+  const overlay=document.getElementById('dl-modal');
+  const box=overlay.querySelector('.t-modal');
+  const ms=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--modal-close-dur'))||150;
+  box.classList.remove('is-open');
+  box.classList.add('is-closing');
+  setTimeout(()=>{box.classList.remove('is-closing');overlay.classList.remove('open');},ms);
+}
 
 function startDownload(){
   const url=document.getElementById('dl-url').value.trim();
@@ -2036,10 +2187,22 @@ function startDownload(){
 // ── EXPORT ─────────────────────────────────────────────────────────────────
 function openExpModal(){
   if(!downloadedVideoPath){alert('Download a video first.');return;}
-  document.getElementById('exp-modal').classList.add('open');
+  const overlay=document.getElementById('exp-modal');
+  const box=overlay.querySelector('.t-modal');
+  overlay.classList.add('open');
+  box.classList.remove('is-closing');
+  box.classList.add('is-open');
   const filename=downloadedVideoPath.split(/[\\/]/).pop();
   document.getElementById('exp-video-info').textContent='Video: '+filename;
   document.getElementById('exp-title').focus();
+}
+function closeExpModal(){
+  const overlay=document.getElementById('exp-modal');
+  const box=overlay.querySelector('.t-modal');
+  const ms=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--modal-close-dur'))||150;
+  box.classList.remove('is-open');
+  box.classList.add('is-closing');
+  setTimeout(()=>{box.classList.remove('is-closing');overlay.classList.remove('open');},ms);
 }
 
 function startExport(){
