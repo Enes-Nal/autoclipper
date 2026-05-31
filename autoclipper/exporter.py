@@ -32,7 +32,10 @@ def render_mask_png(shape: str, w: int, h: int, radius: int,
 
 
 def build_filter_graph(layers: list, cw: int, ch: int,
-                       text_pngs: dict, image_inputs: dict) -> tuple[list, str]:
+                       text_pngs: dict, image_inputs: dict,
+                       mask_inputs: dict = None) -> tuple[list, str]:
+    if mask_inputs is None:
+        mask_inputs = {}
     """
     Pure function: build FFmpeg filter_complex parts from template layers.
     text_pngs: {layer_index: input_stream_index}
@@ -90,12 +93,22 @@ def build_filter_graph(layers: list, cw: int, ch: int,
                 )
             else:
                 parts.append(f"[{raw}]scale={w}:{h}[{scaled}]")
+            # Apply mask if present
+            composited = scaled
+            if i in mask_inputs:
+                mask_idx = mask_inputs[i]
+                mask_scaled = lbl()
+                masked = lbl()
+                parts.append(f"[{mask_idx}:v]scale={w}:{h}[{mask_scaled}]")
+                parts.append(f"[{scaled}][{mask_scaled}]alphamerge[{masked}]")
+                composited = masked
+
             if current:
                 out = lbl()
-                parts.append(f"[{current}][{scaled}]overlay=x={x}:y={y}[{out}]")
+                parts.append(f"[{current}][{composited}]overlay=x={x}:y={y}[{out}]")
                 current = out
             else:
-                current = scaled
+                current = composited
 
         elif t == "text":
             if i in text_pngs:
@@ -122,6 +135,16 @@ def build_filter_graph(layers: list, cw: int, ch: int,
                 f"color=0x{fc}@{op}:t=fill[{out}]"
             )
             current = out
+
+    # Enforce canvas bounds: pad up to canvas size if too small (e.g. no full-canvas
+    # base layer), then crop to exact canvas size if content overflows.
+    if current:
+        out = lbl()
+        parts.append(
+            f"[{current}]pad='max(iw,{cw})':'max(ih,{ch})':0:0:color=black,"
+            f"crop={cw}:{ch}:0:0[{out}]"
+        )
+        current = out
 
     return parts, current or "0:v"
 

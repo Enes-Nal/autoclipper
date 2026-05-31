@@ -207,3 +207,28 @@ def test_audio_only_filter_uses_raw_video_map():
     # enforcement step runs after all layers); just verify it is a non-empty string
     assert isinstance(final_video, str) and len(final_video) > 0
     assert len(video_filter_parts) > 0  # scale + canvas-bounds filters present
+
+def test_build_filter_graph_with_mask():
+    """Video layer with mask_inputs uses alphamerge before overlay."""
+    layers = [
+        {"type": "blur_video", "blur": 20},
+        {"type": "video", "x": 0, "y": 656, "width": 1080, "height": 608,
+         "fit": "contain"},
+    ]
+    # Mask PNG for layer index 1 is at stream index 2
+    mask_inputs = {1: 2}
+    parts, label = build_filter_graph(layers, 1080, 1920, {}, {}, mask_inputs)
+    assert any("alphamerge" in p for p in parts)
+    assert any("overlay" in p for p in parts)
+
+def test_build_filter_graph_no_mask_unchanged():
+    """build_filter_graph with empty mask_inputs behaves identically to before."""
+    layers = [
+        {"type": "blur_video", "blur": 20},
+        {"type": "video", "x": 0, "y": 656, "width": 1080, "height": 608,
+         "fit": "contain"},
+    ]
+    parts_old, label_old = build_filter_graph(layers, 1080, 1920, {}, {})
+    parts_new, label_new = build_filter_graph(layers, 1080, 1920, {}, {}, {})
+    assert parts_old == parts_new
+    assert label_old == label_new
