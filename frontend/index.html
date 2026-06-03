@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -30,7 +30,7 @@
 html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;font-size:13px;background:var(--bg);color:var(--tx)}
 button,input,select{font-family:inherit}
 
-/* ─── LAYOUT ─────────────────────────────────────────── */
+/* â”€â”€â”€ LAYOUT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 #app{display:flex;height:100%;overflow:hidden}
 #sidebar{width:210px;flex-shrink:0;background:var(--s1);border-right:1px solid var(--b1);display:flex;flex-direction:column;overflow:hidden}
 #main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
@@ -41,7 +41,7 @@ button,input,select{font-family:inherit}
 #right::-webkit-scrollbar{width:3px}
 #right::-webkit-scrollbar-thumb{background:var(--mut);border-radius:2px}
 
-/* ─── SIDEBAR ─────────────────────────────────────────── */
+/* â”€â”€â”€ SIDEBAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .sb-logo{display:flex;align-items:center;gap:10px;padding:16px;border-bottom:1px solid var(--b1)}
 .sb-logo-icon{width:30px;height:30px;border-radius:8px;overflow:hidden;flex-shrink:0;background:#f0f0f5;display:flex;align-items:center;justify-content:center}
 .sb-logo-text{font-size:14px;font-weight:900;letter-spacing:-.4px;color:var(--tx)}
@@ -58,7 +58,7 @@ button,input,select{font-family:inherit}
 .vid-filename{font-size:11px;color:var(--tx);font-weight:600;word-break:break-all;line-height:1.4}
 .vid-meta{font-size:10px;color:var(--sub);margin-top:3px}
 
-/* ─── TOP BAR ─────────────────────────────────────────── */
+/* â”€â”€â”€ TOP BAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .tb-file{display:flex;align-items:center;gap:6px;color:var(--sub)}
 .tb-file input{background:transparent;border:none;color:var(--tx);font-family:'Inter',sans-serif;font-size:13px;font-weight:700;outline:none;width:140px}
 .tb-sep{width:1px;height:20px;background:var(--b1);flex-shrink:0}
@@ -76,7 +76,7 @@ button,input,select{font-family:inherit}
 .btn-primary:hover{background:var(--acc2)}
 .btn-danger{background:var(--danger);color:#fff}
 
-/* ─── LEFT PANEL ───────────────────────────────────────── */
+/* â”€â”€â”€ LEFT PANEL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 #left-panel{width:196px;flex-shrink:0;background:var(--s1);border-right:1px solid var(--b1);display:flex;flex-direction:column;overflow:hidden}
 .lp-tabs{display:flex;border-bottom:1px solid var(--b1)}
 .lp-tab{flex:1;padding:9px 0;text-align:center;font-size:11px;font-weight:700;cursor:pointer;color:var(--sub);border-bottom:2px solid transparent;transition:.12s;text-transform:uppercase;letter-spacing:.4px}
@@ -134,7 +134,7 @@ button,input,select{font-family:inherit}
 .tpl-vid{position:absolute;opacity:0;pointer-events:none;transition:opacity .3s}
 .tpl-vid.visible{opacity:1}
 
-/* ─── CANVAS AREA ─────────────────────────────────────── */
+/* â”€â”€â”€ CANVAS AREA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cvs-dots{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(circle,rgba(255,255,255,0.08) 1px,transparent 1px);background-size:22px 22px}
 .phone-wrap{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:14px}
 #phone{position:relative;border:1px solid rgba(255,255,255,0.12);border-radius:20px;overflow:hidden;background:#000;box-shadow:0 20px 60px rgba(0,0,0,.5)}
@@ -145,7 +145,7 @@ button,input,select{font-family:inherit}
 #zlbl{min-width:34px;text-align:center;color:var(--tx);font-weight:700}
 .tsep{width:1px;height:14px;background:var(--b1)}
 
-/* ─── RIGHT PANEL ─────────────────────────────────────── */
+/* â”€â”€â”€ RIGHT PANEL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .psec{padding:11px 12px;margin:6px 8px;border-radius:10px;border:1px solid var(--b1);background:var(--s2)}
 .psec-title{font-size:9px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:9px;display:flex;align-items:center;gap:6px}
 .psec-title-icon{width:14px;height:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -185,7 +185,7 @@ button,input,select{font-family:inherit}
 .abtn:hover{border-color:var(--acc);color:var(--acc);background:var(--s3)}
 .swatches{display:flex;flex-wrap:wrap;gap:4px;flex:1}
 .sw{width:22px;height:22px;border-radius:5px;cursor:pointer;border:2px solid transparent;transition:.1s;position:relative;flex-shrink:0}
-.sw.on::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:900}
+.sw.on::after{content:'âœ“';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:900}
 .sw:hover{transform:scale(1.12)}
 .cinput{width:22px;height:22px;border-radius:5px;border:1px solid var(--b1);cursor:pointer;padding:1px;background:none}
 .emo-btn{width:100%;padding:7px 10px;border-radius:var(--rs);border:1px solid var(--b1);background:var(--s2);cursor:pointer;color:var(--tx);font-size:12px;font-weight:600;text-align:left;transition:.1s;display:flex;align-items:center;gap:6px}
@@ -210,7 +210,7 @@ button,input,select{font-family:inherit}
 #dl-modal.open,#exp-modal.open,#save-tpl-modal.open{display:flex}
 .modal-box{background:var(--s1);border:1px solid var(--b1);border-radius:16px;padding:28px;width:480px;box-shadow:0 24px 80px rgba(0,0,0,.9)}
 
-/* ── transitions-dev ─────────────────────────────────────── */
+/* â”€â”€ transitions-dev â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .t-dropdown{transform-origin:top left;transform:scale(var(--dropdown-pre-scale));opacity:0;pointer-events:none;transition:transform var(--dropdown-open-dur) var(--dropdown-ease),opacity var(--dropdown-open-dur) var(--dropdown-ease);will-change:transform,opacity}
 .t-dropdown[data-origin="top-right"]{transform-origin:top right}
 .t-dropdown[data-origin="top-center"]{transform-origin:top center}
@@ -242,64 +242,64 @@ button,input,select{font-family:inherit}
 .prog-fill{height:100%;background:var(--acc);width:0;transition:width .3s;border-radius:2px}
 .prog-lbl{font-size:10px;color:var(--sub);white-space:nowrap}
 
-/* ─── ANIMATED ICONS (itshover-style) ───────────────── */
+/* â”€â”€â”€ ANIMATED ICONS (itshover-style) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .hover-icon{display:inline-flex;align-items:center;justify-content:center}
 .gear-path,.pal-path{transform-box:fill-box;transform-origin:center}
 
-/* Editor / pen icon — pen tip dips down then returns */
+/* Editor / pen icon â€” pen tip dips down then returns */
 @keyframes pen-write{0%{transform:translate(0,0) rotate(0deg)}30%{transform:translate(1px,1px) rotate(-8deg)}60%{transform:translate(-1px,-1px) rotate(4deg)}100%{transform:translate(0,0) rotate(0deg)}}
 .sb-nav-item:hover #nav-icon-editor .edit-pen{animation:pen-write .5s ease-in-out}
 
-/* Templates / grid icon — tiles scatter and snap back */
+/* Templates / grid icon â€” tiles scatter and snap back */
 @keyframes grid-scatter{0%{transform:scale(1)}40%{transform:scale(1.15)}70%{transform:scale(0.95)}100%{transform:scale(1)}}
 .sb-nav-item:hover #nav-icon-tpl .tpl-rect{animation:grid-scatter .4s ease-in-out}
 .sb-nav-item:hover #nav-icon-tpl .tpl-rect:nth-child(2){animation-delay:.06s}
 .sb-nav-item:hover #nav-icon-tpl .tpl-rect:nth-child(3){animation-delay:.03s}
 .sb-nav-item:hover #nav-icon-tpl .tpl-rect:nth-child(4){animation-delay:.09s}
 
-/* Undo / redo — sweep arc */
+/* Undo / redo â€” sweep arc */
 @keyframes undo-sweep{0%{stroke-dashoffset:0}50%{stroke-dashoffset:20}100%{stroke-dashoffset:0}}
 .undo-path,.redo-path{stroke-dasharray:40}
 .icon-btn:hover .undo-path{animation:undo-sweep .45s ease-in-out}
 .icon-btn:hover .redo-path{animation:undo-sweep .45s ease-in-out reverse}
 
-/* Gear — rotate */
+/* Gear â€” rotate */
 @keyframes gear-spin{from{transform:rotate(0deg);transform-box:fill-box;transform-origin:center}to{transform:rotate(360deg);transform-box:fill-box;transform-origin:center}}
 .psec-title:hover .gear-path,.icon-btn:hover .gear-path{animation:gear-spin .7s ease-in-out}
 
-/* Download arrow — drop and rise */
+/* Download arrow â€” drop and rise */
 @keyframes dl-drop{0%{transform:translateY(0)}40%{transform:translateY(3px)}100%{transform:translateY(0)}}
 .new-proj-btn:hover .dl-arrow,.icon-btn:hover .dl-arrow,.btn:hover .dl-arrow{animation:dl-drop .4s ease-in-out}
 
-/* Export arrow — rise */
+/* Export arrow â€” rise */
 @keyframes ex-rise{0%{transform:translateY(0)}40%{transform:translateY(-3px)}100%{transform:translateY(0)}}
 .btn:hover .ex-arrow{animation:ex-rise .4s ease-in-out}
 
-/* Save / bookmark — pulse */
+/* Save / bookmark â€” pulse */
 @keyframes bm-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
 .btn:hover .save-path{animation:bm-pulse .35s ease-in-out}
 
-/* Palette / color — spin */
+/* Palette / color â€” spin */
 @keyframes pal-spin{0%{transform:rotate(0deg);transform-box:fill-box;transform-origin:center}100%{transform:rotate(20deg);transform-box:fill-box;transform-origin:center}}
 .psec-title:hover .pal-path{animation:pal-spin .3s ease-out forwards}
 
-/* Text cursor — blink */
+/* Text cursor â€” blink */
 @keyframes cur-blink{0%,100%{opacity:1}50%{opacity:0}}
 .psec-title:hover .cur-path{animation:cur-blink .6s ease-in-out 2}
 
-/* Film / video frames — slide */
+/* Film / video frames â€” slide */
 @keyframes film-slide{0%{transform:translateX(0)}50%{transform:translateX(-2px)}100%{transform:translateX(0)}}
 .psec-title:hover .film-path{animation:film-slide .4s ease-in-out}
 
-/* Move / transform — nudge */
+/* Move / transform â€” nudge */
 @keyframes move-nudge{0%{transform:translate(0,0)}25%{transform:translate(-1px,-1px)}75%{transform:translate(1px,1px)}100%{transform:translate(0,0)}}
 .psec-title:hover .move-path{animation:move-nudge .4s ease-in-out}
 
-/* Canvas grid toggle — pulse */
+/* Canvas grid toggle â€” pulse */
 @keyframes grid-pulse{0%,100%{opacity:1}50%{opacity:0.5}}
 .tbar-btn:hover .grid-path{animation:grid-pulse .4s ease-in-out}
 
-/* Volume waves — ripple outward */
+/* Volume waves â€” ripple outward */
 @keyframes vol-wave{0%{opacity:.4;transform:scale(1)}50%{opacity:1;transform:scale(1.06)}100%{opacity:.4;transform:scale(1)}}
 .tbar-btn:hover .vol-wave1,.icon-btn:hover .vol-wave1{animation:vol-wave .55s ease-in-out;transform-box:fill-box;transform-origin:center}
 .tbar-btn:hover .vol-wave2,.icon-btn:hover .vol-wave2{animation:vol-wave .55s ease-in-out .12s;transform-box:fill-box;transform-origin:center}
@@ -321,12 +321,21 @@ button,input,select{font-family:inherit}
 .strip-vol{display:flex;align-items:center;gap:6px;flex-shrink:0}
 .strip-vol label{font-size:10px;color:var(--sub)}
 #strip-vol-slider{width:70px;accent-color:var(--acc)}
+/* ─── CONTEXT MENU ───────────────────────────────────── */
+#ctx-menu{position:fixed;z-index:9999;min-width:180px;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);box-shadow:0 8px 24px rgba(0,0,0,.5);padding:4px 0;display:none;user-select:none}
+#ctx-menu.open{display:block}
+.ctx-item{display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:var(--tx);transition:.1s}
+.ctx-item:hover{background:var(--s3)}
+.ctx-item.danger:hover{color:var(--danger)}
+.ctx-item svg{flex-shrink:0;color:var(--sub)}
+.ctx-item:hover svg{color:var(--tx)}
+.ctx-item.danger:hover svg{color:var(--danger)}
 </style>
 </head>
 <body>
 <div id="app">
 
-<!-- ── SIDEBAR ──────────────────────────────────────── -->
+<!-- â”€â”€ SIDEBAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
 <div id="sidebar">
   <div class="sb-logo">
     <div class="sb-logo-icon">
@@ -354,12 +363,12 @@ button,input,select{font-family:inherit}
   </button>
   <div class="vid-card" id="vid-card" style="display:none">
     <div class="vid-card-lbl">Ready to export</div>
-    <div class="vid-filename" id="vid-filename">—</div>
+    <div class="vid-filename" id="vid-filename">â€”</div>
     <div class="vid-meta" id="vid-meta"></div>
   </div>
 </div>
 
-<!-- ── MAIN ────────────────────────────────────────── -->
+<!-- â”€â”€ MAIN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
 <div id="main">
 
   <!-- TOP BAR -->
@@ -450,7 +459,7 @@ button,input,select{font-family:inherit}
       <!-- Templates tab -->
       <div class="lp-body" id="body-tpl">
         <div class="tpl-body">
-          <input class="tpl-search" placeholder="Search templates…" oninput="filterTpls(this.value)">
+          <input class="tpl-search" placeholder="Search templatesâ€¦" oninput="filterTpls(this.value)">
           <div class="tpl-grid" id="tpl-grid"></div>
         </div>
       </div>
@@ -465,7 +474,7 @@ button,input,select{font-family:inherit}
           <canvas id="poly-overlay" style="position:absolute;top:0;left:0;pointer-events:none;display:none"></canvas>
         </div>
         <div class="cvs-toolbar">
-          <button class="tbar-btn" onclick="doZoom(-.15)">−</button>
+          <button class="tbar-btn" onclick="doZoom(-.15)">âˆ’</button>
           <span id="zlbl">100%</span>
           <button class="tbar-btn" onclick="doZoom(.15)">+</button>
           <div class="tsep"></div>
@@ -486,8 +495,8 @@ button,input,select{font-family:inherit}
     <div id="audio-strip">
       <button class="tbar-btn" id="strip-play-btn" onclick="stripTogglePlay()" style="flex-shrink:0">
         <span class="t-icon-swap" id="strip-play-icon" data-state="a">
-          <span class="t-icon" data-icon="a">▶</span>
-          <span class="t-icon" data-icon="b">⏸</span>
+          <span class="t-icon" data-icon="a">â–¶</span>
+          <span class="t-icon" data-icon="b">â¸</span>
         </span>
       </button>
       <canvas id="strip-canvas"></canvas>
@@ -532,13 +541,13 @@ button,input,select{font-family:inherit}
 <!-- EMOJI POPUP -->
 <div id="emo-popup" class="t-dropdown" data-origin="top-left">
   <div class="emo-cats">
-    <button class="emo-cat-btn on" data-cat="smileys" onclick="switchEmoCat('smileys')" title="Smileys">😀</button>
-    <button class="emo-cat-btn" data-cat="people" onclick="switchEmoCat('people')" title="People">👋</button>
-    <button class="emo-cat-btn" data-cat="fire" onclick="switchEmoCat('fire')" title="Trending">🔥</button>
-    <button class="emo-cat-btn" data-cat="objects" onclick="switchEmoCat('objects')" title="Objects">🎮</button>
-    <button class="emo-cat-btn" data-cat="symbols" onclick="switchEmoCat('symbols')" title="Symbols">❤️</button>
+    <button class="emo-cat-btn on" data-cat="smileys" onclick="switchEmoCat('smileys')" title="Smileys">ðŸ˜€</button>
+    <button class="emo-cat-btn" data-cat="people" onclick="switchEmoCat('people')" title="People">ðŸ‘‹</button>
+    <button class="emo-cat-btn" data-cat="fire" onclick="switchEmoCat('fire')" title="Trending">ðŸ”¥</button>
+    <button class="emo-cat-btn" data-cat="objects" onclick="switchEmoCat('objects')" title="Objects">ðŸŽ®</button>
+    <button class="emo-cat-btn" data-cat="symbols" onclick="switchEmoCat('symbols')" title="Symbols">â¤ï¸</button>
   </div>
-  <input class="emo-search" id="emo-search" placeholder="Search emoji…" oninput="filterEmoji(this.value)">
+  <input class="emo-search" id="emo-search" placeholder="Search emojiâ€¦" oninput="filterEmoji(this.value)">
   <div class="emo-grid" id="emo-grid"></div>
 </div>
 
@@ -549,7 +558,7 @@ button,input,select{font-family:inherit}
       <button class="btn btn-ghost" id="trimmer-play-btn" onclick="trimmerTogglePlay()" style="padding:5px 12px;gap:6px">
         <span class="t-icon-swap" id="trimmer-play-icon" data-state="a">
           <span class="t-icon" data-icon="a">&#9654;</span>
-          <span class="t-icon" data-icon="b">⏸</span>
+          <span class="t-icon" data-icon="b">â¸</span>
         </span>
         <span id="trimmer-play-label">Play</span>
       </button>
@@ -559,7 +568,7 @@ button,input,select{font-family:inherit}
     <canvas id="trimmer-canvas"></canvas>
     <div class="trimmer-labels">
       Start: <span id="trimmer-start-lbl">0:00</span>
-      &nbsp;&nbsp;End: <span id="trimmer-end-lbl">—</span>
+      &nbsp;&nbsp;End: <span id="trimmer-end-lbl">â€”</span>
     </div>
     <div class="trimmer-loop-row">
       <span>When video ends:</span>
@@ -582,7 +591,7 @@ button,input,select{font-family:inherit}
   <div class="modal-box t-modal">
     <div class="modal-title">Download Video</div>
     <div class="modal-sub">Paste any Twitter/X, YouTube, TikTok, or Instagram URL</div>
-    <input class="modal-input" id="dl-url" placeholder="https://twitter.com/…" />
+    <input class="modal-input" id="dl-url" placeholder="https://twitter.com/â€¦" />
     <div class="modal-row">
       <button class="btn btn-primary" onclick="startDownload()">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
@@ -590,7 +599,7 @@ button,input,select{font-family:inherit}
       </button>
       <div class="prog-wrap" id="prog-wrap">
         <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
-        <span class="prog-lbl" id="prog-lbl">Downloading…</span>
+        <span class="prog-lbl" id="prog-lbl">Downloadingâ€¦</span>
       </div>
       <button class="btn btn-ghost" style="margin-left:auto" onclick="closeDlModal()">Cancel</button>
     </div>
@@ -604,8 +613,8 @@ button,input,select{font-family:inherit}
     <div class="modal-title">Export Clip</div>
     <div class="modal-sub">Set a title and export using the current template</div>
     <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
-      <input class="modal-input" id="exp-title" placeholder="Clip title (replaces {title} in template)…" style="margin-bottom:0;flex:1" />
-      <button class="btn btn-ghost" onclick="toggleEmojiPickerForInput(this,'exp-title')" title="Add emoji" style="flex-shrink:0;padding:6px 10px;font-size:16px">😊</button>
+      <input class="modal-input" id="exp-title" placeholder="Clip title (replaces {title} in template)â€¦" style="margin-bottom:0;flex:1" />
+      <button class="btn btn-ghost" onclick="toggleEmojiPickerForInput(this,'exp-title')" title="Add emoji" style="flex-shrink:0;padding:6px 10px;font-size:16px">ðŸ˜Š</button>
     </div>
     <div id="exp-video-info" style="font-size:11px;color:var(--sub);margin-bottom:12px"></div>
     <div class="modal-row">
@@ -615,7 +624,7 @@ button,input,select{font-family:inherit}
       </button>
       <div class="prog-wrap" id="exp-prog-wrap">
         <div class="prog-track"><div class="prog-fill" id="exp-prog-fill"></div></div>
-        <span class="prog-lbl" id="exp-prog-lbl">Processing…</span>
+        <span class="prog-lbl" id="exp-prog-lbl">Processingâ€¦</span>
       </div>
       <button class="btn btn-ghost" style="margin-left:auto" onclick="closeExpModal()">Cancel</button>
     </div>
@@ -628,7 +637,7 @@ button,input,select{font-family:inherit}
   <div class="modal-box t-modal">
     <div class="modal-title">Save Template</div>
     <div class="modal-sub">Give your template a name to save it to your library</div>
-    <input class="modal-input" id="save-tpl-name" placeholder="Template name…" onkeydown="if(event.key==='Enter')confirmSaveTemplate();if(event.key==='Escape')closeSaveTplModal()" />
+    <input class="modal-input" id="save-tpl-name" placeholder="Template nameâ€¦" onkeydown="if(event.key==='Enter')confirmSaveTemplate();if(event.key==='Escape')closeSaveTplModal()" />
     <div class="modal-row">
       <button class="btn btn-primary" onclick="confirmSaveTemplate()">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z"/></svg>
@@ -643,7 +652,7 @@ button,input,select{font-family:inherit}
 <input type="file" id="img-pick" accept="image/*" style="display:none" onchange="onImgFile(event)">
 
 <script>
-// ── ICON HELPER ────────────────────────────────────────────────────────────
+// â”€â”€ ICON HELPER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const ICONS = {
   eye: '<path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>',
   'eye-slash': '<path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88"/>',
@@ -655,7 +664,7 @@ function icon(name, size=16) {
   return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="${size}" height="${size}" style="display:block">${p}</svg>`;
 }
 
-// ── STATE ──────────────────────────────────────────────────────────────────
+// â”€â”€ STATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const FMT = { '9:16':{w:270,h:480}, '1:1':{w:360,h:360} };
 let fmt='9:16', cv, zl=1;
 let gridOn=false, snapOn=true, gridLines=[];
@@ -666,15 +675,15 @@ let scaleSnapState={x:null,y:null};
 let lastTextPos=null, lastTextObj=null;
 let downloadedVideoPath=null, downloadedVideoURL=null;
 
-// ── itshover SVG icon helpers ──────────────────────────────────────────────
-// Icons from https://www.itshover.com/icons — ported to vanilla SVG + CSS animations
+// â”€â”€ itshover SVG icon helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Icons from https://www.itshover.com/icons â€” ported to vanilla SVG + CSS animations
 function icoVol(sz=12){return`<svg class="ih-vol" xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="cursor:pointer;display:block"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path class="ih-wi" d="M16 9a5 5 0 0 1 0 6" style="transform-origin:16px 12px"/><path class="ih-wo" d="M19.364 18.364a9 9 0 0 0 0-12.728" style="transform-origin:19.364px 12px"/></svg>`;}
 function icoVolX(sz=12){return`<svg class="ih-volx" xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="cursor:pointer;display:block"><path class="ih-spk" d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><g class="ih-xmk" style="transform-origin:19px 12px"><line x1="22" x2="16" y1="9" y2="15"/><line x1="16" x2="22" y1="9" y2="15"/></g></svg>`;}
 function icoVinyl(sz=12){return`<svg class="ih-vinyl" xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="cursor:pointer;display:block"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path class="ih-vdisc" d="M16 3.937a9 9 0 1 0 5 8.063" style="transform-origin:50% 50%"/><path class="ih-vdot" d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M20 4m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M20 4l-3.5 10l-2.5 2"/></svg>`;}
 function icoLayers(sz=12){return`<svg class="ih-layers" xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}" viewBox="0 0 120 120" fill="none" style="cursor:pointer;display:block;overflow:visible"><rect class="ih-ltop" x="44" y="22" width="56" height="36" rx="10" fill="currentColor"/><rect x="20" y="62" width="64" height="40" rx="12" fill="currentColor"/></svg>`;}
 function icoTrash(sz=12){return`<svg xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;}
 function icoCut(sz=12){return`<svg xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>`;}
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let audioLayer=null; // {type:'audio',src,volume,loop,trim_start,trim_end}
 const _drag={obj:null,fromDisplay:null};
 // Polygon drawing state
@@ -803,7 +812,7 @@ let _stripMuted = false;
 let _stripWaveform = null;
 let _stripRAF = null;
 
-// ── PERSISTENCE ────────────────────────────────────────────────────────────
+// â”€â”€ PERSISTENCE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function generateUUID(){
   return crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now().toString(36);
 }
@@ -893,50 +902,50 @@ function stopVideoLoop(){
   if(_rafId!==null){fabric.util.cancelAnimFrame(_rafId);_rafId=null;}
 }
 
-// ── EMOJI (TWEMOJI) ────────────────────────────────────────────────────────
+// â”€â”€ EMOJI (TWEMOJI) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const EMOJI_DATA={
   smileys:[
-    {e:'😀',n:'grinning'},{e:'😂',n:'joy'},{e:'🤣',n:'rofl'},
-    {e:'😭',n:'crying'},{e:'😅',n:'sweat smile'},{e:'😍',n:'heart eyes'},
-    {e:'🥲',n:'smiling tear'},{e:'😎',n:'sunglasses'},{e:'🤯',n:'mind blown'},
-    {e:'😤',n:'triumph'},{e:'😡',n:'angry'},{e:'🥶',n:'cold face'},
-    {e:'😱',n:'scream'},{e:'🤭',n:'hand over mouth'},{e:'😏',n:'smirk'},
-    {e:'🤔',n:'thinking'},{e:'😈',n:'smiling devil'},{e:'💀',n:'skull'},
-    {e:'☠️',n:'skull crossbones'},{e:'👻',n:'ghost'},{e:'🤡',n:'clown'},
-    {e:'🤖',n:'robot'},{e:'👾',n:'alien monster'},{e:'🫠',n:'melting'},
+    {e:'ðŸ˜€',n:'grinning'},{e:'ðŸ˜‚',n:'joy'},{e:'ðŸ¤£',n:'rofl'},
+    {e:'ðŸ˜­',n:'crying'},{e:'ðŸ˜…',n:'sweat smile'},{e:'ðŸ˜',n:'heart eyes'},
+    {e:'ðŸ¥²',n:'smiling tear'},{e:'ðŸ˜Ž',n:'sunglasses'},{e:'ðŸ¤¯',n:'mind blown'},
+    {e:'ðŸ˜¤',n:'triumph'},{e:'ðŸ˜¡',n:'angry'},{e:'ðŸ¥¶',n:'cold face'},
+    {e:'ðŸ˜±',n:'scream'},{e:'ðŸ¤­',n:'hand over mouth'},{e:'ðŸ˜',n:'smirk'},
+    {e:'ðŸ¤”',n:'thinking'},{e:'ðŸ˜ˆ',n:'smiling devil'},{e:'ðŸ’€',n:'skull'},
+    {e:'â˜ ï¸',n:'skull crossbones'},{e:'ðŸ‘»',n:'ghost'},{e:'ðŸ¤¡',n:'clown'},
+    {e:'ðŸ¤–',n:'robot'},{e:'ðŸ‘¾',n:'alien monster'},{e:'ðŸ« ',n:'melting'},
   ],
   people:[
-    {e:'👀',n:'eyes'},{e:'👁️',n:'eye'},{e:'🫡',n:'saluting'},
-    {e:'👏',n:'clapping'},{e:'💪',n:'muscle'},{e:'🤝',n:'handshake'},
-    {e:'👍',n:'thumbs up'},{e:'👎',n:'thumbs down'},{e:'🙏',n:'pray'},
-    {e:'🫶',n:'heart hands'},{e:'🤌',n:'pinched fingers'},{e:'✌️',n:'victory'},
-    {e:'🤞',n:'crossed fingers'},{e:'🫵',n:'point at you'},{e:'☝️',n:'index up'},
-    {e:'🧠',n:'brain'},{e:'💅',n:'nail polish'},{e:'🦾',n:'mechanical arm'},
+    {e:'ðŸ‘€',n:'eyes'},{e:'ðŸ‘ï¸',n:'eye'},{e:'ðŸ«¡',n:'saluting'},
+    {e:'ðŸ‘',n:'clapping'},{e:'ðŸ’ª',n:'muscle'},{e:'ðŸ¤',n:'handshake'},
+    {e:'ðŸ‘',n:'thumbs up'},{e:'ðŸ‘Ž',n:'thumbs down'},{e:'ðŸ™',n:'pray'},
+    {e:'ðŸ«¶',n:'heart hands'},{e:'ðŸ¤Œ',n:'pinched fingers'},{e:'âœŒï¸',n:'victory'},
+    {e:'ðŸ¤ž',n:'crossed fingers'},{e:'ðŸ«µ',n:'point at you'},{e:'â˜ï¸',n:'index up'},
+    {e:'ðŸ§ ',n:'brain'},{e:'ðŸ’…',n:'nail polish'},{e:'ðŸ¦¾',n:'mechanical arm'},
   ],
   fire:[
-    {e:'🔥',n:'fire'},{e:'💥',n:'explosion'},{e:'✨',n:'sparkles'},
-    {e:'⚡',n:'lightning'},{e:'🌊',n:'wave'},{e:'❄️',n:'snowflake'},
-    {e:'💯',n:'hundred'},{e:'🎯',n:'bullseye'},{e:'🏆',n:'trophy'},
-    {e:'🥇',n:'gold medal'},{e:'👑',n:'crown'},{e:'💎',n:'diamond'},
-    {e:'💰',n:'money bag'},{e:'🚀',n:'rocket'},{e:'⭐',n:'star'},
-    {e:'🌟',n:'glowing star'},{e:'💫',n:'dizzy'},{e:'🌈',n:'rainbow'},
+    {e:'ðŸ”¥',n:'fire'},{e:'ðŸ’¥',n:'explosion'},{e:'âœ¨',n:'sparkles'},
+    {e:'âš¡',n:'lightning'},{e:'ðŸŒŠ',n:'wave'},{e:'â„ï¸',n:'snowflake'},
+    {e:'ðŸ’¯',n:'hundred'},{e:'ðŸŽ¯',n:'bullseye'},{e:'ðŸ†',n:'trophy'},
+    {e:'ðŸ¥‡',n:'gold medal'},{e:'ðŸ‘‘',n:'crown'},{e:'ðŸ’Ž',n:'diamond'},
+    {e:'ðŸ’°',n:'money bag'},{e:'ðŸš€',n:'rocket'},{e:'â­',n:'star'},
+    {e:'ðŸŒŸ',n:'glowing star'},{e:'ðŸ’«',n:'dizzy'},{e:'ðŸŒˆ',n:'rainbow'},
   ],
   objects:[
-    {e:'🥊',n:'boxing glove'},{e:'⚽',n:'soccer'},{e:'🏀',n:'basketball'},
-    {e:'🎮',n:'video game'},{e:'🕹️',n:'joystick'},{e:'🎲',n:'dice'},
-    {e:'🎬',n:'clapper board'},{e:'🎤',n:'microphone'},{e:'🎧',n:'headphones'},
-    {e:'🎵',n:'music note'},{e:'🎶',n:'notes'},{e:'🃏',n:'joker'},
-    {e:'🎰',n:'slot machine'},{e:'📱',n:'phone'},{e:'💻',n:'laptop'},
-    {e:'🎁',n:'gift'},{e:'🍕',n:'pizza'},{e:'☕',n:'coffee'},
+    {e:'ðŸ¥Š',n:'boxing glove'},{e:'âš½',n:'soccer'},{e:'ðŸ€',n:'basketball'},
+    {e:'ðŸŽ®',n:'video game'},{e:'ðŸ•¹ï¸',n:'joystick'},{e:'ðŸŽ²',n:'dice'},
+    {e:'ðŸŽ¬',n:'clapper board'},{e:'ðŸŽ¤',n:'microphone'},{e:'ðŸŽ§',n:'headphones'},
+    {e:'ðŸŽµ',n:'music note'},{e:'ðŸŽ¶',n:'notes'},{e:'ðŸƒ',n:'joker'},
+    {e:'ðŸŽ°',n:'slot machine'},{e:'ðŸ“±',n:'phone'},{e:'ðŸ’»',n:'laptop'},
+    {e:'ðŸŽ',n:'gift'},{e:'ðŸ•',n:'pizza'},{e:'â˜•',n:'coffee'},
   ],
   symbols:[
-    {e:'❤️',n:'red heart'},{e:'🧡',n:'orange heart'},{e:'💛',n:'yellow heart'},
-    {e:'💚',n:'green heart'},{e:'💙',n:'blue heart'},{e:'💜',n:'purple heart'},
-    {e:'🖤',n:'black heart'},{e:'🤍',n:'white heart'},{e:'🩷',n:'pink heart'},
-    {e:'‼️',n:'double exclamation'},{e:'⁉️',n:'exclamation question'},
-    {e:'❓',n:'question'},{e:'❗',n:'exclamation'},{e:'✅',n:'check mark'},
-    {e:'❌',n:'cross mark'},{e:'⚠️',n:'warning'},{e:'💤',n:'zzz'},
-    {e:'🆒',n:'cool'},{e:'🔞',n:'no under 18'},{e:'🎉',n:'party popper'},
+    {e:'â¤ï¸',n:'red heart'},{e:'ðŸ§¡',n:'orange heart'},{e:'ðŸ’›',n:'yellow heart'},
+    {e:'ðŸ’š',n:'green heart'},{e:'ðŸ’™',n:'blue heart'},{e:'ðŸ’œ',n:'purple heart'},
+    {e:'ðŸ–¤',n:'black heart'},{e:'ðŸ¤',n:'white heart'},{e:'ðŸ©·',n:'pink heart'},
+    {e:'â€¼ï¸',n:'double exclamation'},{e:'â‰ï¸',n:'exclamation question'},
+    {e:'â“',n:'question'},{e:'â—',n:'exclamation'},{e:'âœ…',n:'check mark'},
+    {e:'âŒ',n:'cross mark'},{e:'âš ï¸',n:'warning'},{e:'ðŸ’¤',n:'zzz'},
+    {e:'ðŸ†’',n:'cool'},{e:'ðŸ”ž',n:'no under 18'},{e:'ðŸŽ‰',n:'party popper'},
   ],
 };
 
@@ -1074,7 +1083,7 @@ function insertEmoji(emoji){
 renderEmoGrid();
 Object.values(EMOJI_DATA).flat().forEach(({e})=>preloadTwemojiImg(e));
 
-// ── CANVAS INIT ────────────────────────────────────────────────────────────
+// â”€â”€ CANVAS INIT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function initCanvas(f){
   fmt=f;
   const {w,h}=FMT[f];
@@ -1125,7 +1134,7 @@ function initCanvas(f){
   cv.on('text:editing:exited',e=>{
     lastTextPos=e.target.selectionStart;lastTextObj=e.target;
     // If the user changed the text away from the placeholder, treat as literal (not a title substitution)
-    if(e.target._isTitle && e.target.text!=='Your title here 🔥'){
+    if(e.target._isTitle && e.target.text!=='Your title here ðŸ”¥'){
       e.target._isTitle=false;
       saveHist();
     }
@@ -1160,7 +1169,7 @@ function initCanvas(f){
   });
 }
 
-// ── FORMAT ─────────────────────────────────────────────────────────────────
+// â”€â”€ FORMAT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function setFmt(f){
   if(fmt===f)return;
   fmt=f;
@@ -1180,7 +1189,7 @@ function setFmt(f){
   localStorage.setItem('acFmt',f);
 }
 
-// ── SNAPPING ───────────────────────────────────────────────────────────────
+// â”€â”€ SNAPPING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const SNAP_T=10;
 function setPhoneGlow(on){
   document.getElementById('phone').style.boxShadow=on
@@ -1317,7 +1326,7 @@ function toggleSnap(){
   b.style.color=snapOn?'var(--acc)':'var(--sub)';
 }
 
-// ── ALIGNMENT ──────────────────────────────────────────────────────────────
+// â”€â”€ ALIGNMENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function align(type){
   const obj=cv?.getActiveObject();if(!obj)return;
   const {w:cw,h:ch}=FMT[fmt];
@@ -1326,7 +1335,7 @@ function align(type){
   obj.set(map[type]);obj.setCoords();cv.renderAll();updateProps();
 }
 
-// ── HISTORY ────────────────────────────────────────────────────────────────
+// â”€â”€ HISTORY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function saveHist(){
   if(histLock)return;
   const entry={canvas:JSON.stringify(cv.toJSON(['_type','_label','_blur','_fit','_isTitle','_audioVolume','_audioMuted','_maskShape','_maskRadius','_maskPoints','_maskX','_maskY','_maskW','_maskH'])),audioLayer:audioLayer?{...audioLayer}:null};
@@ -1376,7 +1385,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(_polygonPoints.length >= 3){
       const first = _polygonPoints[0];
       if(Math.hypot(cx - first.x, cy - first.y) < 12){
-        // Close polygon — normalise points relative to layer
+        // Close polygon â€” normalise points relative to layer
         const obj = _polygonTarget;
         const ow = obj.getScaledWidth();
         const oh = obj.getScaledHeight();
@@ -1418,7 +1427,7 @@ function doRedo(){
   cv.loadFromJSON(canvasJSON,()=>{try{cv.renderAll();syncLayers();refreshVideoLayers();updatePreviewStrip();}finally{histLock=false;}});
 }
 
-// ── ZOOM ───────────────────────────────────────────────────────────────────
+// â”€â”€ ZOOM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function doZoom(d){
   const {w,h}=FMT[fmt];
   zl=Math.min(3,Math.max(.25,zl+d));
@@ -1430,7 +1439,7 @@ function doZoom(d){
 function fitZoom(){doZoom(1-zl);}
 function updZoom(){document.getElementById('zlbl').textContent=Math.round(zl*100)+'%';}
 
-// ── GRID ───────────────────────────────────────────────────────────────────
+// â”€â”€ GRID â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function toggleGrid(){
   gridOn=!gridOn;
   gridLines.forEach(l=>cv.remove(l));gridLines=[];
@@ -1444,10 +1453,10 @@ function toggleGrid(){
   cv.renderAll();
 }
 
-// ── SCALE HELPER ───────────────────────────────────────────────────────────
+// â”€â”€ SCALE HELPER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function sc(v){const {w}=FMT[fmt];return Math.round(v*(w/1080));}
 
-// ── ADD ELEMENTS ───────────────────────────────────────────────────────────
+// â”€â”€ ADD ELEMENTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const LC={video:'#5b8cff',blur:'#666',text:'#a78bfa',image:'#34d399',shape:'#f87171',emoji:'#f59e0b'};
 
 function addVideo(){
@@ -1490,7 +1499,7 @@ function addBlur(){
 
 function addText(){
   const {w}=FMT[fmt];
-  const t=new fabric.IText('Your title here 🔥',{
+  const t=new fabric.IText('Your title here ðŸ”¥',{
     left:sc(40),top:sc(80),width:w-sc(80),
     fontSize:sc(52),fontFamily:'"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji","Inter",sans-serif',
     fontWeight:'900',fill:'#ffffff',stroke:'#000',strokeWidth:sc(3),
@@ -1519,7 +1528,7 @@ function addShape(){
   cv.add(r);cv.setActiveObject(r);cv.renderAll();
 }
 
-// ── DELETE ─────────────────────────────────────────────────────────────────
+// â”€â”€ DELETE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function delSel(){
   // If no canvas object is active but audio layer props are showing, delete audio layer
   if(!cv?.getActiveObject() && audioLayer){
@@ -1543,7 +1552,7 @@ document.addEventListener('keydown',e=>{
   if(e.key === 'Escape' && _polygonDrawing){ stopPolygonDraw(); updateProps(); }
 });
 
-// ── LAYERS ─────────────────────────────────────────────────────────────────
+// â”€â”€ LAYERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function syncLayers(){
   const list=document.getElementById('layer-list');
   const active=cv?.getActiveObject();
@@ -1661,7 +1670,7 @@ async function onAudioFile(e){
   e.target.value = '';
 }
 
-// ── PROPERTIES ─────────────────────────────────────────────────────────────
+// â”€â”€ PROPERTIES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function clearProps(){
   document.getElementById('right').innerHTML='<div class="no-sel"><div class="no-sel-ico" style="display:flex;justify-content:center"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" width="32" height="32" style="opacity:.2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.042 21.672 13.684 16.6m0 0-2.51 2.225.569-9.47 5.227 7.917-3.286-.672ZM12 2.25V4.5m5.834.166-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243-1.59-1.59"/></svg></div>Select an element<br>to edit its properties</div>';
   document.getElementById('del-btn').style.display='none';
@@ -1693,20 +1702,21 @@ function updateProps(){
     <div class="psec-title"><svg class="psec-title-icon move-path" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15"/></svg>Transform</div>
     <div class="prow"><span class="plbl">X / Y</span>
       <div class="pxy">
-        <input class="pin" value="${L}" onchange="sp('left',+this.value)">
-        <input class="pin" value="${T}" onchange="sp('top',+this.value)">
+        <input class="pin" value="${L}" onchange="sp('left',+this.value);saveHist()">
+        <input class="pin" value="${T}" onchange="sp('top',+this.value);saveHist()">
       </div>
     </div>
     <div class="prow"><span class="plbl">W / H</span>
       <div class="pxy">
-        <input class="pin" value="${W}" onchange="ssz('w',+this.value)">
-        <input class="pin" value="${H}" onchange="ssz('h',+this.value)" ${type==='text'?'readonly style="opacity:.4;cursor:default"':''}>
+        <input class="pin" value="${W}" onchange="ssz('w',+this.value);saveHist()">
+        <input class="pin" value="${H}" onchange="ssz('h',+this.value);saveHist()" ${type==='text'?'readonly style="opacity:.4;cursor:default"':''}>
       </div>
     </div>
     <div class="prow"><span class="plbl">Opacity</span>
       <div class="slrow">
         <input type="range" class="psl" min="0" max="100" value="${OP}"
-          oninput="sp('opacity',this.value/100);this.nextElementSibling.textContent=this.value+'%'">
+          oninput="sp('opacity',this.value/100);this.nextElementSibling.textContent=this.value+'%'"
+          onchange="saveHist()">
         <span class="slv">${OP}%</span>
       </div>
     </div>
@@ -1718,7 +1728,8 @@ function updateProps(){
     <div class="prow"><span class="plbl">Blur</span>
       <div class="slrow">
         <input type="range" class="psl" min="0" max="60" value="${bl}"
-          oninput="cv.getActiveObject()._blur=+this.value;this.nextElementSibling.textContent=this.value+'px'">
+          oninput="cv.getActiveObject()._blur=+this.value;this.nextElementSibling.textContent=this.value+'px'"
+          onchange="saveHist()">
         <span class="slv">${bl}px</span>
       </div>
     </div>
@@ -1730,12 +1741,12 @@ function updateProps(){
     html+=`<div class="psec"><div class="psec-title"><svg class="psec-title-icon film-path" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>Video Layer</div>
     <div class="prow"><span class="plbl">Fit</span>
       <div class="tog">
-        <button class="togbtn ${fit==='contain'?'on':''}" onclick="togOn(this);cv.getActiveObject()._fit='contain'">Contain</button>
-        <button class="togbtn ${fit==='cover'?'on':''}"   onclick="togOn(this);cv.getActiveObject()._fit='cover'">Cover</button>
-        <button class="togbtn ${fit==='fill'?'on':''}"    onclick="togOn(this);cv.getActiveObject()._fit='fill'">Fill</button>
+        <button class="togbtn ${fit==='contain'?'on':''}" onclick="togOn(this);cv.getActiveObject()._fit='contain';saveHist()">Contain</button>
+        <button class="togbtn ${fit==='cover'?'on':''}"   onclick="togOn(this);cv.getActiveObject()._fit='cover';saveHist()">Cover</button>
+        <button class="togbtn ${fit==='fill'?'on':''}"    onclick="togOn(this);cv.getActiveObject()._fit='fill';saveHist()">Fill</button>
       </div>
     </div></div>`;
-    // ── Audio section ───────────────────────────────────────────────────────
+    // â”€â”€ Audio section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const volPct = Math.round((obj._audioVolume??1)*100);
     const isMuted = obj._audioMuted===true;
     html+=`<div class="psec">
@@ -1753,7 +1764,7 @@ function updateProps(){
         </div>
       </div>
     </div>`;
-    // ── Mask section ────────────────────────────────────────────────────────
+    // â”€â”€ Mask section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const mshape = obj._maskShape||'none';
     const mrad = obj._maskRadius??20;
     html+=`<div class="psec">
@@ -1834,14 +1845,14 @@ function updateProps(){
       <input type="color" class="cinput" value="${sc}" oninput="sp('stroke',this.value)" onchange="saveHist()" title="Stroke color">
     </div></div>
     <div class="psec"><div class="psec-title"><svg class="psec-title-icon gear-path" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>Emoji</div>
-      <button class="emo-btn" onclick="toggleEmojiPicker(this)">😊 Add Emoji</button>
+      <button class="emo-btn" onclick="toggleEmojiPicker(this)">ðŸ˜Š Add Emoji</button>
       <p class="pnote">Inserts Twemoji at cursor in this text. If no cursor position is saved, appends to end. Without a text selection, adds as a standalone image layer.</p>
     </div>`;
   }
 
   if(type==='image'){
     html+=`<div class="psec"><div class="psec-title"><svg class="psec-title-icon gear-path" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>Image / Logo</div>
-    <button class="emo-btn" style="margin-top:4px" onclick="addImage()">Replace Image…</button></div>`;
+    <button class="emo-btn" style="margin-top:4px" onclick="addImage()">Replace Imageâ€¦</button></div>`;
   }
 
   if(type==='shape'){
@@ -1850,15 +1861,16 @@ function updateProps(){
     <div class="prow"><span class="plbl">Fill</span>
       <div class="swatches">
         ${['#000000','#ffffff','#0d0d1a','#7c5cf6','#e879f9','#f43f5e','#22c55e','#f59e0b'].map(c=>
-          `<div class="sw${fill===c?' on':''}" style="background:${c};${c==='#ffffff'?'border-color:#333':''}" onclick="sp('fill','${c}');document.querySelectorAll('.sw').forEach(s=>s.classList.remove('on'));this.classList.add('on')"></div>`
+          `<div class="sw${fill===c?' on':''}" style="background:${c};${c==='#ffffff'?'border-color:#333':''}" onclick="sp('fill','${c}');saveHist();document.querySelectorAll('.sw').forEach(s=>s.classList.remove('on'));this.classList.add('on')"></div>`
         ).join('')}
-        <input type="color" class="cinput" value="${fill}" oninput="sp('fill',this.value)" title="Custom">
+        <input type="color" class="cinput" value="${fill}" oninput="sp('fill',this.value)" onchange="saveHist()" title="Custom">
       </div>
     </div>
     <div class="prow"><span class="plbl">Radius</span>
       <div class="slrow">
         <input type="range" class="psl" min="0" max="80" value="${Math.round(obj.rx||0)}"
-          oninput="sp('rx',+this.value);sp('ry',+this.value);this.nextElementSibling.textContent=this.value+'px'">
+          oninput="sp('rx',+this.value);sp('ry',+this.value);this.nextElementSibling.textContent=this.value+'px'"
+          onchange="saveHist()">
         <span class="slv">${Math.round(obj.rx||0)}px</span>
       </div>
     </div></div>`;
@@ -1912,7 +1924,7 @@ function showAudioLayerProps(){
         </div>
       </div>
       <div class="prow">
-        <button class="btn btn-ghost" style="width:100%;margin-top:4px;display:flex;align-items:center;gap:6px;justify-content:center" onclick="openTrimmerModal()">${icoCut(12)} Edit Trim / Preview…</button>
+        <button class="btn btn-ghost" style="width:100%;margin-top:4px;display:flex;align-items:center;gap:6px;justify-content:center" onclick="openTrimmerModal()">${icoCut(12)} Edit Trim / Previewâ€¦</button>
       </div>
     </div>`;
 }
@@ -1924,7 +1936,7 @@ function setAudioLoop(val, btn){
   saveHist();
 }
 
-// ── VIDEO MASKING ───────────────────────────────────────────────────────────
+// â”€â”€ VIDEO MASKING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function applyMaskClipPath(obj) {
   const shape = obj._maskShape || 'none';
   if (shape === 'none') {
@@ -2012,7 +2024,7 @@ function clearPolygonMask(){
   saveHist();
 }
 
-// ── MASK SHAPE EDITOR (interactive drag/resize overlay) ─────────────────────
+// â”€â”€ MASK SHAPE EDITOR (interactive drag/resize overlay) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function showMaskEditor(videoObj) {
   hideMaskEditor(false); // hide old without restoring selection
   const ow = videoObj.getScaledWidth();
@@ -2158,9 +2170,9 @@ function drawPolyOverlay(mouseX, mouseY){
   });
 }
 
-// ── AUDIO TRIMMER MODAL ─────────────────────────────────────────────────────
+// â”€â”€ AUDIO TRIMMER MODAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function fmtTime(s){
-  if(!isFinite(s)||s<0) return '—';
+  if(!isFinite(s)||s<0) return 'â€”';
   const m=Math.floor(s/60), sec=Math.floor(s%60);
   return `${m}:${sec.toString().padStart(2,'0')}`;
 }
@@ -2351,7 +2363,7 @@ function sp(k,v){const o=cv?.getActiveObject();if(!o)return;o.set(k,v);cv.render
 function ssz(ax,v){const o=cv?.getActiveObject();if(!o)return;if(ax==='w'){o.scaleX=v/o.width;if(o._type==='text')o.scaleY=o.scaleX;}else{o.scaleY=v/o.height;if(o._type==='text')o.scaleX=o.scaleY;}o.setCoords();cv.renderAll();}
 function togOn(el){el.closest('.tog').querySelectorAll('.togbtn').forEach(b=>b.classList.remove('on'));el.classList.add('on');}
 
-// ── TABS ───────────────────────────────────────────────────────────────────
+// â”€â”€ TABS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function switchTab(t){
   document.querySelectorAll('.lp-tab').forEach(b=>b.classList.remove('on'));
   document.getElementById('tab-'+t).classList.add('on');
@@ -2359,20 +2371,20 @@ function switchTab(t){
   document.getElementById('body-'+t).classList.add('on');
 }
 
-// ── BUILT-IN TEMPLATES ─────────────────────────────────────────────────────
+// â”€â”€ BUILT-IN TEMPLATES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const BUILTIN_TEMPLATES=[
   {id:'blur-stack', name:'Blur Stack', format:'9:16', cw:1080, ch:1920, vid:{x:0,y:656,w:1080,h:608,fit:'contain'},
-    thumb:`<div class="tt-bg" style="background:linear-gradient(180deg,#0d1a3a,#060a12)"></div><div class="tt-vid" style="left:0;top:35%;width:100%;height:32%;background:#1a3a6a;opacity:.9"></div><div class="tt-txt" style="top:8%">Your title here 🔥</div>`},
+    thumb:`<div class="tt-bg" style="background:linear-gradient(180deg,#0d1a3a,#060a12)"></div><div class="tt-vid" style="left:0;top:35%;width:100%;height:32%;background:#1a3a6a;opacity:.9"></div><div class="tt-txt" style="top:8%">Your title here ðŸ”¥</div>`},
   {id:'text-header', name:'Text Header', format:'9:16', cw:1080, ch:1920, vid:{x:0,y:320,w:1080,h:1600,fit:'cover'},
-    thumb:`<div class="tt-bar" style="top:0;height:28%;background:#000"></div><div class="tt-vid" style="left:0;top:28%;width:100%;height:72%;background:#1a3a2a"></div><div class="tt-txt" style="top:5%">Bold title 💀</div>`},
+    thumb:`<div class="tt-bar" style="top:0;height:28%;background:#000"></div><div class="tt-vid" style="left:0;top:28%;width:100%;height:72%;background:#1a3a2a"></div><div class="tt-txt" style="top:5%">Bold title ðŸ’€</div>`},
   {id:'footer-fade', name:'Footer Fade', format:'9:16', cw:1080, ch:1920, vid:{x:0,y:0,w:1080,h:1920,fit:'cover'},
-    thumb:`<div class="tt-vid" style="left:0;top:0;width:100%;height:100%;background:linear-gradient(135deg,#2a1a5a,#0d0a1a)"></div><div class="tt-bar" style="bottom:0;height:32%;background:linear-gradient(transparent,#000)"></div><div class="tt-txt" style="bottom:8%">Clip title 🏆</div>`},
+    thumb:`<div class="tt-vid" style="left:0;top:0;width:100%;height:100%;background:linear-gradient(135deg,#2a1a5a,#0d0a1a)"></div><div class="tt-bar" style="bottom:0;height:32%;background:linear-gradient(transparent,#000)"></div><div class="tt-txt" style="bottom:8%">Clip title ðŸ†</div>`},
   {id:'minimal', name:'Minimal', format:'9:16', cw:1080, ch:1920, vid:{x:54,y:480,w:972,h:960,fit:'contain'},
     thumb:`<div class="tt-bg" style="background:#000"></div><div class="tt-vid" style="left:5%;top:22%;width:90%;height:54%;background:#1a2a1a;border-radius:4px"></div><div class="tt-txt" style="top:6%">@channel</div>`},
   {id:'side-blur', name:'Side Blur', format:'1:1', cw:1080, ch:1080, vid:{x:162,y:162,w:756,h:756,fit:'contain'},
-    thumb:`<div class="tt-bg" style="background:#0d1520"></div><div class="tt-vid" style="left:15%;top:20%;width:70%;height:60%;background:#1a3a5a"></div><div class="tt-txt" style="top:6%">Title 🎮</div>`},
+    thumb:`<div class="tt-bg" style="background:#0d1520"></div><div class="tt-vid" style="left:15%;top:20%;width:70%;height:60%;background:#1a3a5a"></div><div class="tt-txt" style="top:6%">Title ðŸŽ®</div>`},
   {id:'podcast', name:'Podcast', format:'9:16', cw:1080, ch:1920, vid:{x:0,y:0,w:1080,h:1920,fit:'cover'},
-    thumb:`<div class="tt-vid" style="left:0;top:0;width:100%;height:100%;background:linear-gradient(135deg,#3a1a0a,#1a0a04)"></div><div class="tt-bar" style="bottom:0;height:26%;background:rgba(0,0,0,.85)"></div><div class="tt-txt" style="bottom:7%">What they said 💬</div>`},
+    thumb:`<div class="tt-vid" style="left:0;top:0;width:100%;height:100%;background:linear-gradient(135deg,#3a1a0a,#1a0a04)"></div><div class="tt-bar" style="bottom:0;height:26%;background:rgba(0,0,0,.85)"></div><div class="tt-txt" style="bottom:7%">What they said ðŸ’¬</div>`},
 ];
 
 let _tplFilter='';
@@ -2397,7 +2409,7 @@ async function renderTplGrid(filter){
     if(userTpls.length){
       userHTML='<div class="tpl-section-label">My Templates</div>'+userTpls.map(t=>`
         <div class="tcard" onclick="applySavedTpl('${t.file}')">
-          <div class="tthumb tthumb-saved"><span class="tthumb-icon">📄</span><span class="tthumb-fmt">${t.format||'9:16'}</span></div>
+          <div class="tthumb tthumb-saved"><span class="tthumb-icon">ðŸ“„</span><span class="tthumb-fmt">${t.format||'9:16'}</span></div>
           <div class="tcard-name">${t.name}</div>
         </div>`).join('');
     }
@@ -2452,7 +2464,7 @@ function applyBuiltinTpl(id){
   switchTab('el');
 }
 
-// ── TEMPLATE EXPORT JSON ───────────────────────────────────────────────────
+// â”€â”€ TEMPLATE EXPORT JSON â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function canvasToTemplate(){
   const {w,h}=FMT[fmt];
   const scale=1080/w;
@@ -2571,7 +2583,7 @@ async function applySavedTpl(file){
       }
     } else if(layer.type==='text'){
       const isTitle=layer.text==='{title}'||layer._isTitle===true;
-      const displayText=isTitle?'Your title here 🔥':(layer.text||'Your title here 🔥');
+      const displayText=isTitle?'Your title here ðŸ”¥':(layer.text||'Your title here ðŸ”¥');
       const t2=new fabric.IText(displayText,{
         left:lx,top:ly,width:lw,
         fontSize:(layer.font_size||48)*s,
@@ -2602,7 +2614,7 @@ async function applySavedTpl(file){
   switchTab('el');
 }
 
-// ── DOWNLOAD ───────────────────────────────────────────────────────────────
+// â”€â”€ DOWNLOAD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function openDlModal(){
   const overlay=document.getElementById('dl-modal');
   const box=overlay.querySelector('.t-modal');
@@ -2627,7 +2639,7 @@ function startDownload(){
   const pf=document.getElementById('prog-fill');
   const pl=document.getElementById('prog-lbl');
   const st=document.getElementById('dl-status');
-  pw.style.display='flex';pf.style.width='2%';pl.textContent='Starting…';st.textContent='';
+  pw.style.display='flex';pf.style.width='2%';pl.textContent='Startingâ€¦';st.textContent='';
   st.style.color='var(--sub)';
 
   fetch('/api/download',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})})
@@ -2647,7 +2659,7 @@ function startDownload(){
           updateTplPreviews('/api/downloads/'+encodeURIComponent(filename));
           document.getElementById('vid-card').style.display='';
           document.getElementById('vid-filename').textContent=filename;
-          document.getElementById('vid-meta').textContent=`${msg.width}×${msg.height} · ${Math.round(msg.duration)}s`;
+          document.getElementById('vid-meta').textContent=`${msg.width}Ã—${msg.height} Â· ${Math.round(msg.duration)}s`;
           st.textContent='Downloaded successfully';st.style.color='var(--ok)';
           setTimeout(closeDlModal,1200);
         } else if(msg.type==='error'){
@@ -2655,13 +2667,13 @@ function startDownload(){
         }
       };
       es.onerror=()=>{
-        es.close();st.textContent='Connection lost — check console';st.style.color='var(--danger)';pw.style.display='none';
+        es.close();st.textContent='Connection lost â€” check console';st.style.color='var(--danger)';pw.style.display='none';
       };
     })
     .catch(e=>{st.textContent='Network error: '+e.message;st.style.color='var(--danger)';pw.style.display='none';});
 }
 
-// ── EXPORT ─────────────────────────────────────────────────────────────────
+// â”€â”€ EXPORT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function openExpModal(){
   if(!downloadedVideoPath){alert('Download a video first.');return;}
   const overlay=document.getElementById('exp-modal');
@@ -2689,7 +2701,7 @@ function startExport(){
   const pf=document.getElementById('exp-prog-fill');
   const pl=document.getElementById('exp-prog-lbl');
   const st=document.getElementById('exp-status');
-  pw.style.display='flex';pf.style.width='2%';pl.textContent='Starting…';st.textContent='';
+  pw.style.display='flex';pf.style.width='2%';pl.textContent='Startingâ€¦';st.textContent='';
   st.style.color='var(--sub)';
 
   fetch('/api/export',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -2717,7 +2729,7 @@ function startExport(){
     .catch(e=>{st.textContent='Network error: '+e.message;st.style.color='var(--danger)';pw.style.display='none';});
 }
 
-// ── INIT ───────────────────────────────────────────────────────────────────
+// â”€â”€ INIT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 (async()=>{
   // 1. Project identity
   acProjectId=localStorage.getItem('acProjectId')||generateUUID();
@@ -2765,5 +2777,9 @@ function startExport(){
   addBlur();addVideo();addText();
 });
 </script>
+
+<div id="ctx-menu"></div>
 </body>
 </html>
+
+
