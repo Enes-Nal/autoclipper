@@ -2062,6 +2062,128 @@ function closeSfxPicker() {
   _sfxPickerTime = null;
 }
 
+// ── SFX PROPERTIES ─────────────────────────────────────────────────────────
+function showSfxLayerProps(layerId) {
+  const layer = sfxLayers.find(l => l.id === layerId);
+  if (!layer) return;
+  activeSfxId = layerId;
+  const sound = sfxLibrary.find(s => s.path === layer.src);
+  const soundName = sound ? sound.name : layer.src.split('/').pop();
+  const volPct = Math.round((layer.volume ?? 1.0) * 100);
+  const muteIcon = layer.muted
+    ? `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 9.75 19.5 12m0 0 2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6 4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.009 9.009 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z"/></svg>`
+    : `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 0 1 0 12.728M16.463 8.288a5.25 5.25 0 0 1 0 7.424M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.009 9.009 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z"/></svg>`;
+
+  const right = document.getElementById('right');
+  right.innerHTML = `
+    <div class="psec">
+      <div class="psec-title">Sound Effect</div>
+      <div class="slrow" style="gap:6px;margin-bottom:8px">
+        <span style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${soundName}">${soundName}</span>
+        <button class="tbar-btn" style="font-size:11px" onclick="openSfxChangePicker()">Change</button>
+      </div>
+      <div class="slrow" style="gap:6px;margin-bottom:4px">
+        <span style="font-size:11px;color:var(--sub);width:60px">Time</span>
+        <input id="sfx-time-input" type="text" value="${layer.start_time.toFixed(3)}s"
+          style="width:80px;font-size:12px;background:var(--s2);border:1px solid var(--b2);border-radius:4px;color:var(--tx);padding:3px 6px"
+          onchange="onSfxTimeChange(this.value)"
+          onkeydown="onSfxTimeKey(event)"
+        />
+      </div>
+      <div class="slrow" style="gap:6px;margin-bottom:4px">
+        <span style="font-size:11px;color:var(--sub);width:60px">Volume</span>
+        <input type="range" min="0" max="100" value="${volPct}"
+          style="flex:1"
+          oninput="onSfxVolumeInput(this.value)"
+          onchange="saveHist()"
+        />
+        <span id="sfx-vol-display" style="font-size:11px;color:var(--sub);width:30px;text-align:right">${volPct}%</span>
+      </div>
+      <div class="slrow" style="gap:6px;margin-bottom:8px">
+        <span style="font-size:11px;color:var(--sub);width:60px">Mute</span>
+        <button id="sfx-mute-btn" class="tbar-btn${layer.muted ? ' on' : ''}"
+          onclick="toggleSfxMute()" title="${layer.muted ? 'Unmute' : 'Mute'}"
+          style="${layer.muted ? 'color:var(--acc)' : ''}">
+          ${muteIcon}
+        </button>
+      </div>
+      <button onclick="deleteSfxLayer('${layerId}')"
+        style="width:100%;padding:5px;font-size:11px;background:none;border:1px solid var(--b2);border-radius:5px;color:var(--sub);cursor:pointer">
+        Delete
+      </button>
+    </div>
+  `;
+  document.getElementById('del-btn').style.display = 'none';
+}
+
+function updateSfxTimestampField(t) {
+  const input = document.getElementById('sfx-time-input');
+  if (input) input.value = t.toFixed(3) + 's';
+}
+
+function onSfxTimeChange(val) {
+  const layer = sfxLayers.find(l => l.id === activeSfxId);
+  if (!layer) return;
+  const t = parseFloat(val.replace('s', ''));
+  if (isNaN(t)) return;
+  layer.start_time = Math.max(0, parseFloat(t.toFixed(3)));
+  updateSfxTimestampField(layer.start_time);
+  renderSfxStrip();
+  saveHist();
+}
+
+function onSfxTimeKey(ev) {
+  const layer = sfxLayers.find(l => l.id === activeSfxId);
+  if (!layer) return;
+  const step = ev.shiftKey ? 1.0 : 0.1;
+  if (ev.key === 'ArrowUp') {
+    ev.preventDefault();
+    layer.start_time = parseFloat((layer.start_time + step).toFixed(3));
+    updateSfxTimestampField(layer.start_time);
+    renderSfxStrip();
+    saveHist();
+  } else if (ev.key === 'ArrowDown') {
+    ev.preventDefault();
+    layer.start_time = Math.max(0, parseFloat((layer.start_time - step).toFixed(3)));
+    updateSfxTimestampField(layer.start_time);
+    renderSfxStrip();
+    saveHist();
+  }
+}
+
+function onSfxVolumeInput(val) {
+  const layer = sfxLayers.find(l => l.id === activeSfxId);
+  if (!layer) return;
+  layer.volume = parseInt(val) / 100;
+  document.getElementById('sfx-vol-display').textContent = val + '%';
+}
+
+function toggleSfxMute() {
+  const layer = sfxLayers.find(l => l.id === activeSfxId);
+  if (!layer) return;
+  layer.muted = !layer.muted;
+  showSfxLayerProps(layer.id);
+  renderSfxStrip();
+  saveHist();
+}
+
+function deleteSfxLayer(layerId) {
+  sfxLayers = sfxLayers.filter(l => l.id !== layerId);
+  if (activeSfxId === layerId) {
+    activeSfxId = null;
+    clearProps();
+  }
+  renderSfxStrip();
+  saveHist();
+}
+
+function openSfxChangePicker() {
+  _sfxPickerTarget = activeSfxId;
+  const btn = document.querySelector('#right .tbar-btn');
+  const rect = btn ? btn.getBoundingClientRect() : {left: 200, bottom: 100};
+  openSfxPicker(rect.left, rect.bottom + 4);
+}
+
 // ── PROPERTIES ─────────────────────────────────────────────────────────────
 function clearProps(){
   document.getElementById('right').innerHTML='<div class="no-sel"><div class="no-sel-ico" style="display:flex;justify-content:center"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" width="32" height="32" style="opacity:.2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.042 21.672 13.684 16.6m0 0-2.51 2.225.569-9.47 5.227 7.917-3.286-.672ZM12 2.25V4.5m5.834.166-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243-1.59-1.59"/></svg></div>Select an element<br>to edit its properties</div>';
@@ -2841,6 +2963,9 @@ function applyBuiltinTpl(id){
   // Set format first (synchronous resize, no dispose)
   if(tpl?.format && tpl.format!==fmt) setFmt(tpl.format);
   stopVideoLoop(); cv.clear(); cv.backgroundColor='#0c0c18';
+  sfxLayers = [];
+  activeSfxId = null;
+  renderSfxStrip();
   const map={
     'blur-stack':()=>{addBlur();addVideo();addText();},
     'text-header':()=>{addShape();addVideo();addText();},
@@ -2895,7 +3020,11 @@ function canvasToTemplate(){
     if(t==='emoji')return{...base,src:twemojiUrl(obj._label||''),label:obj._label||''};
     return{...base,fill:obj.fill||'#000000'};
   });
-  const allLayers = audioLayer ? [...layers, {...audioLayer}] : layers;
+  const allLayers = [
+    ...layers,
+    ...(audioLayer ? [{...audioLayer}] : []),
+    ...sfxLayers.map(l => ({...l})),
+  ];
   return{name:document.getElementById('proj-name-input').value||'My Template',format:fmt,canvas:{width:1080,height:fmt==='9:16'?1920:1080},layers:allLayers};
 }
 
@@ -2945,10 +3074,16 @@ async function applySavedTpl(file){
   const{w}=FMT[fmt];
   const s=w/1080;
 
-  // Restore audio layer (not a canvas object)
-  audioLayer = (tpl.layers||[]).find(l=>l.type==='audio') || null;
+  // Separate sfx layers from canvas layers
+  sfxLayers = (tpl.layers||[]).filter(l=>l.type==='sfx');
+  activeSfxId = null;
+  const canvasLayers = (tpl.layers||[]).filter(l=>l.type!=='sfx');
 
-  for(const layer of(tpl.layers||[])){
+  // Restore audio layer (not a canvas object)
+  audioLayer = canvasLayers.find(l=>l.type==='audio') || null;
+
+  renderSfxStrip();
+  for(const layer of canvasLayers){
     const lx=layer.x*s,ly=layer.y*s,lw=layer.width*s,lh=layer.height*s,op=layer.opacity??1;
     if(layer.type==='blur_video'){
       const r=new fabric.Rect({
