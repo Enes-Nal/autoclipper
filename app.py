@@ -17,6 +17,7 @@ ALLOWED_AUDIO_EXTS = {'.mp3', '.wav', '.ogg', '.m4a', '.aac'}
 
 SFX_DIR = BASE_DIR / "sfx"
 SFX_LIB_PATH = BASE_DIR / "sfx_library.json"
+_sfx_lib_lock = threading.Lock()
 SFX_DIR.mkdir(exist_ok=True)
 ALLOWED_SFX_EXTS = {'.mp3', '.wav', '.ogg'}
 
@@ -221,10 +222,11 @@ def upload_sfx():
     dest = SFX_DIR / filename
     f.save(str(dest))
     name = Path(f.filename).stem
-    lib = _read_sfx_lib()
-    entry = {"id": sfx_id, "name": name, "path": f"sfx/{filename}"}
-    lib["sounds"].append(entry)
-    _write_sfx_lib(lib)
+    with _sfx_lib_lock:
+        lib = _read_sfx_lib()
+        entry = {"id": sfx_id, "name": name, "path": f"sfx/{filename}"}
+        lib["sounds"].append(entry)
+        _write_sfx_lib(lib)
     return jsonify(entry)
 
 
@@ -236,23 +238,27 @@ def serve_sfx(filename):
 @app.patch("/api/sfx/<sfx_id>/rename")
 def rename_sfx(sfx_id):
     new_name = (request.json or {}).get("name", "").strip()
-    lib = _read_sfx_lib()
-    entry = next((s for s in lib["sounds"] if s["id"] == sfx_id), None)
-    if not entry:
-        return jsonify({"error": "not found"}), 404
-    entry["name"] = new_name
-    _write_sfx_lib(lib)
+    if not new_name:
+        return jsonify({"error": "name required"}), 400
+    with _sfx_lib_lock:
+        lib = _read_sfx_lib()
+        entry = next((s for s in lib["sounds"] if s["id"] == sfx_id), None)
+        if not entry:
+            return jsonify({"error": "not found"}), 404
+        entry["name"] = new_name
+        _write_sfx_lib(lib)
     return jsonify(entry)
 
 
 @app.delete("/api/sfx/<sfx_id>")
 def delete_sfx(sfx_id):
-    lib = _read_sfx_lib()
-    entry = next((s for s in lib["sounds"] if s["id"] == sfx_id), None)
-    if not entry:
-        return jsonify({"error": "not found"}), 404
-    lib["sounds"] = [s for s in lib["sounds"] if s["id"] != sfx_id]
-    _write_sfx_lib(lib)
+    with _sfx_lib_lock:
+        lib = _read_sfx_lib()
+        entry = next((s for s in lib["sounds"] if s["id"] == sfx_id), None)
+        if not entry:
+            return jsonify({"error": "not found"}), 404
+        lib["sounds"] = [s for s in lib["sounds"] if s["id"] != sfx_id]
+        _write_sfx_lib(lib)
     file_path = BASE_DIR / entry["path"]
     if file_path.exists():
         file_path.unlink()

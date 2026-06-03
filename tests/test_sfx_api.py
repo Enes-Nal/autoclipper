@@ -71,6 +71,15 @@ def test_rename_sfx_not_found(client):
     assert resp.status_code == 404
 
 
+def test_rename_sfx_empty_name(client):
+    data = {"file": (io.BytesIO(b"\xff\xfb\x90\x00"), "snap.mp3")}
+    up = client.post("/api/sfx/upload", data=data,
+                     content_type="multipart/form-data")
+    sfx_id = up.get_json()["id"]
+    resp = client.patch(f"/api/sfx/{sfx_id}/rename", json={"name": ""})
+    assert resp.status_code == 400
+
+
 def test_delete_sfx(client):
     data = {"file": (io.BytesIO(b"\xff\xfb\x90\x00"), "click.mp3")}
     up = client.post("/api/sfx/upload", data=data,
