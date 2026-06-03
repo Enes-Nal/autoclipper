@@ -94,7 +94,7 @@ button,input,select{font-family:inherit}
 .layers-scroll::-webkit-scrollbar{width:3px}
 .layers-scroll::-webkit-scrollbar-thumb{background:var(--mut);border-radius:2px}
 #layer-list{display:flex;flex-direction:column;gap:2px;padding-top:8px}
-.lrow{display:flex;align-items:center;gap:7px;padding:7px 8px;border-radius:var(--rs);border:1px solid transparent;cursor:pointer;transition:.1s;font-size:11px;color:var(--sub);user-select:none}
+.lrow{display:flex;align-items:center;gap:7px;padding:7px 8px;border-radius:var(--rs);border:1px solid transparent;cursor:grab;transition:.1s;font-size:11px;color:var(--sub);user-select:none}
 .lrow-audio{display:flex;align-items:center;gap:6px;padding:7px 8px;border-radius:6px;background:var(--s2);cursor:pointer;border:1px solid var(--b1);margin-bottom:2px}
 .lrow-audio.on{border-color:var(--acc);background:var(--s3)}
 .lrow-audio .lname{flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -103,7 +103,6 @@ button,input,select{font-family:inherit}
 #add-audio-btn:hover{border-color:var(--acc);color:var(--acc)}
 .lrow:hover{background:var(--s3);color:var(--tx)}
 .lrow-dragging{opacity:.4;cursor:grabbing}
-.lrow{cursor:grab}
 #layer-drop-indicator{height:2px;background:var(--acc);border-radius:1px;margin:1px 0;pointer-events:none}
 .lrow.on{background:var(--s3);border-color:rgba(34,197,94,0.4);color:var(--tx);border-left-color:var(--acc)}
 .ldot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
@@ -1141,7 +1140,7 @@ function initCanvas(f){
     onSnapScale(e);
     if (e.target?._type==='video') _updateMaskEditorForVideo(e.target);
   });
-  cv.on('object:scaled',()=>{snapLines={x:null,y:null};setPhoneGlow(false);cv.requestRenderAll();});
+  cv.on('object:scaled',()=>{snapLines={x:null,y:null};scaleSnapState={x:null,y:null};setPhoneGlow(false);cv.requestRenderAll();});
   cv.on('after:render',drawGuides);
   cv.on('object:added',e=>{
     if(e.target._type==='text'){
@@ -1254,39 +1253,53 @@ function onSnapScale(e){
   const movesT=corner==='tl'||corner==='tr'||corner==='mt';
   const movesB=corner==='bl'||corner==='br'||corner==='mb';
   snapLines={x:null,y:null};
-  if(movesL){
+  // Release x lock when Fabric's proposed edge moves beyond 2x snap threshold
+  if(scaleSnapState.x!==null){
+    let inZone=false;
+    if(movesL&&Math.abs(obj.left-scaleSnapState.x)<SNAP_T*2)inZone=true;
+    if(movesR){const oR=obj.left+obj.width*obj.scaleX;if(Math.abs(oR-scaleSnapState.x)<SNAP_T*2)inZone=true;}
+    if(!inZone)scaleSnapState.x=null;
+  }
+  // Release y lock when Fabric's proposed edge moves beyond 2x snap threshold
+  if(scaleSnapState.y!==null){
+    let inZone=false;
+    if(movesT&&Math.abs(obj.top-scaleSnapState.y)<SNAP_T*2)inZone=true;
+    if(movesB){const oB=obj.top+obj.height*obj.scaleY;if(Math.abs(oB-scaleSnapState.y)<SNAP_T*2)inZone=true;}
+    if(!inZone)scaleSnapState.y=null;
+  }
+  if(movesL&&scaleSnapState.x===null){
     const fixedR=obj.left+obj.width*obj.scaleX;
     for(const s of [0,cw]){
       if(Math.abs(obj.left-s)<SNAP_T){
         obj.left=s;obj.scaleX=Math.max(0.01,(fixedR-s)/obj.width);
-        snapLines.x=s;break;
+        snapLines.x=s;scaleSnapState.x=s;break;
       }
     }
   }
-  if(movesR&&snapLines.x===null){
+  if(movesR&&snapLines.x===null&&scaleSnapState.x===null){
     const oR=obj.left+obj.width*obj.scaleX;
     for(const s of [0,cw]){
       if(Math.abs(oR-s)<SNAP_T){
         obj.scaleX=Math.max(0.01,(s-obj.left)/obj.width);
-        snapLines.x=s;break;
+        snapLines.x=s;scaleSnapState.x=s;break;
       }
     }
   }
-  if(movesT){
+  if(movesT&&scaleSnapState.y===null){
     const fixedB=obj.top+obj.height*obj.scaleY;
     for(const s of [0,ch]){
       if(Math.abs(obj.top-s)<SNAP_T){
         obj.top=s;obj.scaleY=Math.max(0.01,(fixedB-s)/obj.height);
-        snapLines.y=s;break;
+        snapLines.y=s;scaleSnapState.y=s;break;
       }
     }
   }
-  if(movesB&&snapLines.y===null){
+  if(movesB&&snapLines.y===null&&scaleSnapState.y===null){
     const oB=obj.top+obj.height*obj.scaleY;
     for(const s of [0,ch]){
       if(Math.abs(oB-s)<SNAP_T){
         obj.scaleY=Math.max(0.01,(s-obj.top)/obj.height);
-        snapLines.y=s;break;
+        snapLines.y=s;scaleSnapState.y=s;break;
       }
     }
   }
