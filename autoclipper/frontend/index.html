@@ -1215,7 +1215,9 @@ function initCanvas(f){
     onSnapScale(e);
     if (e.target?._type==='video') _updateMaskEditorForVideo(e.target);
   });
-  cv.on('object:scaled',()=>{snapLines={x:null,y:null};scaleSnapState={x:null,y:null};setPhoneGlow(false);cv.requestRenderAll();});
+  cv.on('object:scaled',e=>{snapLines={x:null,y:null};scaleSnapState={x:null,y:null};setPhoneGlow(false);cv.requestRenderAll();
+    const o=e.target;if(o&&o._type==='video'){o._frameW=o.getScaledWidth();o._frameH=o.getScaledHeight();}
+  });
   cv.on('after:render',drawGuides);
   cv.on('object:added',e=>{
     if(e.target._type==='text'){
@@ -2065,6 +2067,10 @@ function closeSfxPicker() {
 }
 
 // ── SFX PROPERTIES ─────────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 function showSfxLayerProps(layerId) {
   const layer = sfxLayers.find(l => l.id === layerId);
   if (!layer) return;
@@ -2081,8 +2087,8 @@ function showSfxLayerProps(layerId) {
     <div class="psec">
       <div class="psec-title">Sound Effect</div>
       <div class="slrow" style="gap:6px;margin-bottom:8px">
-        <span style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${soundName}">${soundName}</span>
-        <button class="tbar-btn" style="font-size:11px" onclick="openSfxChangePicker()">Change</button>
+        <span style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(soundName)}">${escHtml(soundName)}</span>
+        <button id="sfx-change-btn" class="tbar-btn" style="font-size:11px" onclick="openSfxChangePicker()">Change</button>
       </div>
       <div class="slrow" style="gap:6px;margin-bottom:4px">
         <span style="font-size:11px;color:var(--sub);width:60px">Time</span>
@@ -2109,12 +2115,13 @@ function showSfxLayerProps(layerId) {
           ${muteIcon}
         </button>
       </div>
-      <button onclick="deleteSfxLayer('${layerId}')"
+      <button id="sfx-delete-btn"
         style="width:100%;padding:5px;font-size:11px;background:none;border:1px solid var(--b2);border-radius:5px;color:var(--sub);cursor:pointer">
         Delete
       </button>
     </div>
   `;
+  document.getElementById('sfx-delete-btn').addEventListener('click', () => deleteSfxLayer(layerId));
   document.getElementById('del-btn').style.display = 'none';
 }
 
@@ -2181,7 +2188,7 @@ function deleteSfxLayer(layerId) {
 
 function openSfxChangePicker() {
   _sfxPickerTarget = activeSfxId;
-  const btn = document.querySelector('#right .tbar-btn');
+  const btn = document.getElementById('sfx-change-btn');
   const rect = btn ? btn.getBoundingClientRect() : {left: 200, bottom: 100};
   openSfxPicker(rect.left, rect.bottom + 4);
 }
