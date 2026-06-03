@@ -102,6 +102,9 @@ button,input,select{font-family:inherit}
 #add-audio-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;border-radius:6px;border:1px dashed var(--b1);color:var(--sub);font-size:12px;cursor:pointer;margin-top:6px;background:none;width:100%}
 #add-audio-btn:hover{border-color:var(--acc);color:var(--acc)}
 .lrow:hover{background:var(--s3);color:var(--tx)}
+.lrow-dragging{opacity:.4;cursor:grabbing}
+.lrow{cursor:grab}
+#layer-drop-indicator{height:2px;background:var(--acc);border-radius:1px;margin:1px 0;pointer-events:none}
 .lrow.on{background:var(--s3);border-color:rgba(34,197,94,0.4);color:var(--tx);border-left-color:var(--acc)}
 .ldot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 .lname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -204,8 +207,8 @@ button,input,select{font-family:inherit}
 .no-sel{padding:28px 14px;text-align:center;color:var(--sub);font-size:12px;line-height:1.8}
 .no-sel-ico{margin-bottom:8px;opacity:.2;display:flex;justify-content:center}
 /* Modals */
-#dl-modal,#exp-modal{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:400;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
-#dl-modal.open,#exp-modal.open{display:flex}
+#dl-modal,#exp-modal,#save-tpl-modal{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:400;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+#dl-modal.open,#exp-modal.open,#save-tpl-modal.open{display:flex}
 .modal-box{background:var(--s1);border:1px solid var(--b1);border-radius:16px;padding:28px;width:480px;box-shadow:0 24px 80px rgba(0,0,0,.9)}
 
 /* ── transitions-dev ─────────────────────────────────────── */
@@ -621,6 +624,22 @@ button,input,select{font-family:inherit}
   </div>
 </div>
 
+<!-- SAVE TEMPLATE MODAL -->
+<div id="save-tpl-modal">
+  <div class="modal-box t-modal">
+    <div class="modal-title">Save Template</div>
+    <div class="modal-sub">Give your template a name to save it to your library</div>
+    <input class="modal-input" id="save-tpl-name" placeholder="Template name…" onkeydown="if(event.key==='Enter')confirmSaveTemplate();if(event.key==='Escape')closeSaveTplModal()" />
+    <div class="modal-row">
+      <button class="btn btn-primary" onclick="confirmSaveTemplate()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z"/></svg>
+        Save
+      </button>
+      <button class="btn btn-ghost" style="margin-left:auto" onclick="closeSaveTplModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <video id="preview-video" autoplay muted loop playsinline style="position:absolute;width:0;height:0;opacity:0;pointer-events:none"></video>
 <input type="file" id="img-pick" accept="image/*" style="display:none" onchange="onImgFile(event)">
 
@@ -644,6 +663,7 @@ let gridOn=false, snapOn=true, gridLines=[];
 let hist=[], histIdx=-1, histLock=false;
 let db=null, dbAvailable=false, acProjectId='';
 let snapLines={x:null,y:null};
+let scaleSnapState={x:null,y:null};
 let lastTextPos=null, lastTextObj=null;
 let downloadedVideoPath=null, downloadedVideoURL=null;
 
@@ -661,6 +681,8 @@ let audioLayer=null; // {type:'audio',src,volume,loop,trim_start,trim_end}
 let _polygonDrawing = false;
 let _polygonPoints = [];   // canvas-space [{x,y},...] being drawn
 let _polygonTarget = null; // Fabric object currently being masked
+// Mask shape editor overlay state
+let _maskEditorTarget = null;
 function getAudioLayer(){ return audioLayer; }
 function setAudioLayer(data){ audioLayer=data; syncLayers(); updatePreviewStrip(); }
 function removeAudioLayer(){ audioLayer=null; syncLayers(); updatePreviewStrip(); }
@@ -859,6 +881,9 @@ function startVideoLoop(){
   function tick(){
     if(_videoCanvas&&_videoCtx&&vidEl.readyState>=2)
       _videoCtx.drawImage(vidEl,0,0,_videoCanvas.width,_videoCanvas.height);
+    // Video objects with an active mask use objectCaching=true so Fabric can
+    // apply the clipPath.  Mark them dirty each frame so the cache refreshes.
+    cv.forEachObject(o=>{if(o._type==='video'&&o.objectCaching&&o.clipPath)o.dirty=true;});
     cv.renderAll();
     _rafId=fabric.util.requestAnimFrame(tick);
   }
@@ -1061,16 +1086,61 @@ function initCanvas(f){
   cv=new fabric.Canvas('ec',{backgroundColor:'#0c0c18',preserveObjectStacking:true});
   window.canvas=cv;
   cv.setWidth(w);cv.setHeight(h);
-  cv.on('selection:created',updateProps);
-  cv.on('selection:updated',updateProps);
-  cv.on('selection:cleared',clearProps);
-  cv.on('object:modified',()=>{syncLayers();saveHist();});
-  cv.on('object:added',()=>{syncLayers();saveHist();});
-  cv.on('object:removed',()=>{syncLayers();saveHist();});
-  cv.on('text:editing:exited',e=>{lastTextPos=e.target.selectionStart;lastTextObj=e.target;});
-  cv.on('object:moving',onSnap);
+  cv.on('selection:created', e => {
+    const obj = cv.getActiveObject();
+    if (obj?._isMaskEditor) { updateProps(); return; }
+    updateProps();
+    const shape = obj?._maskShape;
+    if (obj?._type==='video' && shape && shape!=='none' && shape!=='polygon') showMaskEditor(obj);
+    else hideMaskEditor();
+  });
+  cv.on('selection:updated', e => {
+    const obj = cv.getActiveObject();
+    if (obj?._isMaskEditor) { updateProps(); return; }
+    updateProps();
+    const shape = obj?._maskShape;
+    if (obj?._type==='video' && shape && shape!=='none' && shape!=='polygon') showMaskEditor(obj);
+    else hideMaskEditor();
+  });
+  cv.on('selection:cleared', () => {
+    // Use setTimeout so Fabric can finish processing the new selection first
+    setTimeout(() => {
+      if (!cv.getActiveObject()?._isMaskEditor) hideMaskEditor();
+      clearProps();
+    }, 0);
+  });
+  cv.on('object:modified', e => {
+    if (e.target?._isMaskEditor) { syncMaskFromEditor(e.target); saveHist(); return; }
+    syncLayers(); saveHist();
+    if (e.target?._type==='video') _updateMaskEditorForVideo(e.target);
+  });
+  cv.on('object:added', e => {
+    if (e.target?._isMaskEditor) return; // don't save/sync for editor overlay
+    syncLayers(); saveHist();
+  });
+  cv.on('object:removed', e => {
+    if (e.target?._isMaskEditor) return;
+    syncLayers(); saveHist();
+  });
+  cv.on('text:editing:exited',e=>{
+    lastTextPos=e.target.selectionStart;lastTextObj=e.target;
+    // If the user changed the text away from the placeholder, treat as literal (not a title substitution)
+    if(e.target._isTitle && e.target.text!=='Your title here 🔥'){
+      e.target._isTitle=false;
+      saveHist();
+    }
+  });
+  cv.on('object:moving', e => {
+    if (e.target?._isMaskEditor) { syncMaskFromEditor(e.target); return; }
+    onSnap(e);
+    if (e.target?._type==='video') _updateMaskEditorForVideo(e.target);
+  });
   cv.on('object:moved',()=>{snapLines={x:null,y:null};setPhoneGlow(false);cv.requestRenderAll();});
-  cv.on('object:scaling',onSnapScale);
+  cv.on('object:scaling', e => {
+    if (e.target?._isMaskEditor) { syncMaskFromEditor(e.target); return; }
+    onSnapScale(e);
+    if (e.target?._type==='video') _updateMaskEditorForVideo(e.target);
+  });
   cv.on('object:scaled',()=>{snapLines={x:null,y:null};setPhoneGlow(false);cv.requestRenderAll();});
   cv.on('after:render',drawGuides);
   cv.on('object:added',e=>{
@@ -1079,6 +1149,15 @@ function initCanvas(f){
     }
   });
   zl=1;updZoom();saveHist();
+
+  document.getElementById('canvas-area').addEventListener('mousedown', e => {
+    if (!cv) return;
+    const phone = document.getElementById('phone');
+    if (!phone.contains(e.target)) {
+      cv.discardActiveObject();
+      cv.requestRenderAll();
+    }
+  });
 }
 
 // ── FORMAT ─────────────────────────────────────────────────────────────────
@@ -1236,7 +1315,7 @@ function align(type){
 // ── HISTORY ────────────────────────────────────────────────────────────────
 function saveHist(){
   if(histLock)return;
-  const entry={canvas:JSON.stringify(cv.toJSON(['_type','_label','_blur','_fit','_isTitle','_audioVolume','_audioMuted'])),audioLayer:audioLayer?{...audioLayer}:null};
+  const entry={canvas:JSON.stringify(cv.toJSON(['_type','_label','_blur','_fit','_isTitle','_audioVolume','_audioMuted','_maskShape','_maskRadius','_maskPoints','_maskX','_maskY','_maskW','_maskH'])),audioLayer:audioLayer?{...audioLayer}:null};
   const j=JSON.stringify(entry);
   hist=hist.slice(0,histIdx+1);hist.push(entry);histIdx=hist.length-1;
   if(hist.length>50){hist=hist.slice(hist.length-50);histIdx=hist.length-1;}
@@ -1292,8 +1371,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
           const fabX = p.x / phone.offsetWidth * FMT[fmt].w;
           const fabY = p.y / phone.offsetHeight * FMT[fmt].h;
           return [
-            Math.max(0, Math.min(1, (fabX - obj.left) / ow)),
-            Math.max(0, Math.min(1, (fabY - obj.top)  / oh)),
+            (fabX - obj.left) / ow,
+            (fabY - obj.top)  / oh,
           ];
         });
         obj._maskPoints = normPts;
@@ -1435,6 +1514,7 @@ function delSel(){
     return;
   }
   const o=cv?.getActiveObject();if(!o)return;
+  if(o._isMaskEditor) return; // can't delete the mask editor directly
   if(o.type==='activeSelection'){o.forEachObject(x=>cv.remove(x));cv.discardActiveObject();}
   else cv.remove(o);
   cv.renderAll();
@@ -1530,7 +1610,9 @@ function clearProps(){
 }
 
 function updateProps(){
-  const obj=cv?.getActiveObject();if(!obj){clearProps();return;}
+  let obj=cv?.getActiveObject();
+  if(obj?._isMaskEditor) obj=obj._maskTarget; // show video props when editor is selected
+  if(!obj){clearProps();return;}
   document.getElementById('del-btn').style.display='';
   const type=obj._type||'shape';
   const L=Math.round(obj.left),T=Math.round(obj.top);
@@ -1782,40 +1864,75 @@ function setAudioLoop(val, btn){
 // ── VIDEO MASKING ───────────────────────────────────────────────────────────
 function applyMaskClipPath(obj) {
   const shape = obj._maskShape || 'none';
-  if (shape === 'none') { obj.clipPath = null; cv.renderAll(); return; }
-  const w = obj.getScaledWidth();
-  const h = obj.getScaledHeight();
-  const r = (obj._maskRadius ?? 20) * (w / 1080); // scale radius to canvas size
+  if (shape === 'none') {
+    obj.clipPath = null;
+    // Restore caching-off for smooth video playback
+    if (obj._type === 'video') { obj.objectCaching = false; }
+    cv.renderAll();
+    return;
+  }
+  // Fabric.js 5 only applies clipPath inside drawCacheOnCanvas, which is
+  // skipped when objectCaching=false.  Enable caching while a mask is active;
+  // the animation loop marks the object dirty each frame so the video still
+  // updates live.
+  if (obj._type === 'video') { obj.objectCaching = true; obj.dirty = true; }
+  // clipPath renders in the object's LOCAL (intrinsic) coordinate space,
+  // so use obj.width/obj.height (not getScaledWidth which is canvas pixels).
+  const w = obj.width;
+  const h = obj.height;
+  const r = (obj._maskRadius ?? 20) * (w / 1080);
+  // Mask position / size as fractions of object dimensions (0=left/top, 1=full)
+  const mx = (obj._maskX ?? 0) * w - w/2;   // local-space left edge
+  const my = (obj._maskY ?? 0) * h - h/2;   // local-space top edge
+  const mw = (obj._maskW ?? 1) * w;          // local-space width
+  const mh = (obj._maskH ?? 1) * h;          // local-space height
   let cp;
   if (shape === 'rect') {
-    cp = new fabric.Rect({width: w, height: h, left: -w/2, top: -h/2});
+    cp = new fabric.Rect({width: mw, height: mh, left: mx, top: my});
   } else if (shape === 'rounded_rect') {
-    cp = new fabric.Rect({width: w, height: h, left: -w/2, top: -h/2, rx: r, ry: r});
+    cp = new fabric.Rect({width: mw, height: mh, left: mx, top: my, rx: r, ry: r});
   } else if (shape === 'circle') {
-    cp = new fabric.Ellipse({rx: w/2, ry: h/2, left: -w/2, top: -h/2});
+    cp = new fabric.Ellipse({rx: mw/2, ry: mh/2, left: mx, top: my});
   } else if (shape === 'polygon') {
     const pts = (obj._maskPoints || []).map(p => ({
       x: p[0] * w - w/2,
       y: p[1] * h - h/2,
     }));
-    cp = pts.length >= 3 ? new fabric.Polygon(pts) : null;
+    if (pts.length >= 3) {
+      // Fabric Polygon with originX='left' places the bbox top-left at (left, top).
+      // We must set left/top to the polygon's own minX/minY so points render at
+      // their intended positions in local space.
+      const minX = Math.min(...pts.map(p => p.x));
+      const minY = Math.min(...pts.map(p => p.y));
+      cp = new fabric.Polygon(pts, {left: minX, top: minY});
+    }
   }
   obj.clipPath = cp || null;
   cv.renderAll();
 }
 
 function setMaskShape(shape){
-  const obj = cv.getActiveObject();
+  let obj = cv.getActiveObject();
+  if(obj?._isMaskEditor) obj = obj._maskTarget;
   if(!obj) return;
+  const wasPositioned = ['rect','rounded_rect','circle'].includes(obj._maskShape||'none');
+  const willBePositioned = ['rect','rounded_rect','circle'].includes(shape);
+  // Reset to full-coverage when first activating a positioned shape
+  if(willBePositioned && !wasPositioned){
+    obj._maskX=0; obj._maskY=0; obj._maskW=1; obj._maskH=1;
+  }
   obj._maskShape = shape;
   if(shape !== 'polygon') obj._maskPoints = [];
   applyMaskClipPath(obj);
-  updateProps(); // re-render panel to show/hide radius/polygon controls
+  if(willBePositioned) showMaskEditor(obj);
+  else hideMaskEditor(false);
+  updateProps();
   saveHist();
 }
 
 function setMaskRadius(val){
-  const obj = cv.getActiveObject();
+  let obj = cv.getActiveObject();
+  if(obj?._isMaskEditor) obj = obj._maskTarget;
   if(!obj) return;
   obj._maskRadius = val;
   applyMaskClipPath(obj);
@@ -1830,6 +1947,77 @@ function clearPolygonMask(){
   cv.renderAll();
   updateProps();
   saveHist();
+}
+
+// ── MASK SHAPE EDITOR (interactive drag/resize overlay) ─────────────────────
+function showMaskEditor(videoObj) {
+  hideMaskEditor(false); // hide old without restoring selection
+  const ow = videoObj.getScaledWidth();
+  const oh = videoObj.getScaledHeight();
+  const ex = videoObj.left + (videoObj._maskX ?? 0) * ow;
+  const ey = videoObj.top  + (videoObj._maskY ?? 0) * oh;
+  const ew = (videoObj._maskW ?? 1) * ow;
+  const eh = (videoObj._maskH ?? 1) * oh;
+  const commonProps = {
+    left: ex, top: ey,
+    fill: 'rgba(167,139,250,0.08)',
+    stroke: '#a78bfa', strokeWidth: 1.5, strokeDashArray: [5,3],
+    _isMaskEditor: true, _maskTarget: videoObj,
+    excludeFromExport: true, lockRotation: true,
+    transparentCorners: false, cornerColor: '#a78bfa',
+    borderColor: '#a78bfa', cornerSize: 8,
+  };
+  const shape = videoObj._maskShape;
+  let ed;
+  if (shape === 'circle') {
+    ed = new fabric.Ellipse({ ...commonProps, rx: ew/2, ry: eh/2 });
+  } else {
+    ed = new fabric.Rect({ ...commonProps, width: ew, height: eh });
+  }
+  cv.add(ed);
+  cv.bringToFront(ed);
+  _maskEditorTarget = videoObj;
+}
+
+function hideMaskEditor(restoreVideo = true) {
+  const editors = cv.getObjects().filter(o => o._isMaskEditor);
+  if (!editors.length) return;
+  const target = editors[0]._maskTarget;
+  editors.forEach(o => cv.remove(o));
+  _maskEditorTarget = null;
+  if (restoreVideo && target && cv.getObjects().includes(target)) {
+    cv.setActiveObject(target);
+  }
+}
+
+function syncMaskFromEditor(ed) {
+  const videoObj = ed._maskTarget;
+  if (!videoObj) return;
+  const ow = videoObj.getScaledWidth();
+  const oh = videoObj.getScaledHeight();
+  videoObj._maskX = (ed.left - videoObj.left) / ow;
+  videoObj._maskY = (ed.top  - videoObj.top)  / oh;
+  videoObj._maskW = ed.getScaledWidth()  / ow;
+  videoObj._maskH = ed.getScaledHeight() / oh;
+  applyMaskClipPath(videoObj);
+  updateProps();
+}
+
+function _updateMaskEditorForVideo(videoObj) {
+  const ed = cv.getObjects().find(o => o._isMaskEditor && o._maskTarget === videoObj);
+  if (!ed) return;
+  const ow = videoObj.getScaledWidth();
+  const oh = videoObj.getScaledHeight();
+  const ew = (videoObj._maskW ?? 1) * ow;
+  const eh = (videoObj._maskH ?? 1) * oh;
+  ed.set({ left: videoObj.left + (videoObj._maskX ?? 0) * ow,
+            top:  videoObj.top  + (videoObj._maskY ?? 0) * oh });
+  if (ed.type === 'ellipse') {
+    ed.set({ rx: ew/2, ry: eh/2, scaleX: 1, scaleY: 1 });
+  } else {
+    ed.set({ width: ew, height: eh, scaleX: 1, scaleY: 1 });
+  }
+  ed.setCoords();
 }
 
 function startPolygonDraw(){
@@ -2223,6 +2411,8 @@ function canvasToTemplate(){
         shape:obj._maskShape||'none',
         radius:obj._maskRadius??20,
         points:obj._maskPoints||[],
+        x:obj._maskX??0, y:obj._maskY??0,
+        w:obj._maskW??1, h:obj._maskH??1,
       }};
     if(t==='text')return{...base,
       text:obj._isTitle?'{title}':(obj.text||'{title}'),
@@ -2243,9 +2433,25 @@ function canvasToTemplate(){
 
 function saveTemplate(){
   const defaultName=document.getElementById('proj-name-input').value||'My Template';
-  const name=prompt('Save template as:',defaultName);
-  if(!name||!name.trim())return;
-  document.getElementById('proj-name-input').value=name.trim();
+  const overlay=document.getElementById('save-tpl-modal');
+  const box=overlay.querySelector('.t-modal');
+  document.getElementById('save-tpl-name').value=defaultName;
+  overlay.classList.add('open');
+  requestAnimationFrame(()=>{box.classList.remove('is-closing');box.classList.add('is-open');});
+  setTimeout(()=>document.getElementById('save-tpl-name').select(),50);
+}
+function closeSaveTplModal(){
+  const overlay=document.getElementById('save-tpl-modal');
+  const box=overlay.querySelector('.t-modal');
+  const ms=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--modal-close-dur'))||150;
+  box.classList.remove('is-open');box.classList.add('is-closing');
+  setTimeout(()=>{overlay.classList.remove('open');box.classList.remove('is-closing');},ms+20);
+}
+function confirmSaveTemplate(){
+  const name=document.getElementById('save-tpl-name').value.trim();
+  if(!name)return;
+  document.getElementById('proj-name-input').value=name;
+  closeSaveTplModal();
   const tpl=canvasToTemplate();
   fetch('/api/templates',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(tpl)})
     .then(r=>r.json())
@@ -2288,7 +2494,7 @@ async function applySavedTpl(file){
       const vidEl=document.getElementById('preview-video');
       if(downloadedVideoURL&&vidEl.readyState>=1&&vidEl.videoWidth>0){
         const vc2=ensureVideoCanvas(vidEl);
-        const img=new fabric.Image(vc2,{left:lx,top:ly,objectCaching:false,_type:'video',_label:'Video Layer',_fit:layer.fit||'contain',opacity:op,_audioVolume:layer.volume??1.0,_audioMuted:layer.muted===true,_maskShape:(layer.mask||{}).shape||'none',_maskRadius:(layer.mask||{}).radius??20,_maskPoints:(layer.mask||{}).points||[]});
+        const img=new fabric.Image(vc2,{left:lx,top:ly,objectCaching:false,_type:'video',_label:'Video Layer',_fit:layer.fit||'contain',opacity:op,_audioVolume:layer.volume??1.0,_audioMuted:layer.muted===true,_maskShape:(layer.mask||{}).shape||'none',_maskRadius:(layer.mask||{}).radius??20,_maskPoints:(layer.mask||{}).points||[],_maskX:(layer.mask||{}).x??0,_maskY:(layer.mask||{}).y??0,_maskW:(layer.mask||{}).w??1,_maskH:(layer.mask||{}).h??1});
         if(img._maskShape!=='none') applyMaskClipPath(img);
         const sc2=Math.min(lw/vc2.width,lh/vc2.height);
         img.set({scaleX:sc2,scaleY:sc2,left:lx+(lw-img.getScaledWidth())/2,top:ly+(lh-img.getScaledHeight())/2});
