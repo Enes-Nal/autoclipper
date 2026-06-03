@@ -650,7 +650,7 @@ button,input,select{font-family:inherit}
   </div>
 </div>
 
-<video id="preview-video" autoplay muted loop playsinline style="position:absolute;width:0;height:0;opacity:0;pointer-events:none"></video>
+<video id="preview-video" autoplay loop playsinline style="position:absolute;width:0;height:0;opacity:0;pointer-events:none"></video>
 <input type="file" id="img-pick" accept="image/*" style="display:none" onchange="onImgFile(event)">
 
 <script>
@@ -676,6 +676,7 @@ let snapLines={x:null,y:null};
 let scaleSnapState={x:null,y:null};
 let lastTextPos=null, lastTextObj=null;
 let downloadedVideoPath=null, downloadedVideoURL=null;
+let _canvasMuted=true;
 
 // ── itshover SVG icon helpers ──────────────────────────────────────────────
 // Icons from https://www.itshover.com/icons — ported to vanilla SVG + CSS animations
@@ -789,6 +790,18 @@ function stripTogglePlay(){
   }
 }
 
+function syncCanvasMuteBtn(){
+  const btn=document.getElementById('canvas-mute-btn');
+  if(!btn)return;
+  btn.style.display=downloadedVideoURL?'inline-flex':'none';
+  btn.innerHTML=_canvasMuted?icoVolX(15):icoVol(15);
+}
+function toggleCanvasMute(){
+  _canvasMuted=!_canvasMuted;
+  const vidEl=document.getElementById('preview-video');
+  if(vidEl)vidEl.muted=_canvasMuted;
+  syncCanvasMuteBtn();
+}
 function stripToggleMute(){
   _stripMuted = !_stripMuted;
   const stripAudio = document.getElementById('strip-audio');
@@ -1359,6 +1372,8 @@ function refreshVideoLayers(){
 document.addEventListener('DOMContentLoaded', ()=>{
   const vidEl = document.getElementById('preview-video');
   if(vidEl){
+    vidEl.muted=true;
+    syncCanvasMuteBtn();
     vidEl.addEventListener('timeupdate', ()=>{
       const stripAudio = document.getElementById('strip-audio');
       if(!stripAudio || !stripAudio.src || !audioLayer) return;
@@ -2422,6 +2437,9 @@ function updateTplPreviews(url){
   downloadedVideoURL=url;
   const vidEl=document.getElementById('preview-video');
   vidEl.src=url;
+  _canvasMuted=true;
+  vidEl.muted=true;
+  syncCanvasMuteBtn();
   document.querySelectorAll('.tpl-vid').forEach(v=>{v.src=url;v.classList.add('visible');v.play().catch(()=>{});});
   function swapVideoLayer(){
     if(!cv){vidEl.addEventListener('canplay',swapVideoLayer,{once:true});return;}
