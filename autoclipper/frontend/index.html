@@ -2999,7 +2999,7 @@ function ctxItemsForObject(o){
     label: isLocked ? 'Unlock' : 'Lock',
     action:()=>{
       const lock = !isLocked;
-      o.set({lockMovementX:lock,lockMovementY:lock,lockScalingX:lock,lockScalingY:lock,hasControls:!lock,selectable:!lock});
+      o.set({lockMovementX:lock,lockMovementY:lock,lockScalingX:lock,lockScalingY:lock,hasControls:!lock});
       cv.renderAll();
       saveHist();
     }});
