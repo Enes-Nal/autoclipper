@@ -44,10 +44,10 @@ def test_audio_passthrough_when_no_changes():
     """No audio layer, default volume → no filter, passthrough label."""
     video_layers = [{"type": "video", "volume": 1.0, "muted": False}]
     audio_layer = None
-    extra_inputs, filter_parts, audio_label = build_audio_cmd_parts(
+    music_inputs, sfx_inputs, filter_parts, audio_label = build_audio_cmd_parts(
         video_layers, audio_layer, next_input_idx=1
     )
-    assert extra_inputs == []
+    assert music_inputs == []
     assert filter_parts == []
     assert audio_label == "0:a"   # plain passthrough
 
@@ -56,7 +56,7 @@ def test_audio_volume_filter():
     """Video layer with volume=0.5 → volume filter applied."""
     video_layers = [{"type": "video", "volume": 0.5, "muted": False}]
     audio_layer = None
-    extra_inputs, filter_parts, audio_label = build_audio_cmd_parts(
+    music_inputs, sfx_inputs, filter_parts, audio_label = build_audio_cmd_parts(
         video_layers, audio_layer, next_input_idx=1
     )
     assert any("volume=0.5" in p for p in filter_parts)
@@ -67,7 +67,7 @@ def test_audio_muted():
     """Muted video layer → volume=0 filter."""
     video_layers = [{"type": "video", "volume": 1.0, "muted": True}]
     audio_layer = None
-    extra_inputs, filter_parts, audio_label = build_audio_cmd_parts(
+    music_inputs, sfx_inputs, filter_parts, audio_label = build_audio_cmd_parts(
         video_layers, audio_layer, next_input_idx=1
     )
     assert any("volume=0" in p for p in filter_parts)
@@ -84,10 +84,10 @@ def test_audio_layer_amix():
         "trim_start": 0.0,
         "trim_end": None,
     }
-    extra_inputs, filter_parts, audio_label = build_audio_cmd_parts(
+    music_inputs, sfx_inputs, filter_parts, audio_label = build_audio_cmd_parts(
         video_layers, audio_layer, next_input_idx=1
     )
-    assert "uploads/fake.mp3" in extra_inputs
+    assert "uploads/fake.mp3" in music_inputs
     assert any("amix" in p for p in filter_parts)
     assert audio_label != "0:a"
 
@@ -102,7 +102,7 @@ def test_audio_layer_loop():
         "trim_start": 0.0,
         "trim_end": None,
     }
-    extra_inputs, filter_parts, audio_label = build_audio_cmd_parts(
+    music_inputs, sfx_inputs, filter_parts, audio_label = build_audio_cmd_parts(
         video_layers, audio_layer, next_input_idx=1
     )
     assert any("aloop" in p for p in filter_parts)
@@ -118,7 +118,7 @@ def test_audio_layer_volume():
         "trim_start": 0.0,
         "trim_end": None,
     }
-    extra_inputs, filter_parts, audio_label = build_audio_cmd_parts(
+    music_inputs, sfx_inputs, filter_parts, audio_label = build_audio_cmd_parts(
         video_layers, audio_layer, next_input_idx=1
     )
     assert any("volume=0.4" in p for p in filter_parts)
@@ -194,7 +194,7 @@ def test_audio_only_filter_uses_raw_video_map():
     # Simulate what export_video does: layers with no visual filters + audio layer
     layers = [{"type": "video", "volume": 0.5, "muted": False}]
     audio_layer = None  # just test the volume filter path
-    _, audio_filter_parts, audio_label = build_audio_cmd_parts(
+    _, _, audio_filter_parts, audio_label = build_audio_cmd_parts(
         layers, audio_layer, next_input_idx=1
     )
     # Confirm a volume filter was generated

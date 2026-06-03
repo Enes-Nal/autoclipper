@@ -1,30 +1,55 @@
-import subprocess, uuid, os
+import subprocess, uuid, os, shutil
 from pathlib import Path
 from text_renderer import render_text_layer
 
 EXPORTS_DIR = Path(__file__).parent / "exports"
+
+def _has_nvenc() -> bool:
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffmpeg:
+        return False
+    try:
+        r = subprocess.run(
+            ["ffmpeg", "-hide_banner", "-encoders"],
+            capture_output=True, text=True, timeout=5
+        )
+        return "h264_nvenc" in r.stdout
+    except Exception:
+        return False
+
+_USE_NVENC = _has_nvenc()
+
 TEMP_DIR = Path(__file__).parent / "temp"
 for d in (EXPORTS_DIR, TEMP_DIR):
     d.mkdir(exist_ok=True)
 
 def render_mask_png(shape: str, w: int, h: int, radius: int,
-                    points: list, path: str) -> None:
+                    points: list, path: str,
+                    mx: float = 0.0, my: float = 0.0,
+                    mw: float = 1.0, mh: float = 1.0) -> None:
     """
     Render a white-on-black mask PNG at w×h pixels.
     shape: "rect" | "rounded_rect" | "circle" | "polygon"
     radius: corner radius in pixels (rounded_rect only)
     points: normalised [[x,y],...] vertices (polygon only, 0-1 relative to w/h)
+    mx, my: normalised top-left of mask region (0-1, default 0,0 = top-left corner)
+    mw, mh: normalised size of mask region (0-1, default 1,1 = full frame)
     path: output file path
     """
     from PIL import Image, ImageDraw
     img = Image.new("L", (w, h), 0)
     draw = ImageDraw.Draw(img)
+    # Compute pixel bounding box for positioned shapes
+    x0 = int(mx * w)
+    y0 = int(my * h)
+    x1 = int((mx + mw) * w) - 1
+    y1 = int((my + mh) * h) - 1
     if shape == "rect":
-        draw.rectangle([0, 0, w - 1, h - 1], fill=255)
+        draw.rectangle([x0, y0, x1, y1], fill=255)
     elif shape == "rounded_rect":
-        draw.rounded_rectangle([0, 0, w - 1, h - 1], radius=max(0, radius), fill=255)
+        draw.rounded_rectangle([x0, y0, x1, y1], radius=max(0, radius), fill=255)
     elif shape == "circle":
-        draw.ellipse([0, 0, w - 1, h - 1], fill=255)
+        draw.ellipse([x0, y0, x1, y1], fill=255)
     elif shape == "polygon" and points:
         pts = [(int(p[0] * w), int(p[1] * h)) for p in points]
         draw.polygon(pts, fill=255)
@@ -158,16 +183,17 @@ def build_audio_cmd_parts(
     next_input_idx: int,
 ):
     """
-    Build FFmpeg audio filter parts for video layer volume/mute and an optional
-    audio layer (music track).
+    Build FFmpeg audio filter parts for video layer volume/mute, SFX layers,
+    and an optional audio layer (music track).
 
     Returns:
-        extra_inputs  – additional file paths to pass as -i arguments
+        music_inputs  – list of music file paths (0 or 1 items) for -i args
+        sfx_inputs    – list of SFX file paths for -i args (no trim/seek)
         filter_parts  – filter_complex fragment strings (no semicolons)
-        audio_label   – the label/stream to use for -map audio output,
-                        e.g. "0:a", "va1", or "aout"
+        audio_label   – the label/stream to use for -map audio output
     """
-    extra_inputs = []
+    music_inputs = []
+    sfx_inputs = []
     filter_parts = []
     n = [0]
 
@@ -192,41 +218,66 @@ def build_audio_cmd_parts(
     else:
         vid_audio_label = "0:a"
 
-    # ── Step 2: Audio layer (music track) ───────────────────────────────────
-    if audio_layer is None:
-        return extra_inputs, filter_parts, vid_audio_label
-
-    src = audio_layer.get("src") or ""
-    if not src:
-        raise ValueError("audio_layer must have a non-empty 'src'")
-    music_vol = float(audio_layer.get("volume", 1.0))
-    loop = bool(audio_layer.get("loop", False))
-
-    music_input_idx = next_input_idx + len(extra_inputs)
-    extra_inputs.append(src)
-
-    raw_music = f"{music_input_idx}:a"
-    cur_label = raw_music
-
-    if loop:
-        looped = albl()
+    # ── Step 2: SFX layers ───────────────────────────────────────────────────
+    active_sfx = [
+        l for l in layers
+        if l.get("type") == "sfx"
+        and not l.get("muted", False)
+        and l.get("src")
+    ]
+    sfx_labels = []
+    for i, sfx in enumerate(active_sfx):
+        idx = next_input_idx + i
+        sfx_inputs.append(sfx["src"])
+        delay_ms = int(float(sfx.get("start_time", 0)) * 1000)
+        vol = float(sfx.get("volume", 1.0))
+        lbl = albl()
         filter_parts.append(
-            f"[{raw_music}]aloop=loop=-1:size=2147483647[{looped}]"
+            f"[{idx}:a]adelay={delay_ms}|{delay_ms},volume={vol}[{lbl}]"
         )
-        cur_label = looped
+        sfx_labels.append(lbl)
 
-    if music_vol != 1.0:
-        volout = albl()
-        filter_parts.append(f"[{cur_label}]volume={music_vol}[{volout}]")
-        cur_label = volout
+    # ── Step 3: Music layer ──────────────────────────────────────────────────
+    music_label = None
+    if audio_layer is not None:
+        src = audio_layer.get("src") or ""
+        if not src:
+            raise ValueError("audio_layer must have a non-empty 'src'")
+        music_vol = float(audio_layer.get("volume", 1.0))
+        loop = bool(audio_layer.get("loop", False))
+
+        music_idx = next_input_idx + len(sfx_inputs)
+        music_inputs.append(src)
+
+        raw_music = f"{music_idx}:a"
+        cur_label = raw_music
+
+        if loop:
+            looped = albl()
+            filter_parts.append(
+                f"[{raw_music}]aloop=loop=-1:size=2147483647[{looped}]"
+            )
+            cur_label = looped
+
+        if music_vol != 1.0:
+            volout = albl()
+            filter_parts.append(f"[{cur_label}]volume={music_vol}[{volout}]")
+            cur_label = volout
+
+        music_label = cur_label
+
+    # ── Step 4: Mix all streams ──────────────────────────────────────────────
+    all_labels = [vid_audio_label] + sfx_labels + ([music_label] if music_label else [])
+    if len(all_labels) == 1:
+        return music_inputs, sfx_inputs, filter_parts, all_labels[0]
 
     mixed = albl()
+    inputs_str = "".join(f"[{l}]" for l in all_labels)
     filter_parts.append(
-        f"[{vid_audio_label}][{cur_label}]"
-        f"amix=inputs=2:duration=first:dropout_transition=0[{mixed}]"
+        f"{inputs_str}amix=inputs={len(all_labels)}"
+        f":duration=first:dropout_transition=0:normalize=0[{mixed}]"
     )
-
-    return extra_inputs, filter_parts, mixed
+    return music_inputs, sfx_inputs, filter_parts, mixed
 
 
 def export_video(video_path: str, template: dict, title: str = "",
@@ -265,14 +316,18 @@ def export_video(video_path: str, template: dict, title: str = "",
             lw, lh = l.get("width", cw), l.get("height", ch)
             radius = l.get("mask", {}).get("radius", 20)
             points = l.get("mask", {}).get("points", [])
-            render_mask_png(shape, lw, lh, radius, points, p)
+            mx = l.get("mask", {}).get("x", 0.0)
+            my = l.get("mask", {}).get("y", 0.0)
+            mw_f = l.get("mask", {}).get("w", 1.0)
+            mh_f = l.get("mask", {}).get("h", 1.0)
+            render_mask_png(shape, lw, lh, radius, points, p, mx, my, mw_f, mh_f)
             mask_inputs[i] = len(extra_inputs) + 1
             extra_inputs.append(p)
 
     filter_parts, final_video = build_filter_graph(layers, cw, ch, text_pngs, image_inputs, mask_inputs)
 
     # next free input index = 1 (video) + len(extra_inputs)
-    audio_extra, audio_filter_parts, audio_label = build_audio_cmd_parts(
+    music_extra, sfx_extra, audio_filter_parts, audio_label = build_audio_cmd_parts(
         layers, audio_layer, next_input_idx=1 + len(extra_inputs)
     )
 
@@ -282,8 +337,12 @@ def export_video(video_path: str, template: dict, title: str = "",
     for inp in extra_inputs:
         cmd += ["-i", inp]
 
-    # Audio layer input: apply seek/trim at input level when not looping
-    if audio_layer and audio_extra:
+    # SFX inputs (no trim/seek)
+    for p in sfx_extra:
+        cmd += ["-i", p]
+
+    # Music input: apply seek/trim at input level when not looping
+    if audio_layer and music_extra:
         trim_start = float(audio_layer.get("trim_start", 0.0))
         trim_end = audio_layer.get("trim_end")
         loop = bool(audio_layer.get("loop", False))
@@ -292,7 +351,7 @@ def export_video(video_path: str, template: dict, title: str = "",
                 cmd += ["-ss", str(trim_start)]
             if trim_end is not None:
                 cmd += ["-to", str(trim_end)]
-        cmd += ["-i", audio_extra[0]]
+        cmd += ["-i", music_extra[0]]
 
     all_filter_parts = filter_parts + audio_filter_parts
     if filter_parts and audio_filter_parts:
@@ -313,7 +372,12 @@ def export_video(video_path: str, template: dict, title: str = "",
         cmd += ["-map", f"[{audio_label}]"]
 
     cmd += [
-        "-c:v", "libx264", "-preset", "fast", "-crf", "23",
+        *(
+            ["-c:v", "h264_nvenc", "-preset", "p4", "-cq", "23", "-rc", "vbr",
+             "-b:v", "0", "-spatial_aq", "1"]
+            if _USE_NVENC else
+            ["-c:v", "libx264", "-preset", "medium", "-crf", "23", "-threads", "4"]
+        ),
         "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart",
         out_path,
     ]
