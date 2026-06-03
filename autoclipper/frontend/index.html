@@ -676,6 +676,7 @@ function icoTrash(sz=12){return`<svg xmlns="http://www.w3.org/2000/svg" width="$
 function icoCut(sz=12){return`<svg xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>`;}
 // ─────────────────────────────────────────────────────────────────────────────
 let audioLayer=null; // {type:'audio',src,volume,loop,trim_start,trim_end}
+const _drag={obj:null,fromDisplay:null};
 // Polygon drawing state
 let _polygonDrawing = false;
 let _polygonPoints = [];   // canvas-space [{x,y},...] being drawn
@@ -1548,10 +1549,11 @@ function syncLayers(){
   const active=cv?.getActiveObject();
   const objs=cv.getObjects().filter(o=>!o.excludeFromExport).slice().reverse();
   list.innerHTML='';
-  objs.forEach(obj=>{
+  objs.forEach((obj,displayIdx)=>{
     const t=obj._type||'shape',label=obj._label||'Element',color=LC[t]||'#888';
     const row=document.createElement('div');
     row.className='lrow'+(obj===active?' on':'');
+    row.draggable=true;
     const eyeIco=document.createElement('span');
     eyeIco.className='leye';
     const _hidden=obj.visible===false;
@@ -1565,7 +1567,55 @@ function syncLayers(){
       eyeIco.querySelector('.t-icon-swap').dataset.state=obj.visible===false?'b':'a';
       cv.renderAll();
     });
+    // drag-and-drop
+    row.addEventListener('dragstart',ev=>{
+      _drag.obj=obj;
+      _drag.fromDisplay=displayIdx;
+      ev.dataTransfer.effectAllowed='move';
+      setTimeout(()=>row.classList.add('lrow-dragging'),0);
+    });
+    row.addEventListener('dragend',()=>{
+      row.classList.remove('lrow-dragging');
+      _drag.obj=null;
+      _drag.fromDisplay=null;
+      const ind=document.getElementById('layer-drop-indicator');
+      if(ind)ind.remove();
+    });
+    row.addEventListener('dragover',ev=>{
+      if(!_drag.obj)return;
+      ev.preventDefault();
+      ev.dataTransfer.dropEffect='move';
+      const ind=document.getElementById('layer-drop-indicator')||document.createElement('div');
+      ind.id='layer-drop-indicator';
+      const rect=row.getBoundingClientRect();
+      const after=ev.clientY>rect.top+rect.height/2;
+      if(after){
+        row.after(ind);
+      }else{
+        row.before(ind);
+      }
+    });
+    row.addEventListener('drop',ev=>{
+      if(!_drag.obj||_drag.obj===obj)return;
+      ev.preventDefault();
+      const rect=row.getBoundingClientRect();
+      const after=ev.clientY>rect.top+rect.height/2;
+      // displayIdx of the target slot
+      let targetDisplay=after?displayIdx+1:displayIdx;
+      // clamp
+      targetDisplay=Math.max(0,Math.min(targetDisplay,objs.length-1));
+      const total=cv.getObjects().filter(o=>!o.excludeFromExport).length;
+      const targetCanvas=(total-1)-targetDisplay;
+      cv.moveTo(_drag.obj,targetCanvas);
+      cv.renderAll();
+      syncLayers();
+      saveHist();
+    });
     list.appendChild(row);
+  });
+  list.addEventListener('dragover',ev=>{
+    if(!_drag.obj)return;
+    ev.preventDefault();
   });
   // Audio layer row
   const audioRowEl = document.getElementById('audio-layer-row');
