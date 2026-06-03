@@ -1287,6 +1287,7 @@ function setFmt(f){
   // Clear existing content
   gridLines.forEach(l=>cv.remove(l));gridLines=[];gridOn=false;
   stopVideoLoop(); cv.clear(); cv.backgroundColor='#0c0c18'; cv.renderAll();
+  sfxLayers = []; activeSfxId = null; renderSfxStrip();
   updZoom(); syncLayers(); saveHist();
   localStorage.setItem('acFmt',f);
 }
@@ -1442,7 +1443,7 @@ function align(type){
 // ── HISTORY ────────────────────────────────────────────────────────────────
 function saveHist(){
   if(histLock)return;
-  const entry={canvas:JSON.stringify(cv.toJSON(['_type','_label','_blur','_fit','_isTitle','_audioVolume','_audioMuted','_maskShape','_maskRadius','_maskPoints','_maskX','_maskY','_maskW','_maskH','_overflow'])),audioLayer:audioLayer?{...audioLayer}:null};
+  const entry={canvas:JSON.stringify(cv.toJSON(['_type','_label','_blur','_fit','_isTitle','_audioVolume','_audioMuted','_maskShape','_maskRadius','_maskPoints','_maskX','_maskY','_maskW','_maskH','_overflow','_frameW','_frameH'])),audioLayer:audioLayer?{...audioLayer}:null};
   const j=JSON.stringify(entry);
   hist=hist.slice(0,histIdx+1);hist.push(entry);histIdx=hist.length-1;
   if(hist.length>50){hist=hist.slice(hist.length-50);histIdx=hist.length-1;}
@@ -1613,6 +1614,7 @@ function addVideo(){
       left:0,top:vTop,objectCaching:false,
       _type:'video',_label:'Video Layer',_fit:'contain',
       _audioVolume:1.0,_audioMuted:false,
+      _frameW:w,_frameH:vh,
     });
     const sx=w/vc.width,sy=vh/vc.height;
     const s=Math.min(sx,sy);
@@ -1624,7 +1626,7 @@ function addVideo(){
     stopVideoLoop();
     const r=new fabric.Rect({left:0,top:vTop,width:w,height:vh,fill:'#1a1a1d',stroke:'rgba(255,255,255,0.08)',strokeWidth:1,rx:3,ry:3});
     const t=new fabric.Text('[VIDEO]',{left:w/2,top:vTop+vh/2,originX:'center',originY:'center',fontSize:12,fill:'rgba(255,255,255,0.2)',fontFamily:'Inter',fontWeight:'600',selectable:false,evented:false});
-    const g=new fabric.Group([r,t],{_type:'video',_label:'Video Layer',_fit:'contain'});
+    const g=new fabric.Group([r,t],{_type:'video',_label:'Video Layer',_fit:'contain',_frameW:w,_frameH:vh});
     cv.add(g);cv.setActiveObject(g);
   }
   cv.renderAll();
@@ -2996,17 +2998,31 @@ function canvasToTemplate(){
       opacity:obj.opacity??1,
     };
     if(t==='blur')return{...base,blur:obj._blur??20};
-    if(t==='video')return{...base,fit:obj._fit||'contain',
-      volume:obj._audioVolume??1.0,
-      muted:obj._audioMuted===true,
-      mask:{
-        shape:obj._maskShape||'none',
-        radius:obj._maskRadius??20,
-        points:obj._maskPoints||[],
-        x:obj._maskX??0, y:obj._maskY??0,
-        w:obj._maskW??1, h:obj._maskH??1,
-      }};
+    if(t==='video'){
+      // Use stored frame-box dims so cover/fill crops the intended region,
+      // not the smaller contain-display region.
+      const dW=obj.getScaledWidth(),dH=obj.getScaledHeight();
+      const fW=obj._frameW??dW, fH=obj._frameH??dH;
+      const fX=obj.left-(fW-dW)/2, fY=obj.top-(fH-dH)/2;
+      return{
+        type:'video',
+        x:Math.round(fX*scale),y:Math.round(fY*scale),
+        width:Math.round(fW*scale),height:Math.round(fH*scale),
+        opacity:obj.opacity??1,
+        fit:obj._fit||'contain',
+        volume:obj._audioVolume??1.0,
+        muted:obj._audioMuted===true,
+        mask:{
+          shape:obj._maskShape||'none',
+          radius:obj._maskRadius??20,
+          points:obj._maskPoints||[],
+          x:obj._maskX??0, y:obj._maskY??0,
+          w:obj._maskW??1, h:obj._maskH??1,
+        }};
+    }
     if(t==='text')return{...base,
+      // Use remaining canvas height so the renderer never clips wrapped lines
+      height:Math.round(Math.max(0,h-obj.top)*scale),
       text:obj._isTitle?'{title}':(obj.text||'{title}'),
       font_size:Math.round((obj.fontSize||48)*scale),
       fill:obj.fill||'#ffffff',
@@ -3097,7 +3113,7 @@ async function applySavedTpl(file){
       const vidEl=document.getElementById('preview-video');
       if(downloadedVideoURL&&vidEl.readyState>=1&&vidEl.videoWidth>0){
         const vc2=ensureVideoCanvas(vidEl);
-        const img=new fabric.Image(vc2,{left:lx,top:ly,objectCaching:false,_type:'video',_label:'Video Layer',_fit:layer.fit||'contain',opacity:op,_audioVolume:layer.volume??1.0,_audioMuted:layer.muted===true,_maskShape:(layer.mask||{}).shape||'none',_maskRadius:(layer.mask||{}).radius??20,_maskPoints:(layer.mask||{}).points||[],_maskX:(layer.mask||{}).x??0,_maskY:(layer.mask||{}).y??0,_maskW:(layer.mask||{}).w??1,_maskH:(layer.mask||{}).h??1});
+        const img=new fabric.Image(vc2,{left:lx,top:ly,objectCaching:false,_type:'video',_label:'Video Layer',_fit:layer.fit||'contain',opacity:op,_audioVolume:layer.volume??1.0,_audioMuted:layer.muted===true,_maskShape:(layer.mask||{}).shape||'none',_maskRadius:(layer.mask||{}).radius??20,_maskPoints:(layer.mask||{}).points||[],_maskX:(layer.mask||{}).x??0,_maskY:(layer.mask||{}).y??0,_maskW:(layer.mask||{}).w??1,_maskH:(layer.mask||{}).h??1,_frameW:lw,_frameH:lh});
         if(img._maskShape!=='none') applyMaskClipPath(img);
         const sc2=Math.min(lw/vc2.width,lh/vc2.height);
         img.set({scaleX:sc2,scaleY:sc2,left:lx+(lw-img.getScaledWidth())/2,top:ly+(lh-img.getScaledHeight())/2});
@@ -3105,7 +3121,7 @@ async function applySavedTpl(file){
       } else {
         const r=new fabric.Rect({left:lx,top:ly,width:lw,height:lh,fill:'#1a1a1d',stroke:'rgba(255,255,255,0.08)',strokeWidth:1,rx:3,ry:3});
         const t2=new fabric.Text('[VIDEO]',{left:lx+lw/2,top:ly+lh/2,originX:'center',originY:'center',fontSize:12,fill:'rgba(255,255,255,0.2)',fontFamily:'Inter',fontWeight:'600',selectable:false,evented:false});
-        const grp=new fabric.Group([r,t2],{_type:'video',_label:'Video Layer',_fit:layer.fit||'contain',_audioVolume:layer.volume??1.0,_audioMuted:layer.muted===true,_maskShape:(layer.mask||{}).shape||'none',_maskRadius:(layer.mask||{}).radius??20,_maskPoints:(layer.mask||{}).points||[]});
+        const grp=new fabric.Group([r,t2],{_type:'video',_label:'Video Layer',_fit:layer.fit||'contain',_audioVolume:layer.volume??1.0,_audioMuted:layer.muted===true,_maskShape:(layer.mask||{}).shape||'none',_maskRadius:(layer.mask||{}).radius??20,_maskPoints:(layer.mask||{}).points||[],_frameW:lw,_frameH:lh});
         if(grp._maskShape!=='none') applyMaskClipPath(grp);
         cv.add(grp);
       }
