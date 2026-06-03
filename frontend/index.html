@@ -1197,6 +1197,28 @@ function initCanvas(f){
     updateProps();
     openCtxMenu(e, ctxItemsForObject(target));
   });
+
+  document.getElementById('layer-list').addEventListener('contextmenu', e => {
+    e.preventDefault();
+    const row = e.target.closest('.lrow');
+    if(!row) return;
+    const rows = Array.from(document.querySelectorAll('#layer-list .lrow'));
+    const idx = rows.indexOf(row);
+    if(idx < 0) return;
+    const objs = cv.getObjects().filter(o=>!o.excludeFromExport).slice().reverse();
+    const obj = objs[idx];
+    if(!obj) return;
+    cv.setActiveObject(obj);
+    cv.renderAll();
+    updateProps();
+    openCtxMenu(e, ctxItemsForObject(obj));
+  });
+
+  document.getElementById('audio-layer-row').addEventListener('contextmenu', e => {
+    e.preventDefault();
+    if(!audioLayer) return;
+    openCtxMenu(e, ctxItemsForAudio());
+  });
 }
 
 // ── FORMAT ─────────────────────────────────────────────────────────────────
