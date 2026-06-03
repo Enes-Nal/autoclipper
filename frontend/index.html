@@ -334,6 +334,16 @@ button,input,select{font-family:inherit}
 .trimmer-actions{display:flex;justify-content:flex-end;gap:8px}
 #audio-strip{display:none;background:var(--s1);border-top:1px solid var(--b1);padding:8px 14px;align-items:center;gap:10px;flex-shrink:0;width:100%;box-sizing:border-box}
 #audio-strip.visible{display:flex}
+#sfx-strip{display:none;height:36px;background:var(--s1);border-top:1px solid var(--b1);position:relative;flex-shrink:0;width:100%;box-sizing:border-box;cursor:crosshair;user-select:none}
+#sfx-strip.visible{display:block}
+.sfx-chip{position:absolute;top:4px;height:28px;padding:0 8px;background:var(--acc);border-radius:12px;font-size:10px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;display:flex;align-items:center;cursor:grab;transform:translateX(-50%);border:2px solid transparent;box-sizing:border-box;line-height:1}
+.sfx-chip.selected{border-color:#fff;box-shadow:0 0 0 2px var(--acc)}
+.sfx-chip:active{cursor:grabbing}
+#sfx-picker-popover{position:fixed;background:var(--s2);border:1px solid var(--b2);border-radius:8px;padding:8px;min-width:180px;max-height:220px;overflow-y:auto;z-index:1000;box-shadow:0 4px 16px rgba(0,0,0,.4);display:none}
+#sfx-picker-popover.open{display:block}
+.sfx-picker-row{padding:6px 8px;border-radius:5px;font-size:12px;color:var(--tx);cursor:pointer;display:flex;align-items:center;gap:6px}
+.sfx-picker-row:hover{background:var(--s3)}
+.sfx-picker-empty{padding:8px;font-size:11px;color:var(--sub);text-align:center}
 #strip-canvas{flex:1;height:32px;border-radius:4px;background:var(--s3);display:block;min-width:0}
 .strip-vol{display:flex;align-items:center;gap:6px;flex-shrink:0}
 .strip-vol label{font-size:10px;color:var(--sub)}
@@ -523,6 +533,12 @@ button,input,select{font-family:inherit}
           </button>
         </div>
       </div>
+    <!-- SFX STRIP -->
+    <div id="sfx-strip"></div>
+    <!-- SFX PICKER POPOVER -->
+    <div id="sfx-picker-popover">
+      <div id="sfx-picker-list"></div>
+    </div>
     <!-- AUDIO PREVIEW STRIP -->
     <div id="audio-strip">
       <button class="tbar-btn" id="strip-play-btn" onclick="stripTogglePlay()" style="flex-shrink:0">
@@ -1500,6 +1516,46 @@ document.addEventListener('DOMContentLoaded', ()=>{
     drawPolyOverlay(cx, cy);
   });
 
+  // ── SFX strip events ──────────────────────────────────────────────────────
+  const sfxStripEl = document.getElementById('sfx-strip');
+  sfxStripEl.addEventListener('mousedown', ev => {
+    if (ev.target !== sfxStripEl) return;
+    const rect = sfxStripEl.getBoundingClientRect();
+    const duration = getClipDuration();
+    let t = ((ev.clientX - rect.left) / rect.width) * duration;
+    t = snapSfxTime(t);
+    _sfxPickerTime = Math.max(0, parseFloat(t.toFixed(3)));
+    _sfxPickerTarget = null;
+    openSfxPicker(ev.clientX, ev.clientY);
+  });
+
+  document.addEventListener('mousemove', ev => {
+    if (!_sfxDrag) return;
+    const { layerId, startX, startTime, stripRect } = _sfxDrag;
+    const duration = getClipDuration();
+    const dx = ev.clientX - startX;
+    const dt = (dx / stripRect.width) * duration;
+    let newTime = Math.max(0, Math.min(startTime + dt, duration));
+    newTime = snapSfxTime(newTime);
+    const layer = sfxLayers.find(l => l.id === layerId);
+    if (layer) {
+      layer.start_time = parseFloat(newTime.toFixed(3));
+      renderSfxStrip();
+      if (typeof updateSfxTimestampField === 'function' && activeSfxId === layerId) {
+        updateSfxTimestampField(layer.start_time);
+      }
+    }
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (_sfxDrag) { _sfxDrag = null; saveHist(); }
+  });
+
+  document.addEventListener('mousedown', ev => {
+    const picker = document.getElementById('sfx-picker-popover');
+    if (picker && !picker.contains(ev.target)) closeSfxPicker();
+  });
+
   loadSfxLibrary();
 });
 function doUndo(){
@@ -1774,7 +1830,7 @@ let activeSfxId = null;
 
 function toggleSfxPanel() {
   document.getElementById('sfx-panel').classList.toggle('open');
-
+  renderSfxStrip();
 }
 
 async function loadSfxLibrary() {
@@ -1886,6 +1942,132 @@ async function onSfxFile(e) {
     alert('Upload failed: ' + err.message);
   }
   e.target.value = '';
+}
+
+// ── SFX STRIP ──────────────────────────────────────────────────────────────
+let _sfxDrag = null;
+let _sfxPickerTarget = null;
+let _sfxPickerTime = null;
+
+function getClipDuration() {
+  const vid = document.querySelector('video');
+  if (vid && vid.duration && isFinite(vid.duration)) return vid.duration;
+  return 30;
+}
+
+function renderSfxStrip() {
+  const strip = document.getElementById('sfx-strip');
+  if (!strip) return;
+  const hasSfx = sfxLayers.length > 0;
+  const panelOpen = document.getElementById('sfx-panel').classList.contains('open');
+  strip.classList.toggle('visible', hasSfx || panelOpen);
+
+  strip.querySelectorAll('.sfx-chip').forEach(c => c.remove());
+
+  const duration = getClipDuration();
+  const W = strip.clientWidth || strip.offsetWidth || 400;
+
+  sfxLayers.forEach(layer => {
+    const pct = Math.min(layer.start_time / duration, 1);
+    const x = pct * W;
+    const chip = document.createElement('div');
+    chip.className = 'sfx-chip' + (layer.id === activeSfxId ? ' selected' : '');
+    chip.dataset.id = layer.id;
+    const sound = sfxLibrary.find(s => s.path === layer.src);
+    chip.textContent = sound ? sound.name : layer.src.split('/').pop();
+    chip.style.left = x + 'px';
+
+    chip.addEventListener('mousedown', ev => {
+      ev.stopPropagation();
+      activeSfxId = layer.id;
+      renderSfxStrip();
+      if (typeof showSfxLayerProps === 'function') showSfxLayerProps(layer.id);
+      _sfxDrag = {
+        layerId: layer.id,
+        startX: ev.clientX,
+        startTime: layer.start_time,
+        stripRect: strip.getBoundingClientRect(),
+      };
+    });
+    strip.appendChild(chip);
+  });
+}
+
+function snapSfxTime(t) {
+  const duration = getClipDuration();
+  const W = document.getElementById('sfx-strip').clientWidth || 400;
+  const snapThresholdSec = (8 / W) * duration;
+
+  const objs = window.cv ? cv.getObjects().filter(o => !o.excludeFromExport) : [];
+  const boundaries = [];
+  objs.forEach(obj => {
+    if (obj._startTime != null) boundaries.push(obj._startTime);
+    if (obj._endTime   != null) boundaries.push(obj._endTime);
+  });
+  for (const b of boundaries) {
+    if (Math.abs(t - b) <= snapThresholdSec) return b;
+  }
+  return Math.round(t * 10) / 10;
+}
+
+function openSfxPicker(clientX, clientY) {
+  const picker = document.getElementById('sfx-picker-popover');
+  const listEl = document.getElementById('sfx-picker-list');
+  listEl.innerHTML = '';
+
+  if (sfxLibrary.length === 0) {
+    listEl.innerHTML = '<div class="sfx-picker-empty">No sounds yet — upload one first</div>';
+  } else {
+    sfxLibrary.forEach(sound => {
+      const row = document.createElement('div');
+      row.className = 'sfx-picker-row';
+      const nameSpan = document.createElement('span');
+      nameSpan.style.flex = '1';
+      nameSpan.textContent = sound.name;
+      row.appendChild(nameSpan);
+      row.addEventListener('click', () => {
+        if (_sfxPickerTarget) {
+          const layer = sfxLayers.find(l => l.id === _sfxPickerTarget);
+          if (layer) {
+            layer.src = sound.path;
+            renderSfxStrip();
+            if (typeof showSfxLayerProps === 'function') showSfxLayerProps(layer.id);
+            saveHist();
+          }
+        } else {
+          const newLayer = {
+            type: 'sfx',
+            id: (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)),
+            src: sound.path,
+            start_time: _sfxPickerTime,
+            volume: 1.0,
+            muted: false,
+          };
+          sfxLayers.push(newLayer);
+          activeSfxId = newLayer.id;
+          renderSfxStrip();
+          if (typeof showSfxLayerProps === 'function') showSfxLayerProps(newLayer.id);
+          saveHist();
+        }
+        closeSfxPicker();
+      });
+      listEl.appendChild(row);
+    });
+  }
+
+  picker.classList.add('open');
+  const pw = 180, ph = Math.min(sfxLibrary.length * 36 + 16, 220);
+  let left = clientX, top = clientY + 8;
+  if (left + pw > window.innerWidth) left = window.innerWidth - pw - 8;
+  if (top + ph > window.innerHeight) top = clientY - ph - 8;
+  picker.style.left = left + 'px';
+  picker.style.top  = top  + 'px';
+}
+
+function closeSfxPicker() {
+  document.getElementById('sfx-picker-popover').classList.remove('open');
+  _sfxPickerTarget = null;
+  _sfxPickerTime = null;
 }
 
 // ── PROPERTIES ─────────────────────────────────────────────────────────────
