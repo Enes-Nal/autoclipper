@@ -2807,6 +2807,7 @@ function closeCtxMenu(){
 
 function openCtxMenu(e, items){
   e.preventDefault();
+  e.stopPropagation();
   const menu = document.getElementById('ctx-menu');
   menu.innerHTML = '';
   items.forEach(({icon, label, action, danger}) => {
@@ -2824,6 +2825,8 @@ function openCtxMenu(e, items){
   const mw = menu.offsetWidth || 180, mh = menu.offsetHeight || 200;
   if(x + mw > vw) x = vw - mw - 4;
   if(y + mh > vh) y = vh - mh - 4;
+  x = Math.max(0, x);
+  y = Math.max(0, y);
   menu.style.left = x + 'px';
   menu.style.top = y + 'px';
 }
@@ -2886,10 +2889,11 @@ function _ctxRename(o){
     saveHist();
   }
   nameEl.addEventListener('blur', finish, {once:true});
-  nameEl.addEventListener('keydown', e => {
-    if(e.key==='Enter'){e.preventDefault();nameEl.blur();}
-    if(e.key==='Escape'){nameEl.textContent=orig;nameEl.blur();}
-  }, {once:true});
+  function _renameKey(e){
+    if(e.key==='Enter'){e.preventDefault();nameEl.removeEventListener('keydown',_renameKey);nameEl.blur();}
+    if(e.key==='Escape'){nameEl.removeEventListener('keydown',_renameKey);nameEl.removeEventListener('blur',finish);nameEl.contentEditable='false';nameEl.textContent=orig;o._label=orig;nameEl.blur();}
+  }
+  nameEl.addEventListener('keydown', _renameKey);
 }
 
 function _ctxRenameAudio(){
@@ -2907,12 +2911,14 @@ function _ctxRenameAudio(){
     const newName = nameEl.textContent.trim() || orig;
     audioLayer._label = newName;
     nameEl.textContent = newName;
+    saveHist();
   }
   nameEl.addEventListener('blur', finish, {once:true});
-  nameEl.addEventListener('keydown', e => {
-    if(e.key==='Enter'){e.preventDefault();nameEl.blur();}
-    if(e.key==='Escape'){nameEl.textContent=orig;nameEl.blur();}
-  }, {once:true});
+  function _renameAudioKey(e){
+    if(e.key==='Enter'){e.preventDefault();nameEl.removeEventListener('keydown',_renameAudioKey);nameEl.blur();}
+    if(e.key==='Escape'){nameEl.removeEventListener('keydown',_renameAudioKey);nameEl.removeEventListener('blur',finish);nameEl.contentEditable='false';nameEl.textContent=orig;audioLayer._label=orig;nameEl.blur();}
+  }
+  nameEl.addEventListener('keydown', _renameAudioKey);
 }
 
 function _ctxSplitAtPlayhead(o){
