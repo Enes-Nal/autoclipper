@@ -1602,20 +1602,15 @@ function syncLayers(){
       const after=ev.clientY>rect.top+rect.height/2;
       // displayIdx of the target slot
       let targetDisplay=after?displayIdx+1:displayIdx;
-      // clamp
-      targetDisplay=Math.max(0,Math.min(targetDisplay,objs.length-1));
-      const total=cv.getObjects().filter(o=>!o.excludeFromExport).length;
-      const targetCanvas=(total-1)-targetDisplay;
+      const clampedDisplay=Math.max(0,Math.min(targetDisplay,objs.length-1));
+      const targetObj=objs[clampedDisplay];
+      const targetCanvas=cv.getObjects().indexOf(targetObj);
       cv.moveTo(_drag.obj,targetCanvas);
       cv.renderAll();
       syncLayers();
       saveHist();
     });
     list.appendChild(row);
-  });
-  list.addEventListener('dragover',ev=>{
-    if(!_drag.obj)return;
-    ev.preventDefault();
   });
   // Audio layer row
   const audioRowEl = document.getElementById('audio-layer-row');
@@ -1793,45 +1788,50 @@ function updateProps(){
   if(type==='text'){
     const fill=typeof obj.fill==='string'?obj.fill:'#ffffff';
     const fs=Math.round(obj.fontSize||48),sw=Math.round(obj.strokeWidth||0);
+    const fw=String(obj.fontWeight||'900');
+    const ta=obj.textAlign||'center';
+    const sc=typeof obj.stroke==='string'?obj.stroke:'#000000';
     html+=`<div class="psec"><div class="psec-title"><svg class="psec-title-icon cur-path" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"/></svg>Text</div>
     <div class="prow"><span class="plbl">Size</span>
       <div class="slrow">
         <input type="range" class="psl" min="8" max="180" value="${fs}"
-          oninput="sp('fontSize',+this.value);this.nextElementSibling.textContent=this.value+'px'">
+          oninput="sp('fontSize',+this.value);this.nextElementSibling.textContent=this.value+'px'"
+          onchange="saveHist()">
         <span class="slv">${fs}px</span>
       </div>
     </div>
     <div class="prow"><span class="plbl">Weight</span>
       <div class="tog">
-        <button class="togbtn" onclick="togOn(this);sp('fontWeight','400')">Regular</button>
-        <button class="togbtn" onclick="togOn(this);sp('fontWeight','700')">Bold</button>
-        <button class="togbtn on" onclick="togOn(this);sp('fontWeight','900')">Black</button>
+        <button class="togbtn ${fw==='400'?'on':''}" onclick="togOn(this);sp('fontWeight','400');saveHist()">Regular</button>
+        <button class="togbtn ${fw==='700'?'on':''}" onclick="togOn(this);sp('fontWeight','700');saveHist()">Bold</button>
+        <button class="togbtn ${fw==='900'?'on':''}" onclick="togOn(this);sp('fontWeight','900');saveHist()">Black</button>
       </div>
     </div>
     <div class="prow"><span class="plbl">Align</span>
       <div class="tog">
-        <button class="togbtn" onclick="togOn(this);sp('textAlign','left')">L</button>
-        <button class="togbtn on" onclick="togOn(this);sp('textAlign','center')">C</button>
-        <button class="togbtn" onclick="togOn(this);sp('textAlign','right')">R</button>
+        <button class="togbtn ${ta==='left'?'on':''}" onclick="togOn(this);sp('textAlign','left');saveHist()">L</button>
+        <button class="togbtn ${ta==='center'?'on':''}" onclick="togOn(this);sp('textAlign','center');saveHist()">C</button>
+        <button class="togbtn ${ta==='right'?'on':''}" onclick="togOn(this);sp('textAlign','right');saveHist()">R</button>
       </div>
     </div>
     <div class="prow"><span class="plbl">Color</span>
       <div class="swatches">
         ${['#ffffff','#000000','#ffdd00','#ff4466','#44ccff','#a78bfa','#ff8800','#22c55e'].map(c=>
-          `<div class="sw${fill===c?' on':''}" style="background:${c};${c==='#ffffff'?'border-color:#333':''}" onclick="sp('fill','${c}');document.querySelectorAll('.sw').forEach(s=>s.classList.remove('on'));this.classList.add('on')"></div>`
+          `<div class="sw${fill===c?' on':''}" style="background:${c};${c==='#ffffff'?'border-color:#333':''}" onclick="sp('fill','${c}');saveHist();document.querySelectorAll('.sw').forEach(s=>s.classList.remove('on'));this.classList.add('on')"></div>`
         ).join('')}
-        <input type="color" class="cinput" value="${fill}" oninput="sp('fill',this.value)" title="Custom">
+        <input type="color" class="cinput" value="${fill}" oninput="sp('fill',this.value)" onchange="saveHist()" title="Custom">
       </div>
     </div>
     <div class="prow"><span class="plbl">Stroke</span>
       <div class="slrow">
         <input type="range" class="psl" min="0" max="20" value="${sw}"
-          oninput="sp('strokeWidth',+this.value);this.nextElementSibling.textContent=this.value+'px'">
+          oninput="const _o=cv?.getActiveObject();if(_o&&typeof _o.stroke!=='string')_o.set('stroke','#000000');sp('strokeWidth',+this.value);this.nextElementSibling.textContent=this.value+'px'"
+          onchange="saveHist()">
         <span class="slv">${sw}px</span>
       </div>
     </div>
     <div class="prow"><span class="plbl">S.Color</span>
-      <input type="color" class="cinput" value="${typeof obj.stroke==='string'?obj.stroke:'#000000'}" oninput="sp('stroke',this.value)" title="Stroke color">
+      <input type="color" class="cinput" value="${sc}" oninput="sp('stroke',this.value)" onchange="saveHist()" title="Stroke color">
     </div></div>
     <div class="psec"><div class="psec-title"><svg class="psec-title-icon gear-path" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>Emoji</div>
       <button class="emo-btn" onclick="toggleEmojiPicker(this)">😊 Add Emoji</button>
