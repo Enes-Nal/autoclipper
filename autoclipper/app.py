@@ -15,6 +15,11 @@ UPLOADS_DIR   = BASE_DIR / "uploads"
 UPLOADS_DIR.mkdir(exist_ok=True)
 ALLOWED_AUDIO_EXTS = {'.mp3', '.wav', '.ogg', '.m4a', '.aac'}
 
+SFX_DIR = BASE_DIR / "sfx"
+SFX_LIB_PATH = BASE_DIR / "sfx_library.json"
+SFX_DIR.mkdir(exist_ok=True)
+ALLOWED_SFX_EXTS = {'.mp3', '.wav', '.ogg'}
+
 # In-memory job store: job_id -> Queue of SSE event dicts
 _jobs: dict[str, queue.Queue] = {}
 
@@ -182,6 +187,76 @@ def upload_audio():
 @app.get("/api/uploads/<filename>")
 def serve_upload(filename):
     return send_from_directory(str(UPLOADS_DIR.resolve()), filename)
+
+
+# ── SFX Library ───────────────────────────────────────────────────────────────
+def _read_sfx_lib():
+    if SFX_LIB_PATH.exists():
+        return json.loads(SFX_LIB_PATH.read_text(encoding="utf-8"))
+    return {"sounds": []}
+
+
+def _write_sfx_lib(data):
+    SFX_LIB_PATH.write_text(json.dumps(data, indent=2, ensure_ascii=False),
+                             encoding="utf-8")
+
+
+@app.get("/api/sfx")
+def list_sfx():
+    return jsonify(_read_sfx_lib())
+
+
+@app.post("/api/sfx/upload")
+def upload_sfx():
+    f = request.files.get("file")
+    if not f:
+        return jsonify({"error": "file required"}), 400
+    if not f.filename:
+        return jsonify({"error": "no filename provided"}), 400
+    ext = Path(f.filename).suffix.lower()
+    if ext not in ALLOWED_SFX_EXTS:
+        return jsonify({"error": f"extension {ext} not allowed"}), 400
+    sfx_id = uuid.uuid4().hex[:12]
+    filename = f"{sfx_id}{ext}"
+    dest = SFX_DIR / filename
+    f.save(str(dest))
+    name = Path(f.filename).stem
+    lib = _read_sfx_lib()
+    entry = {"id": sfx_id, "name": name, "path": f"sfx/{filename}"}
+    lib["sounds"].append(entry)
+    _write_sfx_lib(lib)
+    return jsonify(entry)
+
+
+@app.get("/api/sfx/files/<filename>")
+def serve_sfx(filename):
+    return send_from_directory(str(SFX_DIR.resolve()), filename)
+
+
+@app.patch("/api/sfx/<sfx_id>/rename")
+def rename_sfx(sfx_id):
+    new_name = (request.json or {}).get("name", "").strip()
+    lib = _read_sfx_lib()
+    entry = next((s for s in lib["sounds"] if s["id"] == sfx_id), None)
+    if not entry:
+        return jsonify({"error": "not found"}), 404
+    entry["name"] = new_name
+    _write_sfx_lib(lib)
+    return jsonify(entry)
+
+
+@app.delete("/api/sfx/<sfx_id>")
+def delete_sfx(sfx_id):
+    lib = _read_sfx_lib()
+    entry = next((s for s in lib["sounds"] if s["id"] == sfx_id), None)
+    if not entry:
+        return jsonify({"error": "not found"}), 404
+    lib["sounds"] = [s for s in lib["sounds"] if s["id"] != sfx_id]
+    _write_sfx_lib(lib)
+    file_path = BASE_DIR / entry["path"]
+    if file_path.exists():
+        file_path.unlink()
+    return jsonify({"deleted": sfx_id})
 
 
 if __name__ == "__main__":
