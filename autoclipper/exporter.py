@@ -1,55 +1,30 @@
-import subprocess, uuid, os, shutil
+import subprocess, uuid, os
 from pathlib import Path
 from text_renderer import render_text_layer
 
 EXPORTS_DIR = Path(__file__).parent / "exports"
-
-def _has_nvenc() -> bool:
-    ffmpeg = shutil.which("ffmpeg")
-    if not ffmpeg:
-        return False
-    try:
-        r = subprocess.run(
-            ["ffmpeg", "-hide_banner", "-encoders"],
-            capture_output=True, text=True, timeout=5
-        )
-        return "h264_nvenc" in r.stdout
-    except Exception:
-        return False
-
-_USE_NVENC = _has_nvenc()
-
 TEMP_DIR = Path(__file__).parent / "temp"
 for d in (EXPORTS_DIR, TEMP_DIR):
     d.mkdir(exist_ok=True)
 
 def render_mask_png(shape: str, w: int, h: int, radius: int,
-                    points: list, path: str,
-                    mx: float = 0.0, my: float = 0.0,
-                    mw: float = 1.0, mh: float = 1.0) -> None:
+                    points: list, path: str) -> None:
     """
     Render a white-on-black mask PNG at w×h pixels.
     shape: "rect" | "rounded_rect" | "circle" | "polygon"
     radius: corner radius in pixels (rounded_rect only)
     points: normalised [[x,y],...] vertices (polygon only, 0-1 relative to w/h)
-    mx, my: normalised top-left of mask region (0-1, default 0,0 = top-left corner)
-    mw, mh: normalised size of mask region (0-1, default 1,1 = full frame)
     path: output file path
     """
     from PIL import Image, ImageDraw
     img = Image.new("L", (w, h), 0)
     draw = ImageDraw.Draw(img)
-    # Compute pixel bounding box for positioned shapes
-    x0 = int(mx * w)
-    y0 = int(my * h)
-    x1 = int((mx + mw) * w) - 1
-    y1 = int((my + mh) * h) - 1
     if shape == "rect":
-        draw.rectangle([x0, y0, x1, y1], fill=255)
+        draw.rectangle([0, 0, w - 1, h - 1], fill=255)
     elif shape == "rounded_rect":
-        draw.rounded_rectangle([x0, y0, x1, y1], radius=max(0, radius), fill=255)
+        draw.rounded_rectangle([0, 0, w - 1, h - 1], radius=max(0, radius), fill=255)
     elif shape == "circle":
-        draw.ellipse([x0, y0, x1, y1], fill=255)
+        draw.ellipse([0, 0, w - 1, h - 1], fill=255)
     elif shape == "polygon" and points:
         pts = [(int(p[0] * w), int(p[1] * h)) for p in points]
         draw.polygon(pts, fill=255)
@@ -229,7 +204,7 @@ def build_audio_cmd_parts(
     for i, sfx in enumerate(active_sfx):
         idx = next_input_idx + i
         sfx_inputs.append(sfx["src"])
-        delay_ms = int(float(sfx.get("start_time", 0)) * 1000)
+        delay_ms = max(0, int(float(sfx.get("start_time", 0)) * 1000))
         vol = float(sfx.get("volume", 1.0))
         lbl = albl()
         filter_parts.append(
@@ -316,11 +291,7 @@ def export_video(video_path: str, template: dict, title: str = "",
             lw, lh = l.get("width", cw), l.get("height", ch)
             radius = l.get("mask", {}).get("radius", 20)
             points = l.get("mask", {}).get("points", [])
-            mx = l.get("mask", {}).get("x", 0.0)
-            my = l.get("mask", {}).get("y", 0.0)
-            mw_f = l.get("mask", {}).get("w", 1.0)
-            mh_f = l.get("mask", {}).get("h", 1.0)
-            render_mask_png(shape, lw, lh, radius, points, p, mx, my, mw_f, mh_f)
+            render_mask_png(shape, lw, lh, radius, points, p)
             mask_inputs[i] = len(extra_inputs) + 1
             extra_inputs.append(p)
 
@@ -372,12 +343,7 @@ def export_video(video_path: str, template: dict, title: str = "",
         cmd += ["-map", f"[{audio_label}]"]
 
     cmd += [
-        *(
-            ["-c:v", "h264_nvenc", "-preset", "p4", "-cq", "23", "-rc", "vbr",
-             "-b:v", "0", "-spatial_aq", "1"]
-            if _USE_NVENC else
-            ["-c:v", "libx264", "-preset", "medium", "-crf", "23", "-threads", "4"]
-        ),
+        "-c:v", "libx264", "-preset", "fast", "-crf", "23",
         "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart",
         out_path,
     ]
