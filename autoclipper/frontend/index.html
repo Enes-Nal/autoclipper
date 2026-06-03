@@ -1184,6 +1184,19 @@ function initCanvas(f){
       cv.requestRenderAll();
     }
   });
+
+  document.getElementById('canvas-area').addEventListener('contextmenu', e => {
+    if(!cv) return;
+    const target = cv.findTarget(e, false);
+    if(!target || target.excludeFromExport || target._isMaskEditor) {
+      e.preventDefault();
+      return;
+    }
+    cv.setActiveObject(target);
+    cv.renderAll();
+    updateProps();
+    openCtxMenu(e, ctxItemsForObject(target));
+  });
 }
 
 // ── FORMAT ─────────────────────────────────────────────────────────────────
