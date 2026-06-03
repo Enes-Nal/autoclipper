@@ -1551,11 +1551,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if (_sfxDrag) { _sfxDrag = null; saveHist(); }
   });
 
-  document.addEventListener('mousedown', ev => {
-    const picker = document.getElementById('sfx-picker-popover');
-    if (picker && !picker.contains(ev.target)) closeSfxPicker();
-  });
-
   loadSfxLibrary();
 });
 function doUndo(){
@@ -1830,7 +1825,7 @@ let activeSfxId = null;
 
 function toggleSfxPanel() {
   document.getElementById('sfx-panel').classList.toggle('open');
-  renderSfxStrip();
+  requestAnimationFrame(renderSfxStrip);
 }
 
 async function loadSfxLibrary() {
@@ -1994,19 +1989,6 @@ function renderSfxStrip() {
 }
 
 function snapSfxTime(t) {
-  const duration = getClipDuration();
-  const W = document.getElementById('sfx-strip').clientWidth || 400;
-  const snapThresholdSec = (8 / W) * duration;
-
-  const objs = window.cv ? cv.getObjects().filter(o => !o.excludeFromExport) : [];
-  const boundaries = [];
-  objs.forEach(obj => {
-    if (obj._startTime != null) boundaries.push(obj._startTime);
-    if (obj._endTime   != null) boundaries.push(obj._endTime);
-  });
-  for (const b of boundaries) {
-    if (Math.abs(t - b) <= snapThresholdSec) return b;
-  }
   return Math.round(t * 10) / 10;
 }
 
@@ -2062,6 +2044,16 @@ function openSfxPicker(clientX, clientY) {
   if (top + ph > window.innerHeight) top = clientY - ph - 8;
   picker.style.left = left + 'px';
   picker.style.top  = top  + 'px';
+
+  // Dismiss on next outside click
+  const onOutsideClick = ev => {
+    if (!picker.contains(ev.target)) {
+      closeSfxPicker();
+      document.removeEventListener('mousedown', onOutsideClick, true);
+    }
+  };
+  // Use capture phase so it fires before strip mousedown handler
+  document.addEventListener('mousedown', onOutsideClick, true);
 }
 
 function closeSfxPicker() {
