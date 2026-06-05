@@ -1628,21 +1628,33 @@ function insertEmoji(emoji){
 }
 
 function switchEmoTab(tab){
-  document.querySelectorAll('.emo-tab').forEach((b,i)=>{
-    b.classList.toggle('on',i===(tab==='mypack'?0:1));
-  });
-  document.getElementById('emo-tab-mypack').classList.toggle('on',tab==='mypack');
-  document.getElementById('emo-tab-twemoji').classList.toggle('on',tab==='twemoji');
+  const isMypack=tab==='mypack';
+  const btn0=document.querySelector('.emo-tab:first-child');
+  const btn1=document.querySelector('.emo-tab:last-child');
+  if(btn0)btn0.classList.toggle('on',isMypack);
+  if(btn1)btn1.classList.toggle('on',!isMypack);
+  const mypackEl=document.getElementById('emo-tab-mypack');
+  const twemojiEl=document.getElementById('emo-tab-twemoji');
+  if(mypackEl)mypackEl.classList.toggle('on',isMypack);
+  if(twemojiEl)twemojiEl.classList.toggle('on',!isMypack);
 }
 
 function renderMyEmojiGrid(){
   const grid=document.getElementById('myemo-grid');
   if(!grid)return;
-  grid.innerHTML=EMOJIPACK_FILES.map(path=>{
+  function _he(s){return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  grid.innerHTML=EMOJIPACK_FILES.map((path,i)=>{
     const filename=path.split('/').pop();
     const label=filename.replace(/_[^_]+\.png$/,'').replace(/-/g,' ');
-    return `<div class="ec" onclick="insertEmojiPackImg('${path.replace(/'/g,"\\'")}',this)" title="${label}"><img src="${path}" alt="${label}" loading="lazy" width="28" height="28" style="display:block"></div>`;
+    return `<div class="ec" data-idx="${i}" title="${_he(label)}"><img src="${path}" alt="${_he(label)}" loading="lazy" width="28" height="28" style="display:block"></div>`;
   }).join('');
+  if(!grid._emoPackListenerAttached){
+    grid._emoPackListenerAttached=true;
+    grid.addEventListener('click',function(e){
+      const cell=e.target.closest('[data-idx]');
+      if(cell)insertEmojiPackImg(EMOJIPACK_FILES[+cell.dataset.idx]);
+    });
+  }
 }
 
 function insertEmojiPackImg(path){
@@ -1651,6 +1663,7 @@ function insertEmojiPackImg(path){
   _epop.classList.remove('is-open');_epop.classList.add('is-closing');
   setTimeout(()=>_epop.classList.remove('is-closing'),_ecms);
   emoOpen=false;
+  emoTargetInput=null;
   const filename=path.split('/').pop();
   const label=filename.replace(/_[^_]+\.png$/,'').replace(/-/g,' ');
   const currentFmt=fmt;
