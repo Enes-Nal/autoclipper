@@ -279,6 +279,9 @@ button,input,select{font-family:inherit}
 .modal-input{width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);color:var(--tx);font-family:'Inter',sans-serif;font-size:13px;padding:10px 12px;outline:none;margin-bottom:12px;transition:.1s}
 .modal-input:focus{border-color:var(--acc)}
 .modal-input::placeholder{color:var(--sub)}
+.exp-preview-toggle{width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);color:var(--sub);font-size:11px;font-weight:600;padding:6px 10px;text-align:left;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:6px;transition:.1s}
+.exp-preview-toggle:hover{border-color:var(--b2);color:var(--tx)}
+.exp-preview-crop-wrap{background:var(--s1);border-radius:6px;padding:10px;border:1px solid var(--b1)}
 .modal-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .prog-wrap{display:none;align-items:center;gap:8px;flex:1;min-width:120px}
 .prog-track{flex:1;height:4px;background:var(--mut);border-radius:2px;overflow:hidden}
@@ -702,9 +705,28 @@ button,input,select{font-family:inherit}
   <div class="modal-box t-modal">
     <div class="modal-title">Export Clip</div>
     <div class="modal-sub">Set a title and export using the current template</div>
-    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
-      <input class="modal-input" id="exp-title" placeholder="Clip title (replaces {title} in template)…" style="margin-bottom:0;flex:1" />
+    <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+      <input class="modal-input" id="exp-title" placeholder="Clip title (replaces {title} in template)…" style="margin-bottom:0;flex:1" oninput="onExpTitleInput()" />
       <button class="btn btn-ghost" onclick="toggleEmojiPickerForInput(this,'exp-title')" title="Add emoji" style="flex-shrink:0;padding:6px 10px;font-size:16px">😊</button>
+    </div>
+    <button id="exp-preview-toggle" class="exp-preview-toggle" onclick="toggleExpPreview()" style="display:none">
+      <span id="exp-preview-arrow">▶</span> Title Preview &amp; Style
+    </button>
+    <div id="exp-preview-panel" style="display:none">
+      <div class="exp-preview-crop-wrap">
+        <div style="font-size:9px;color:var(--sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Canvas Preview</div>
+        <div style="position:relative;display:inline-block;width:100%">
+          <img id="exp-preview-img" style="width:100%;border-radius:5px;border:1px solid var(--b1);display:block" alt="title preview" />
+          <div style="position:absolute;inset:0;outline:1.5px dashed rgba(124,92,246,0.5);border-radius:5px;pointer-events:none"></div>
+        </div>
+        <div style="font-size:9px;color:#444;margin-top:3px;text-align:right">Cropped from canvas · updates live</div>
+      </div>
+      <div id="exp-title-controls" style="margin-top:10px"></div>
+      <label style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:11px;color:var(--sub);cursor:pointer">
+        <input type="checkbox" id="exp-update-tpl" style="accent-color:var(--acc)">
+        Update template with these text styles
+      </label>
+      <div id="exp-update-tpl-note" style="font-size:10px;color:var(--sub);margin-top:3px;display:none">Save a template first to update it.</div>
     </div>
     <div id="exp-video-info" style="font-size:11px;color:var(--sub);margin-bottom:12px"></div>
     <div class="modal-row">
