@@ -3022,7 +3022,7 @@ function updateProps(){
     <div class="prow"><span class="plbl">W / H</span>
       <div class="pxy">
         <input class="pin" value="${W}" onchange="ssz('w',+this.value)">
-        <input class="pin" value="${H}" onchange="ssz('h',+this.value)" ${type==='text'?'readonly style="opacity:.4;cursor:default"':''}>
+        <input class="pin" value="${H}" onchange="ssz('h',+this.value)" ${type==='text'&&obj._autoHeight!==false?'readonly style="opacity:.4;cursor:default"':''}>
       </div>
     </div>
     <div class="prow"><span class="plbl">Opacity</span>
@@ -3110,6 +3110,8 @@ function updateProps(){
   if(type==='text'){
     const fill=typeof obj.fill==='string'?obj.fill:'#ffffff';
     const fs=Math.round(obj.fontSize||48),sw=Math.round(obj.strokeWidth||0);
+    const isFixed = obj._autoHeight === false;
+    const vAlign = obj._verticalAlign || 'top';
     const ff=(obj.fontFamily||'Inter').replace(/^"|"$/g,'').split(',')[0].trim();
     const ffEsc=ff.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const ffCss=CSS.escape(ff);
@@ -3148,6 +3150,20 @@ function updateProps(){
         ${['wrap','truncate','shrink'].map(m=>`<button class="togbtn${(obj._overflow||'wrap')===m?' on':''}" onclick="togOn(this);sp('_overflow','${m}')">${m[0].toUpperCase()+m.slice(1)}</button>`).join('')}
       </div>
     </div>
+    <div class="prow"><span class="plbl">Fixed H</span>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+        <input type="checkbox" ${isFixed?'checked':''} onchange="toggleTextFixedHeight(this.checked)">
+        <span style="font-size:11px;color:var(--sub)">Fixed height</span>
+      </label>
+    </div>
+    ${isFixed?`
+    <div class="prow"><span class="plbl">V.Align</span>
+      <div class="tog">
+        <button class="togbtn${vAlign==='top'?' on':''}" onclick="togOn(this);setTextVAlign('top')">Top</button>
+        <button class="togbtn${vAlign==='middle'?' on':''}" onclick="togOn(this);setTextVAlign('middle')">Mid</button>
+        <button class="togbtn${vAlign==='bottom'?' on':''}" onclick="togOn(this);setTextVAlign('bottom')">Bot</button>
+      </div>
+    </div>`:''}
     <div class="prow"><span class="plbl">Color</span>
       <div class="swatches">
         ${['#ffffff','#000000','#ffdd00','#ff4466','#44ccff','#a78bfa','#ff8800','#22c55e'].map(c=>
@@ -3686,6 +3702,24 @@ function onTrimmerMouseUp(){ _trimmerDragging=null; }
 
 function sp(k,v){const o=cv?.getActiveObject();if(!o)return;o.set(k,v);cv.renderAll();}
 function ssz(ax,v){const o=cv?.getActiveObject();if(!o)return;if(o._type==='text'){if(ax==='w'){o.width=Math.max(20,v);}else if(o._autoHeight===false){o.height=Math.max(20,v);}o.scaleX=1;o.scaleY=1;}else{if(ax==='w'){o.scaleX=v/o.width;}else{o.scaleY=v/o.height;}}o.setCoords();cv.renderAll();}
+
+function toggleTextFixedHeight(on){
+  const o=cv?.getActiveObject();if(!o||o._type!=='text')return;
+  o._autoHeight=!on;
+  if(on){
+    // capture current rendered height as the starting fixed height
+    o.height=Math.round(o.getScaledHeight());
+    o.scaleY=1;
+  }
+  syncTextHandles(o);
+  o.setCoords();cv.renderAll();updateProps();saveHist();
+}
+
+function setTextVAlign(v){
+  const o=cv?.getActiveObject();if(!o||o._type!=='text')return;
+  o._verticalAlign=v;
+  cv.renderAll();saveHist();
+}
 function togOn(el){el.closest('.tog').querySelectorAll('.togbtn').forEach(b=>b.classList.remove('on'));el.classList.add('on');}
 
 // ── TABS ───────────────────────────────────────────────────────────────────
