@@ -3919,6 +3919,40 @@ function openExpModal(){
   const filename=downloadedVideoPath.split(/[\\/]/).pop();
   document.getElementById('exp-video-info').textContent='Video: '+filename;
   document.getElementById('exp-title').focus();
+  _expPreviewOpen = false;
+  document.getElementById('exp-preview-panel').style.display = 'none';
+  document.getElementById('exp-preview-arrow').textContent = '▶';
+  const titleObj = getTitleObj();
+  const toggleBtn = document.getElementById('exp-preview-toggle');
+  if(titleObj){
+    toggleBtn.style.display = 'flex';
+    renderExpTitleControls(titleObj);
+    checkExpUpdateTplNote();
+  } else {
+    toggleBtn.style.display = 'none';
+  }
+}
+let _expPreviewOpen = false;
+function toggleExpPreview(){
+  _expPreviewOpen = !_expPreviewOpen;
+  document.getElementById('exp-preview-panel').style.display = _expPreviewOpen ? 'block' : 'none';
+  document.getElementById('exp-preview-arrow').textContent = _expPreviewOpen ? '▼' : '▶';
+  if(_expPreviewOpen) refreshExpPreview();
+}
+function getTitleObj(){
+  return cv.getObjects().find(o => o._isTitle === true) || null;
+}
+function checkExpUpdateTplNote(){
+  const name = document.getElementById('proj-name-input').value.trim();
+  const note = document.getElementById('exp-update-tpl-note');
+  const cb = document.getElementById('exp-update-tpl');
+  if(!name){
+    note.style.display = 'block';
+    cb.disabled = true;
+  } else {
+    note.style.display = 'none';
+    cb.disabled = false;
+  }
 }
 function closeExpModal(){
   const overlay=document.getElementById('exp-modal');
