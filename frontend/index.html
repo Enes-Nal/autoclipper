@@ -619,6 +619,7 @@ button,input,select{font-family:inherit}
     <button class="emo-tab" onclick="switchEmoTab('twemoji')">Twemoji</button>
   </div>
   <div class="emo-tab-body on" id="emo-tab-mypack">
+    <input class="emo-search" id="myemo-search" placeholder="Search emojis…" oninput="filterMyEmoji(this.value)">
     <div class="myemo-grid" id="myemo-grid"></div>
   </div>
   <div class="emo-tab-body" id="emo-tab-twemoji">
@@ -1637,6 +1638,11 @@ function switchEmoTab(tab){
   const twemojiEl=document.getElementById('emo-tab-twemoji');
   if(mypackEl)mypackEl.classList.toggle('on',isMypack);
   if(twemojiEl)twemojiEl.classList.toggle('on',!isMypack);
+  // Reset search when switching to My Emojis tab
+  if(isMypack){
+    const s=document.getElementById('myemo-search');
+    if(s){s.value='';filterMyEmoji('');}
+  }
 }
 
 function renderMyEmojiGrid(){
@@ -1658,30 +1664,57 @@ function renderMyEmojiGrid(){
 }
 
 function insertEmojiPackImg(path){
-  const _epop=document.getElementById('emo-popup');
-  const _ecms=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dropdown-close-dur'))||150;
-  _epop.classList.remove('is-open');_epop.classList.add('is-closing');
-  setTimeout(()=>_epop.classList.remove('is-closing'),_ecms);
-  emoOpen=false;
-  emoTargetInput=null;
-  const filename=path.split('/').pop();
-  const label=filename.replace(/_[^_]+\.png$/,'').replace(/-/g,' ');
-  const currentFmt=fmt;
-  fabric.Image.fromURL(path,function(img){
-    if(!img||!img.width||!img.height)return;
-    const {w,h}=FMT[currentFmt];
-    const size=Math.round(Math.min(w,h)*0.18);
-    img.set({
-      left:Math.round(w/2-size/2),
-      top:Math.round(h/2-size/2),
-      scaleX:size/img.width,
-      scaleY:size/img.height,
-      _type:'emoji',
-      _label:label,
-      _src:path,
+  // Extract unicode character from the codepoint suffix in the filename
+  const filename=path.split('/').pop().replace('.png','');
+  const cpStr=filename.replace(/.*_/,'');
+  let emojiChar=null;
+  try{emojiChar=cpStr.split('-').map(cp=>String.fromCodePoint(parseInt(cp,16))).join('');}catch(e){}
+
+  if(emojiChar){
+    // Preload local PNG into TWEMOJI_IMGS so _renderChar uses it instead of CDN
+    if(!TWEMOJI_IMGS.get(emojiChar)){
+      const localImg=new Image();
+      localImg.onload=()=>{TWEMOJI_IMGS.set(emojiChar,localImg);cv&&cv.requestRenderAll();};
+      localImg.src=path;
+      TWEMOJI_IMGS.set(emojiChar,null); // claim slot — prevents preloadTwemojiImg from overwriting
+    }
+    // Delegate to existing insertEmoji: handles text-cursor insertion when text is selected,
+    // falls back to canvas image layer when nothing is selected
+    insertEmoji(emojiChar);
+  } else {
+    // Fallback for edge-case filenames we can't decode: insert as standalone canvas image
+    const _epop=document.getElementById('emo-popup');
+    const _ecms=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dropdown-close-dur'))||150;
+    _epop.classList.remove('is-open');_epop.classList.add('is-closing');
+    setTimeout(()=>_epop.classList.remove('is-closing'),_ecms);
+    emoOpen=false;emoTargetInput=null;
+    const label=filename.replace(/_[^_]+\.png$/,'').replace(/-/g,' ');
+    const currentFmt=fmt;
+    fabric.Image.fromURL(path,function(img){
+      if(!img||!img.width||!img.height)return;
+      const {w,h}=FMT[currentFmt];
+      const size=Math.round(Math.min(w,h)*0.18);
+      img.set({left:Math.round(w/2-size/2),top:Math.round(h/2-size/2),scaleX:size/img.width,scaleY:size/img.height,_type:'emoji',_label:label,_src:path});
+      cv.add(img);cv.setActiveObject(img);cv.renderAll();saveHist();
     });
-    cv.add(img);cv.setActiveObject(img);cv.renderAll();saveHist();
-  });
+  }
+}
+
+function filterMyEmoji(q){
+  const grid=document.getElementById('myemo-grid');
+  if(!grid)return;
+  function _he(s){return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  const lower=q.toLowerCase().trim();
+  const items=lower
+    ?EMOJIPACK_FILES.map((path,i)=>({path,i})).filter(({path})=>{
+        const label=path.split('/').pop().replace(/_[^_]+\.png$/,'').replace(/-/g,' ');
+        return label.includes(lower);
+      })
+    :EMOJIPACK_FILES.map((path,i)=>({path,i}));
+  grid.innerHTML=items.map(({path,i})=>{
+    const label=path.split('/').pop().replace(/_[^_]+\.png$/,'').replace(/-/g,' ');
+    return `<div class="ec" data-idx="${i}" title="${_he(label)}"><img src="${path}" alt="${_he(label)}" loading="lazy" width="28" height="28" style="display:block"></div>`;
+  }).join('');
 }
 
 renderEmoGrid();
