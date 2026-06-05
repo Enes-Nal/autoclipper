@@ -1955,10 +1955,13 @@ function initCanvas(f){
     // Text: convert scale → width/height, keep scale=1
     if (e.target?._type === 'text') {
       const obj = e.target;
-      const newW = Math.max(20, obj.width * obj.scaleX);
+      const orig = e.transform?.original;
+      const origW = orig?.width ?? obj.width;
+      const newW = Math.max(20, origW * obj.scaleX);
       obj.width = newW;
       if (obj._autoHeight === false) {
-        const newH = Math.max(20, obj.height * obj.scaleY);
+        const origH = orig?.height ?? obj.height;
+        const newH = Math.max(20, origH * obj.scaleY);
         obj.height = newH;
       }
       obj.scaleX = 1;
@@ -4002,7 +4005,7 @@ async function applySavedTpl(file){
         fontWeight:layer.font_weight||'900',fill:layer.fill||'#ffffff',
         stroke:layer.stroke||'#000',strokeWidth:(layer.stroke_width||0)*s,
         paintFirst:'stroke',textAlign:layer.text_align||'center',
-        _type:'text',_label:'Text Block',opacity:op,_isTitle:isTitle,_autoHeight:true,_verticalAlign:'top',
+        _type:'text',_label:'Text Block',opacity:op,_isTitle:isTitle,_autoHeight:layer._autoHeight!==undefined?layer._autoHeight:true,_verticalAlign:layer._verticalAlign||'top',
         _overflow:layer.overflow_mode||'wrap',
       });
       cv.add(t2);
