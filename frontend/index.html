@@ -3942,6 +3942,83 @@ function toggleExpPreview(){
 function getTitleObj(){
   return cv.getObjects().find(o => o._isTitle === true) || null;
 }
+function spTitle(k, v){
+  const o = getTitleObj();
+  if(!o) return;
+  o.set(k, v);
+  cv.renderAll();
+  refreshExpPreview();
+}
+function renderExpTitleControls(obj){
+  const fill = typeof obj.fill === 'string' ? obj.fill : '#ffffff';
+  const fs = Math.round(obj.fontSize || 48);
+  const sw = Math.round(obj.strokeWidth || 0);
+  const fw = obj.fontWeight || '900';
+  const ta = obj.textAlign || 'center';
+  const ov = obj._overflow || 'wrap';
+  const ff = (obj.fontFamily || 'Inter').replace(/^"|"$/g,'').split(',')[0].trim();
+  const ffEsc = ff.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const ffCss = CSS.escape(ff);
+  const strokeColor = typeof obj.stroke === 'string' ? obj.stroke : '#000000';
+
+  const wBtn = (label, active, code) =>
+    `<button class="togbtn${active?' on':''}" onclick="togOn(this);${code}">${label}</button>`;
+
+  document.getElementById('exp-title-controls').innerHTML = `
+    <div class="prow"><span class="plbl">Font</span>
+      <div class="fp-wrap">
+        <button class="fp-trigger" id="fp-trigger-exp" onclick="toggleFontPickerExp(this)" style="font-family:${ffCss}">
+          <span class="fp-trigger-name">${ffEsc}</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+      </div>
+    </div>
+    <div class="prow"><span class="plbl">Size</span>
+      <div class="slrow">
+        <input type="range" class="psl" min="8" max="180" value="${fs}"
+          oninput="spTitle('fontSize',+this.value);this.nextElementSibling.textContent=this.value+'px'">
+        <span class="slv">${fs}px</span>
+      </div>
+    </div>
+    <div class="prow"><span class="plbl">Weight</span>
+      <div class="tog">
+        ${wBtn('Regular', fw==='400', "spTitle('fontWeight','400')")}
+        ${wBtn('Bold', fw==='700', "spTitle('fontWeight','700')")}
+        ${wBtn('Black', fw==='900', "spTitle('fontWeight','900')")}
+      </div>
+    </div>
+    <div class="prow"><span class="plbl">Align</span>
+      <div class="tog">
+        ${wBtn('L', ta==='left', "spTitle('textAlign','left')")}
+        ${wBtn('C', ta==='center', "spTitle('textAlign','center')")}
+        ${wBtn('R', ta==='right', "spTitle('textAlign','right')")}
+      </div>
+    </div>
+    <div class="prow"><span class="plbl">Overflow</span>
+      <div class="tog">
+        ${['wrap','truncate','shrink'].map(m => wBtn(m[0].toUpperCase()+m.slice(1), ov===m, `spTitle('_overflow','${m}')`)).join('')}
+      </div>
+    </div>
+    <div class="prow"><span class="plbl">Color</span>
+      <div class="swatches">
+        ${['#ffffff','#000000','#ffdd00','#ff4466','#44ccff','#a78bfa','#ff8800','#22c55e'].map(c =>
+          `<div class="sw${fill===c?' on':''}" style="background:${c};${c==='#ffffff'?'border-color:#333':''}"
+            onclick="spTitle('fill','${c}');document.querySelectorAll('#exp-title-controls .sw').forEach(s=>s.classList.remove('on'));this.classList.add('on')"></div>`
+        ).join('')}
+        <input type="color" class="cinput" value="${fill}" oninput="spTitle('fill',this.value)" title="Custom">
+      </div>
+    </div>
+    <div class="prow"><span class="plbl">Stroke</span>
+      <div class="slrow">
+        <input type="range" class="psl" min="0" max="20" value="${sw}"
+          oninput="spTitle('strokeWidth',+this.value);this.nextElementSibling.textContent=this.value+'px'">
+        <span class="slv">${sw}px</span>
+      </div>
+    </div>
+    <div class="prow"><span class="plbl">S.Color</span>
+      <input type="color" class="cinput" value="${strokeColor}" oninput="spTitle('stroke',this.value)" title="Stroke color">
+    </div>`;
+}
 function checkExpUpdateTplNote(){
   const name = document.getElementById('proj-name-input').value.trim();
   const note = document.getElementById('exp-update-tpl-note');
