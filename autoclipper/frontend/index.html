@@ -3991,6 +3991,41 @@ function toggleExpPreview(){
   document.getElementById('exp-preview-arrow').textContent = _expPreviewOpen ? '▼' : '▶';
   if(_expPreviewOpen) refreshExpPreview();
 }
+function refreshExpPreview(){
+  const img = document.getElementById('exp-preview-img');
+  if(!img) return;
+  const obj = getTitleObj();
+  if(!obj){ img.src = ''; return; }
+
+  const PAD = 24;
+  const br = obj.getBoundingRect();
+  const canvasW = cv.getWidth();
+  const canvasH = cv.getHeight();
+  const left   = Math.max(0, br.left - PAD);
+  const top    = Math.max(0, br.top  - PAD);
+  const right  = Math.min(canvasW, br.left + br.width  + PAD);
+  const bottom = Math.min(canvasH, br.top  + br.height + PAD);
+  const width  = right - left;
+  const height = bottom - top;
+  if(width <= 0 || height <= 0) return;
+
+  const dataURL = cv.toDataURL({ format: 'png', left, top, width, height, multiplier: 0.5 });
+  img.src = dataURL;
+}
+
+let _expTitleDebounce = null;
+function onExpTitleInput(){
+  clearTimeout(_expTitleDebounce);
+  _expTitleDebounce = setTimeout(() => {
+    const obj = getTitleObj();
+    if(!obj) return;
+    const val = document.getElementById('exp-title').value;
+    obj.set('text', val || 'Your title here 🔥');
+    cv.renderAll();
+    if(_expPreviewOpen) refreshExpPreview();
+  }, 300);
+}
+
 function getTitleObj(){
   return cv.getObjects().find(o => o._isTitle === true) || null;
 }
