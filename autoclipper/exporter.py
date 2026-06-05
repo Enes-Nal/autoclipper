@@ -111,19 +111,24 @@ def build_filter_graph(layers: list, cw: int, ch: int,
 
             if current:
                 out = lbl()
-                parts.append(f"[{current}][{composited}]overlay=x={x}:y={y}[{out}]")
+                parts.append(f"[{current}][{composited}]overlay=x={int(x)}:y={int(y)}[{out}]")
                 current = out
             else:
                 # Video is the first layer — x/y must still be applied.
-                # Without a background stream to overlay onto, use pad to
-                # position the video at (x, y) within a black canvas.
+                # Use a color source + overlay so negative offsets (partial
+                # off-screen positioning) are handled correctly; pad filters
+                # reject negative offsets with EINVAL.
                 if x == 0 and y == 0:
                     current = composited
                 else:
+                    ix, iy = int(x), int(y)
+                    bg = lbl()
                     positioned = lbl()
                     parts.append(
-                        f"[{composited}]pad='max(iw+{x},{cw})':'max(ih+{y},{ch})':{x}:{y}"
-                        f":color=black[{positioned}]"
+                        f"color=c=black:s={int(cw)}x{int(ch)}:r=60[{bg}]"
+                    )
+                    parts.append(
+                        f"[{bg}][{composited}]overlay=x={ix}:y={iy}:shortest=1[{positioned}]"
                     )
                     current = positioned
 
@@ -138,7 +143,7 @@ def build_filter_graph(layers: list, cw: int, ch: int,
             idx = image_inputs[i]
             x, y = layer.get("x", 0), layer.get("y", 0)
             out = lbl()
-            parts.append(f"[{current}][{idx}:v]overlay=x={x}:y={y}[{out}]")
+            parts.append(f"[{current}][{idx}:v]overlay=x={int(x)}:y={int(y)}[{out}]")
             current = out
 
         elif t == "shape":
@@ -289,7 +294,10 @@ def export_video(video_path: str, template: dict, title: str = "",
     for i, l in enumerate(layers):
         if l["type"] == "text":
             p = str(TEMP_DIR / f"{job_id}_t{i}.png")
-            render_text_layer(l, cw, ch, p, emoji_source=emoji_source)
+            render_layer = dict(l)
+            render_layer["auto_height"] = l.get("_autoHeight", True)
+            render_layer["vertical_align"] = l.get("_verticalAlign", "top")
+            render_text_layer(render_layer, cw, ch, p, emoji_source=emoji_source)
             text_pngs[i] = len(extra_inputs) + 1
             extra_inputs.append(p)
         elif l["type"] in ("image", "emoji") and os.path.exists(l.get("src", "")):
