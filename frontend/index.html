@@ -1627,7 +1627,52 @@ function insertEmoji(emoji){
   }
 }
 
+function switchEmoTab(tab){
+  document.querySelectorAll('.emo-tab').forEach((b,i)=>{
+    b.classList.toggle('on',i===(tab==='mypack'?0:1));
+  });
+  document.getElementById('emo-tab-mypack').classList.toggle('on',tab==='mypack');
+  document.getElementById('emo-tab-twemoji').classList.toggle('on',tab==='twemoji');
+}
+
+function renderMyEmojiGrid(){
+  const grid=document.getElementById('myemo-grid');
+  if(!grid)return;
+  grid.innerHTML=EMOJIPACK_FILES.map(path=>{
+    const filename=path.split('/').pop();
+    const label=filename.replace(/_[^_]+\.png$/,'').replace(/-/g,' ');
+    return `<div class="ec" onclick="insertEmojiPackImg('${path.replace(/'/g,"\\'")}',this)" title="${label}"><img src="${path}" alt="${label}" loading="lazy" width="28" height="28" style="display:block"></div>`;
+  }).join('');
+}
+
+function insertEmojiPackImg(path){
+  const _epop=document.getElementById('emo-popup');
+  const _ecms=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dropdown-close-dur'))||150;
+  _epop.classList.remove('is-open');_epop.classList.add('is-closing');
+  setTimeout(()=>_epop.classList.remove('is-closing'),_ecms);
+  emoOpen=false;
+  const filename=path.split('/').pop();
+  const label=filename.replace(/_[^_]+\.png$/,'').replace(/-/g,' ');
+  const currentFmt=fmt;
+  fabric.Image.fromURL(path,function(img){
+    if(!img||!img.width||!img.height)return;
+    const {w,h}=FMT[currentFmt];
+    const size=Math.round(Math.min(w,h)*0.18);
+    img.set({
+      left:Math.round(w/2-size/2),
+      top:Math.round(h/2-size/2),
+      scaleX:size/img.width,
+      scaleY:size/img.height,
+      _type:'emoji',
+      _label:label,
+      _src:path,
+    });
+    cv.add(img);cv.setActiveObject(img);cv.renderAll();saveHist();
+  },{crossOrigin:'anonymous'});
+}
+
 renderEmoGrid();
+renderMyEmojiGrid();
 Object.values(EMOJI_DATA).flat().forEach(({e})=>preloadTwemojiImg(e));
 
 // ── CANVAS INIT ────────────────────────────────────────────────────────────
@@ -3531,7 +3576,7 @@ function canvasToTemplate(){
       overflow_mode:obj._overflow||'wrap',
     };
     if(t==='image')return{...base,src:obj._src||''};
-    if(t==='emoji')return{...base,src:twemojiUrl(obj._label||''),label:obj._label||''};
+    if(t==='emoji')return{...base,src:obj._src||twemojiUrl(obj._label||''),label:obj._label||''};
     return{...base,fill:obj.fill||'#000000'};
   });
   const allLayers = [
