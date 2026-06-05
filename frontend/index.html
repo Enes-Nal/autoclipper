@@ -1516,6 +1516,7 @@ const EMOJI_DATA={
 };
 
 let emoOpen=false, emoActiveCat='smileys', emoSearchVal='', emoTargetInput=null;
+let activeEmoTab='mypack'; // 'mypack' | 'twemoji'
 
 function twemojiUrl(emoji){
   const cp=twemoji.convert.toCodePoint(emoji);
@@ -1651,6 +1652,7 @@ function insertEmoji(emoji){
 }
 
 function switchEmoTab(tab){
+  activeEmoTab=tab;
   const isMypack=tab==='mypack';
   const btn0=document.querySelector('.emo-tab:first-child');
   const btn1=document.querySelector('.emo-tab:last-child');
@@ -3657,7 +3659,7 @@ async function renderTplGrid(filter){
     const userTpls=all.filter(t=>!t.builtin&&(!f||t.name.toLowerCase().includes(f.toLowerCase())));
     if(userTpls.length){
       userHTML='<div class="tpl-section-label">My Templates</div>'+userTpls.map(t=>`
-        <div class="tcard" onclick="applySavedTpl('${t.file}')" oncontextmenu="openTplCtxMenu(event,'${t.file}',${JSON.stringify(t.name).replace(/'/g,'&#39;')})">
+        <div class="tcard" data-tpl-file="${t.file}" data-tpl-name="${t.name.replace(/"/g,'&quot;')}" onclick="applySavedTpl('${t.file}')">
           <div class="tthumb tthumb-saved"><span class="tthumb-icon">📄</span><span class="tthumb-fmt">${t.format||'9:16'}</span></div>
           <div class="tcard-name" id="tcard-name-${t.file}">${t.name}</div>
         </div>`).join('');
@@ -3689,6 +3691,21 @@ function updateTplPreviews(url){
   else vidEl.addEventListener('canplay',swapVideoLayer,{once:true});
 }
 renderTplGrid();
+
+// ── TEMPLATE GRID CONTEXT MENU (event delegation) ──────────────────────────
+document.getElementById('tpl-grid').addEventListener('contextmenu', e => {
+  const card = e.target.closest('.tcard[data-tpl-file]');
+  if(!card) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const file = card.dataset.tplFile;
+  const name = card.dataset.tplName;
+  openCtxMenu(e, [
+    {icon:_CTX_ICO.rename,    label:'Rename',    action:()=>_ctxRenameTpl(file, name)},
+    {icon:_CTX_ICO.duplicate, label:'Duplicate', action:()=>_ctxDuplicateTpl(file, name)},
+    {icon:_CTX_ICO.trash,     label:'Delete',    action:()=>_ctxDeleteTpl(file, name), danger:true},
+  ]);
+});
 
 function applyBuiltinTpl(id){
   const tpl=BUILTIN_TEMPLATES.find(t=>t.id===id);
@@ -4153,7 +4170,7 @@ function startExport(){
   st.style.color='var(--sub)';
 
   fetch('/api/export',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({video_path:downloadedVideoPath,template:tpl,title})})
+    body:JSON.stringify({video_path:downloadedVideoPath,template:tpl,title,emoji_source:activeEmoTab})})
     .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
     .then(({job_id,error})=>{
       if(error){st.textContent='Error: '+error;st.style.color='var(--danger)';pw.style.display='none';return;}
@@ -4430,15 +4447,6 @@ function ctxItemsForAudio(){
   ];
 }
 
-function openTplCtxMenu(e, file, name){
-  e.preventDefault();
-  e.stopPropagation();
-  openCtxMenu(e, [
-    {icon:_CTX_ICO.rename, label:'Rename', action:()=>_ctxRenameTpl(file, name)},
-    {icon:_CTX_ICO.duplicate, label:'Duplicate', action:()=>_ctxDuplicateTpl(file, name)},
-    {icon:_CTX_ICO.trash, label:'Delete', action:()=>_ctxDeleteTpl(file, name), danger:true},
-  ]);
-}
 
 async function _ctxRenameTpl(file, currentName){
   const nameEl = document.getElementById('tcard-name-' + file);
