@@ -5,7 +5,7 @@
 <title>Cutly</title>
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Roboto:wght@400;700;900&family=Open+Sans:wght@400;700;900&family=Montserrat:wght@400;700;900&family=Lato:wght@400;700;900&family=Poppins:wght@400;700;900&family=Nunito:wght@400;700;900&family=Raleway:wght@400;700;900&family=Ubuntu:wght@400;700&family=Oswald:wght@400;700&family=Work+Sans:wght@400;700;900&family=DM+Sans:wght@400;700;900&family=Mulish:wght@400;700;900&family=Barlow:wght@400;700;900&family=Rubik:wght@400;700;900&family=Quicksand:wght@400;700&family=Space+Grotesk:wght@400;700&family=Josefin+Sans:wght@400;700&family=Cabin:wght@400;700&family=Exo+2:wght@400;700;900&family=IBM+Plex+Sans:wght@400;700&family=Urbanist:wght@400;700;900&family=Karla:wght@400;700;900&family=Jost:wght@400;700;900&family=Manrope:wght@400;700;900&family=Figtree:wght@400;700;900&family=Plus+Jakarta+Sans:wght@400;700;900&family=Outfit:wght@400;700;900&family=Sora:wght@400;700&family=Lexend:wght@400;700;900&family=Archivo:wght@400;700;900&family=Asap:wght@400;700&family=Chivo:wght@400;700;900&family=Dosis:wght@400;700;900&family=Fira+Sans:wght@400;700;900&family=Hind:wght@400;700&family=Noto+Sans:wght@400;700&family=Nunito+Sans:wght@400;700;900&family=Questrial&family=Rajdhani:wght@400;700&family=Signika:wght@400;700&family=Titillium+Web:wght@400;700;900&family=Varela+Round&family=Khand:wght@400;700&family=Overpass:wght@400;700;900&family=Source+Sans+3:wght@400;700;900&family=PT+Sans:wght@400;700&family=Merriweather:wght@400;700;900&family=Playfair+Display:wght@400;700;900&family=Lora:wght@400;700&family=Crimson+Text:wght@400;700&family=EB+Garamond:wght@400;700;900&family=Cormorant+Garamond:wght@400;700&family=Spectral:wght@400;700&family=Libre+Baskerville:wght@400;700&family=Bitter:wght@400;700;900&family=Libre+Franklin:wght@400;700;900&family=Zilla+Slab:wght@400;700&family=Rokkitt:wght@400;700;900&family=Source+Serif+4:wght@400;700;900&family=Bebas+Neue&family=Anton&family=Archivo+Black&family=Fjalla+One&family=Righteous&family=Teko:wght@400;700&family=Russo+One&family=Passion+One:wght@400;900&family=Yanone+Kaffeesatz:wght@400;700&family=Hammersmith+One&family=Alfa+Slab+One&family=Abril+Fatface&family=Gravitas+One&family=Boogaloo&family=Fugaz+One&family=Patua+One&family=Contrail+One&family=Cinzel:wght@400;700;900&family=Comfortaa:wght@400;700&family=Exo:wght@400;700;900&family=Sigmar+One&family=Yeseva+One&family=Bangers&family=Chewy&family=Carter+One&family=Fredoka+One&family=Permanent+Marker&family=Dancing+Script:wght@400;700&family=Pacifico&family=Lobster&family=Kaushan+Script&family=Sacramento&family=Great+Vibes&family=Satisfy&family=Yellowtail&family=Caveat:wght@400;700&family=Shadows+Into+Light&family=Indie+Flower&family=Gochi+Hand&family=Patrick+Hand&family=Amatic+SC:wght@400;700&family=Architects+Daughter&family=Rock+Salt&family=Reenie+Beanie&family=Courgette&family=Cookie&family=Marck+Script&family=Tangerine:wght@400;700&family=Allura&family=Parisienne&family=Space+Mono:wght@400;700&family=Inconsolata:wght@400;700&family=Fira+Code:wght@400;700&family=IBM+Plex+Mono:wght@400;700&family=Source+Code+Pro:wght@400;700&family=Share+Tech+Mono&family=Comic+Neue:wght@400;700&family=Varela&family=Economica:wght@400;700&family=Philosopher:wght@400;700&family=Electrolize&family=Jura:wght@400;700&family=Kreon:wght@400;700&family=Lusitana:wght@400;700&family=Proza+Libre:wght@400;700&family=Ruda:wght@400;700;900&family=Volkhov:wght@400;700&family=Gudea:wght@400;700&family=Oxygen:wght@400;700&family=Coda:wght@400;900&family=Cuprum:wght@400;700&family=Nanum+Gothic:wght@400;700&family=Sarabun:wght@400;700;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js" crossorigin="anonymous"></script>
 <style>
@@ -988,6 +988,35 @@ function startVideoLoop(){
 function stopVideoLoop(){
   if(_rafId!==null){fabric.util.cancelAnimFrame(_rafId);_rafId=null;}
 }
+
+// ── GOOGLE FONTS ───────────────────────────────────────────────────────────
+const GOOGLE_FONTS=[
+  'Inter','Roboto','Open Sans','Montserrat','Lato','Poppins','Nunito','Raleway',
+  'Ubuntu','Oswald','Work Sans','DM Sans','Mulish','Barlow','Rubik','Quicksand',
+  'Space Grotesk','Josefin Sans','Cabin','Exo 2','IBM Plex Sans','Urbanist',
+  'Karla','Jost','Manrope','Figtree','Plus Jakarta Sans','Outfit','Sora','Lexend',
+  'Archivo','Asap','Chivo','Dosis','Fira Sans','Hind','Noto Sans','Nunito Sans',
+  'Questrial','Rajdhani','Signika','Titillium Web','Varela Round','Khand',
+  'Overpass','Source Sans 3','PT Sans',
+  'Merriweather','Playfair Display','Lora','Crimson Text','EB Garamond',
+  'Cormorant Garamond','Spectral','Libre Baskerville','Bitter','Libre Franklin',
+  'Zilla Slab','Rokkitt','Source Serif 4',
+  'Bebas Neue','Anton','Archivo Black','Fjalla One','Righteous','Teko',
+  'Russo One','Passion One','Yanone Kaffeesatz','Hammersmith One','Alfa Slab One',
+  'Abril Fatface','Gravitas One','Boogaloo','Fugaz One','Patua One',
+  'Contrail One','Cinzel','Comfortaa','Exo','Sigmar One','Yeseva One',
+  'Bangers','Chewy','Carter One','Fredoka One','Permanent Marker',
+  'Dancing Script','Pacifico','Lobster','Kaushan Script','Sacramento',
+  'Great Vibes','Satisfy','Yellowtail','Caveat','Shadows Into Light',
+  'Indie Flower','Gochi Hand','Patrick Hand','Amatic SC','Architects Daughter',
+  'Rock Salt','Reenie Beanie','Courgette','Cookie','Marck Script','Tangerine',
+  'Allura','Parisienne',
+  'Space Mono','Inconsolata','Fira Code','IBM Plex Mono','Source Code Pro',
+  'Share Tech Mono',
+  'Comic Neue','Varela','Economica','Philosopher','Electrolize','Jura',
+  'Kreon','Lusitana','Proza Libre','Ruda','Volkhov','Gudea','Oxygen',
+  'Coda','Cuprum','Nanum Gothic','Sarabun',
+];
 
 // ── EMOJI (TWEMOJI) ────────────────────────────────────────────────────────
 const EMOJI_DATA={
