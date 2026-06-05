@@ -248,6 +248,30 @@ button,input,select{font-family:inherit}
 .t-modal.is-open{transform:scale(1);opacity:1;pointer-events:auto}
 .t-modal.is-closing{transform:scale(var(--modal-scale-close));opacity:0;pointer-events:none;transition:transform var(--modal-close-dur) var(--modal-ease),opacity var(--modal-close-dur) var(--modal-ease)}
 @media(prefers-reduced-motion:reduce){.t-modal{transition:none!important}}
+/* ─── FONT PICKER ──────────────────────────────────────── */
+.fp-wrap{position:relative;flex:1}
+.fp-trigger{width:100%;padding:5px 8px;background:var(--s2);border:1px solid var(--b1);border-radius:var(--rs);color:var(--tx);font-size:11px;text-align:left;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:4px;transition:.1s;overflow:hidden}
+.fp-trigger:hover{border-color:var(--b2)}
+.fp-trigger.open{border-color:var(--acc)}
+.fp-trigger-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+#fp-panel{position:fixed;background:var(--s1);border:1px solid var(--b2);border-radius:var(--rs);z-index:300;box-shadow:0 8px 24px rgba(0,0,0,.6);display:none;flex-direction:column;min-width:180px}
+#fp-panel.open{display:flex}
+#fp-search{background:var(--s2);border:none;border-bottom:1px solid var(--b1);color:var(--tx);font-size:11px;padding:7px 10px;outline:none;font-family:'Inter',sans-serif;width:100%;border-radius:var(--rs) var(--rs) 0 0}
+#fp-list{max-height:200px;overflow-y:auto}
+#fp-list::-webkit-scrollbar{width:3px}
+#fp-list::-webkit-scrollbar-thumb{background:var(--mut);border-radius:2px}
+.fp-item{padding:5px 10px;font-size:12px;cursor:pointer;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fp-item:hover{background:var(--s3)}
+.fp-item.on{color:var(--acc);background:var(--accdim)}
+/* ─── EMOJI TABS ────────────────────────────────────────── */
+.emo-tabs{display:flex;border-bottom:1px solid var(--b1);flex-shrink:0}
+.emo-tab{flex:1;padding:7px 0;font-size:11px;font-weight:700;cursor:pointer;background:transparent;border:none;color:var(--sub);border-bottom:2px solid transparent;transition:.12s;font-family:'Inter',sans-serif}
+.emo-tab.on{color:var(--acc);border-bottom-color:var(--acc)}
+.emo-tab-body{display:none;flex-direction:column;overflow:hidden}
+.emo-tab-body.on{display:flex}
+.myemo-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;max-height:220px;overflow-y:auto;padding:6px;flex-shrink:0}
+.myemo-grid::-webkit-scrollbar{width:3px}
+.myemo-grid::-webkit-scrollbar-thumb{background:var(--mut);border-radius:2px}
 .modal-title{font-size:16px;font-weight:800;margin-bottom:6px}
 .modal-sub{font-size:12px;color:var(--sub);margin-bottom:20px}
 .modal-input{width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);color:var(--tx);font-family:'Inter',sans-serif;font-size:13px;padding:10px 12px;outline:none;margin-bottom:12px;transition:.1s}
@@ -2409,6 +2433,8 @@ function toggleVideoMute(btn){
   const lbl = slider.nextElementSibling;
   slider.disabled = obj._audioMuted;
   lbl.textContent = obj._audioMuted ? '0%' : Math.round((obj._audioVolume??1)*100)+'%';
+  const vidEl = document.getElementById('preview-video');
+  if(vidEl) vidEl.muted = obj._audioMuted || _canvasMuted;
   saveHist();
 }
 
@@ -2416,6 +2442,8 @@ function setVideoVolume(val){
   const obj = cv.getActiveObject();
   if(!obj) return;
   obj._audioVolume = val/100;
+  const vidEl = document.getElementById('preview-video');
+  if(vidEl && !_canvasMuted && !obj._audioMuted) vidEl.volume = val/100;
   saveHist();
 }
 
@@ -2928,9 +2956,9 @@ async function renderTplGrid(filter){
     const userTpls=all.filter(t=>!t.builtin&&(!f||t.name.toLowerCase().includes(f.toLowerCase())));
     if(userTpls.length){
       userHTML='<div class="tpl-section-label">My Templates</div>'+userTpls.map(t=>`
-        <div class="tcard" onclick="applySavedTpl('${t.file}')">
+        <div class="tcard" onclick="applySavedTpl('${t.file}')" oncontextmenu="openTplCtxMenu(event,'${t.file}',${JSON.stringify(t.name).replace(/'/g,'&#39;')})">
           <div class="tthumb tthumb-saved"><span class="tthumb-icon">📄</span><span class="tthumb-fmt">${t.format||'9:16'}</span></div>
-          <div class="tcard-name">${t.name}</div>
+          <div class="tcard-name" id="tcard-name-${t.file}">${t.name}</div>
         </div>`).join('');
     }
   }catch(e){}
@@ -3006,17 +3034,22 @@ function canvasToTemplate(){
     };
     if(t==='blur')return{...base,blur:obj._blur??20};
     if(t==='video'){
-      // Use stored frame-box dims so cover/fill crops the intended region,
-      // not the smaller contain-display region.
+      const fit=obj._fit||'contain';
       const dW=obj.getScaledWidth(),dH=obj.getScaledHeight();
-      const fW=obj._frameW??dW, fH=obj._frameH??dH;
-      const fX=obj.left-(fW-dW)/2, fY=obj.top-(fH-dH)/2;
+      // Contain: use display x/y/w/h so the centered video stays centered.
+      // Cover/fill: use stored frame box so the source fills the intended area.
+      let vx=obj.left,vy=obj.top,vw=dW,vh2=dH;
+      if(fit!=='contain'){
+        const fW=obj._frameW??dW, fH=obj._frameH??dH;
+        vx=obj.left-(fW-dW)/2; vy=obj.top-(fH-dH)/2;
+        vw=fW; vh2=fH;
+      }
       return{
         type:'video',
-        x:Math.round(fX*scale),y:Math.round(fY*scale),
-        width:Math.round(fW*scale),height:Math.round(fH*scale),
+        x:Math.round(vx*scale),y:Math.round(vy*scale),
+        width:Math.round(vw*scale),height:Math.round(vh2*scale),
         opacity:obj.opacity??1,
-        fit:obj._fit||'contain',
+        fit,
         volume:obj._audioVolume??1.0,
         muted:obj._audioMuted===true,
         mask:{
@@ -3123,7 +3156,8 @@ async function applySavedTpl(file){
         const img=new fabric.Image(vc2,{left:lx,top:ly,objectCaching:false,_type:'video',_label:'Video Layer',_fit:layer.fit||'contain',opacity:op,_audioVolume:layer.volume??1.0,_audioMuted:layer.muted===true,_maskShape:(layer.mask||{}).shape||'none',_maskRadius:(layer.mask||{}).radius??20,_maskPoints:(layer.mask||{}).points||[],_maskX:(layer.mask||{}).x??0,_maskY:(layer.mask||{}).y??0,_maskW:(layer.mask||{}).w??1,_maskH:(layer.mask||{}).h??1,_frameW:lw,_frameH:lh});
         if(img._maskShape!=='none') applyMaskClipPath(img);
         const sc2=Math.min(lw/vc2.width,lh/vc2.height);
-        img.set({scaleX:sc2,scaleY:sc2,left:lx+(lw-img.getScaledWidth())/2,top:ly+(lh-img.getScaledHeight())/2});
+        img.set({scaleX:sc2,scaleY:sc2});
+        img.set({left:lx+(lw-img.getScaledWidth())/2,top:ly+(lh-img.getScaledHeight())/2});
         cv.add(img);startVideoLoop();
       } else {
         const r=new fabric.Rect({left:lx,top:ly,width:lw,height:lh,fill:'#1a1a1d',stroke:'rgba(255,255,255,0.08)',strokeWidth:1,rx:3,ry:3});
@@ -3270,6 +3304,7 @@ function startExport(){
           es.close();pf.style.width='100%';pl.textContent='Done';
           st.innerHTML=`Exported: <a href="/api/exports/${msg.filename}" style="color:var(--acc)" download>${msg.filename}</a>`;
           st.style.color='var(--ok)';
+          const a=document.createElement('a');a.href=`/api/exports/${msg.filename}`;a.download=msg.filename;document.body.appendChild(a);a.click();document.body.removeChild(a);
         } else if(msg.type==='error'){
           es.close();st.textContent='Error: '+msg.message;st.style.color='var(--danger)';pw.style.display='none';
         }
@@ -3530,6 +3565,70 @@ function ctxItemsForAudio(){
     {icon:_CTX_ICO.rename, label:'Rename', action:()=>_ctxRenameAudio()},
     {icon:_CTX_ICO.trash,  label:'Delete', action:()=>removeAudioLayer(), danger:true},
   ];
+}
+
+function openTplCtxMenu(e, file, name){
+  e.preventDefault();
+  e.stopPropagation();
+  openCtxMenu(e, [
+    {icon:_CTX_ICO.rename, label:'Rename', action:()=>_ctxRenameTpl(file, name)},
+    {icon:_CTX_ICO.duplicate, label:'Duplicate', action:()=>_ctxDuplicateTpl(file, name)},
+    {icon:_CTX_ICO.trash, label:'Delete', action:()=>_ctxDeleteTpl(file, name), danger:true},
+  ]);
+}
+
+async function _ctxRenameTpl(file, currentName){
+  const nameEl = document.getElementById('tcard-name-' + file);
+  if(!nameEl) return;
+  const orig = currentName;
+  nameEl.contentEditable = 'true';
+  nameEl.focus();
+  const range = document.createRange();
+  range.selectNodeContents(nameEl);
+  window.getSelection().removeAllRanges();
+  window.getSelection().addRange(range);
+  async function finish(){
+    nameEl.contentEditable = 'false';
+    const newName = nameEl.textContent.trim() || orig;
+    if(newName === orig) return;
+    try{
+      const res = await fetch(`/api/templates/${encodeURIComponent(file)}`, {
+        method:'PATCH', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({name: newName})
+      });
+      if(!res.ok) throw new Error();
+      renderTplGrid();
+    } catch(e){
+      nameEl.textContent = orig;
+      _ctxToast('Rename failed');
+    }
+  }
+  nameEl.addEventListener('blur', finish, {once:true});
+  nameEl.addEventListener('keydown', function _k(e){
+    if(e.key==='Enter'){e.preventDefault();nameEl.removeEventListener('keydown',_k);nameEl.blur();}
+    if(e.key==='Escape'){nameEl.removeEventListener('keydown',_k);nameEl.removeEventListener('blur',finish);nameEl.contentEditable='false';nameEl.textContent=orig;nameEl.blur();}
+  });
+}
+
+async function _ctxDuplicateTpl(file, name){
+  try{
+    const tpl = await fetch(`/api/templates/${encodeURIComponent(file)}`).then(r=>r.json());
+    if(tpl.error) throw new Error();
+    tpl.name = name + ' Copy';
+    await fetch('/api/templates', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(tpl)});
+    renderTplGrid();
+    _ctxToast('Template duplicated');
+  } catch(e){ _ctxToast('Duplicate failed'); }
+}
+
+async function _ctxDeleteTpl(file, name){
+  if(!confirm(`Delete template "${name}"?`)) return;
+  try{
+    const res = await fetch(`/api/templates/${encodeURIComponent(file)}`, {method:'DELETE'});
+    if(!res.ok) throw new Error();
+    renderTplGrid();
+    _ctxToast('Template deleted');
+  } catch(e){ _ctxToast('Delete failed'); }
 }
 </script>
 <div id="ctx-menu"></div>
