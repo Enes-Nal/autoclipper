@@ -1880,6 +1880,13 @@ document.addEventListener('click',e=>{
 document.addEventListener('scroll',()=>{if(fpOpen)closeFontPicker();},true);
 
 // ── CANVAS INIT ────────────────────────────────────────────────────────────
+function syncTextHandles(obj) {
+  if (obj._autoHeight !== false) {
+    obj.setControlsVisibility({mt:false,mb:false,tl:false,tr:false,bl:false,br:false,ml:true,mr:true});
+  } else {
+    obj.setControlsVisibility({mt:true,mb:true,tl:true,tr:true,bl:true,br:true,ml:true,mr:true});
+  }
+}
 function initCanvas(f){
   fmt=f;
   const {w,h}=FMT[f];
@@ -1961,13 +1968,7 @@ function initCanvas(f){
     const o=e.target;if(o&&o._type==='video'){o._frameW=o.getScaledWidth();o._frameH=o.getScaledHeight();}
   });
   cv.on('after:render',drawGuides);
-  function syncTextHandles(obj) {
-    if (obj._autoHeight !== false) {
-      obj.setControlsVisibility({mt:false,mb:false,tl:false,tr:false,bl:false,br:false});
-    } else {
-      obj.setControlsVisibility({mt:true,mb:true,tl:true,tr:true,bl:true,br:true});
-    }
-  }
+
 
   cv.on('object:added',e=>{
     if(e.target._type==='text'){
