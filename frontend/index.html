@@ -3999,8 +3999,8 @@ function refreshExpPreview(){
 
   const PAD = 24;
   const br = obj.getBoundingRect();
-  const canvasW = cv.getWidth();
-  const canvasH = cv.getHeight();
+  const canvasW = FMT[fmt].w;
+  const canvasH = FMT[fmt].h;
   const left   = Math.max(0, br.left - PAD);
   const top    = Math.max(0, br.top  - PAD);
   const right  = Math.min(canvasW, br.left + br.width  + PAD);
@@ -4119,6 +4119,7 @@ function checkExpUpdateTplNote(){
   }
 }
 function closeExpModal(){
+  clearTimeout(_expTitleDebounce);
   const overlay=document.getElementById('exp-modal');
   const box=overlay.querySelector('.t-modal');
   const ms=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--modal-close-dur'))||150;
