@@ -537,6 +537,7 @@ button,input,select{font-family:inherit}
 
     <!-- CANVAS -->
     <div id="canvas-area">
+      <div id="resize-label" style="display:none;position:absolute;pointer-events:none;background:rgba(0,0,0,.75);color:#fff;font-size:11px;font-weight:700;padding:3px 7px;border-radius:5px;z-index:99;white-space:nowrap"></div>
       <div class="cvs-dots"></div>
       <div class="phone-wrap">
         <div id="phone" style="position:relative">
@@ -1963,6 +1964,18 @@ function initCanvas(f){
       obj.scaleX = 1;
       obj.scaleY = 1;
       obj.setCoords();
+      // Show dimension label
+      const lbl = document.getElementById('resize-label');
+      if (lbl) {
+        const zoom = cv.getZoom();
+        const vpt = cv.viewportTransform;
+        const screenX = obj.left * zoom + vpt[4];
+        const screenY = (obj.top + (obj._autoHeight === false ? obj.height : obj.getScaledHeight())) * zoom + vpt[5] + 4;
+        lbl.textContent = `${Math.round(obj.width)} × ${Math.round(obj._autoHeight === false ? obj.height : obj.getScaledHeight())}`;
+        lbl.style.left = screenX + 'px';
+        lbl.style.top = screenY + 'px';
+        lbl.style.display = '';
+      }
       return;
     }
 
@@ -1979,6 +1992,10 @@ function initCanvas(f){
     }
     onSnapScale(e);
     if (e.target?._type==='video') _updateMaskEditorForVideo(e.target);
+  });
+  cv.on('mouse:up', () => {
+    const lbl = document.getElementById('resize-label');
+    if (lbl) lbl.style.display = 'none';
   });
   cv.on('object:scaled',e=>{snapLines={x:null,y:null};scaleSnapState={x:null,y:null};setPhoneGlow(false);cv.requestRenderAll();
     const o=e.target;if(o&&o._type==='video'){o._frameW=o.getScaledWidth();o._frameH=o.getScaledHeight();}
