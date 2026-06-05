@@ -1722,9 +1722,17 @@ function renderFontList(query){
   const curFont=(obj?.fontFamily||'Inter').replace(/^"|"$/g,'').split(',')[0].trim();
   const q=query.toLowerCase();
   const filtered=q?GOOGLE_FONTS.filter(f=>f.toLowerCase().includes(q)):GOOGLE_FONTS;
+  function he(s){return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   list.innerHTML=filtered.map(f=>
-    `<div class="fp-item${f===curFont?' on':''}" style="font-family:'${f}'" onclick="selectFont('${f.replace(/'/g,"\\'")}')">${f}</div>`
+    `<div class="fp-item${f===curFont?' on':''}" style="font-family:${CSS.escape(f)}" data-font="${he(f)}">${he(f)}</div>`
   ).join('');
+  if(!list._fpListenerAttached){
+    list._fpListenerAttached=true;
+    list.addEventListener('click',function(e){
+      const item=e.target.closest('[data-font]');
+      if(item)selectFont(item.dataset.font);
+    });
+  }
 }
 
 function selectFont(fontName){
@@ -2918,11 +2926,14 @@ function updateProps(){
   if(type==='text'){
     const fill=typeof obj.fill==='string'?obj.fill:'#ffffff';
     const fs=Math.round(obj.fontSize||48),sw=Math.round(obj.strokeWidth||0);
+    const ff=(obj.fontFamily||'Inter').replace(/^"|"$/g,'').split(',')[0].trim();
+    const ffEsc=ff.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const ffCss=CSS.escape(ff);
     html+=`<div class="psec"><div class="psec-title"><svg class="psec-title-icon cur-path" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"/></svg>Text</div>
     <div class="prow"><span class="plbl">Font</span>
       <div class="fp-wrap">
-        <button class="fp-trigger" id="fp-trigger" onclick="toggleFontPicker(this)" style="font-family:'${(obj.fontFamily||'Inter').replace(/^"|"$/g,'').split(',')[0].trim()}'">
-          <span class="fp-trigger-name">${(obj.fontFamily||'Inter').replace(/^"|"$/g,'').split(',')[0].trim()}</span>
+        <button class="fp-trigger" id="fp-trigger" onclick="toggleFontPicker(this)" style="font-family:${ffCss}">
+          <span class="fp-trigger-name">${ffEsc}</span>
           <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
       </div>
