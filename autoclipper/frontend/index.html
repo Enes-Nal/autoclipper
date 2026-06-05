@@ -1740,7 +1740,7 @@ function selectFont(fontName){
   closeFontPicker();
   const trigger=document.getElementById('fp-trigger');
   if(trigger){
-    trigger.style.fontFamily=`'${fontName}'`;
+    trigger.style.fontFamily=fontName;
     const nameEl=trigger.querySelector('.fp-trigger-name');
     if(nameEl)nameEl.textContent=fontName;
   }
