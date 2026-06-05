@@ -253,8 +253,21 @@ def render_text_layer(layer: dict, canvas_w: int, canvas_h: int, output_path: st
         # 'wrap' and 'shrink' both use word-wrap
         lines = _wrap_lines(text, font, emoji_font, frame_w, line_h)
 
+    # ── Compute y_start based on vertical_align (fixed frame only) ───────────
+    vertical_align = layer.get("vertical_align", "top")
+    auto_height = layer.get("auto_height", True)
+    total_text_h = len(lines) * line_h
+
+    if not auto_height and vertical_align != "top":
+        if vertical_align == "middle":
+            y_offset = max(0, (frame_h - total_text_h) // 2)
+        else:  # bottom
+            y_offset = max(0, frame_h - total_text_h)
+    else:
+        y_offset = 0
+
     # ── Draw each line, clipping at frame bottom ──────────────────────────────
-    y_cursor = frame_y - bbox[1]
+    y_cursor = frame_y + y_offset - bbox[1]
     for line in lines:
         if y_cursor + line_h > frame_y + frame_h:
             break

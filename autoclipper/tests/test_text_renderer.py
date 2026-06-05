@@ -118,3 +118,107 @@ def test_render_text_layer_wide_word_does_not_crash():
             assert img.mode == "RGBA"
     finally:
         os.unlink(path)
+
+def _topmost_nonzero_row(arr):
+    """Return the topmost row that has any non-transparent pixel."""
+    for row in range(arr.shape[0]):
+        if arr[row, :, 3].max() > 0:
+            return row
+    return arr.shape[0]
+
+def test_vertical_align_top_fixed():
+    """In fixed frame mode with vertical_align=top, text starts near the top of the frame."""
+    layer = {
+        "type": "text", "x": 0, "y": 100,
+        "width": 400, "height": 300,
+        "text": "Hello",
+        "font_size": 48, "fill": "#ffffff",
+        "stroke": "#000000", "stroke_width": 0,
+        "text_align": "left",
+        "vertical_align": "top",
+        "auto_height": False,
+    }
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
+        path = f.name
+    try:
+        render_text_layer(layer, 1080, 1920, path)
+        with Image.open(path) as img:
+            arr = np.array(img)
+        top_row = _topmost_nonzero_row(arr)
+        # Top-aligned text should start near y=100 (within 10px of font ascender)
+        assert 90 <= top_row <= 115, f"Expected text near row 100, got {top_row}"
+    finally:
+        os.unlink(path)
+
+def test_vertical_align_middle_fixed():
+    """In fixed frame mode with vertical_align=middle, text is vertically centred in the frame."""
+    layer = {
+        "type": "text", "x": 0, "y": 0,
+        "width": 400, "height": 400,
+        "text": "Hello",
+        "font_size": 48, "fill": "#ffffff",
+        "stroke": "#000000", "stroke_width": 0,
+        "text_align": "left",
+        "vertical_align": "middle",
+        "auto_height": False,
+    }
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
+        path = f.name
+    try:
+        render_text_layer(layer, 1080, 1920, path)
+        with Image.open(path) as img:
+            arr = np.array(img)
+        top_row = _topmost_nonzero_row(arr)
+        # Middle-aligned in a 400px frame: text block (~58px) starts around row 171
+        # Allow +-20px tolerance
+        assert 150 <= top_row <= 200, f"Expected text near row 171, got {top_row}"
+    finally:
+        os.unlink(path)
+
+def test_vertical_align_bottom_fixed():
+    """In fixed frame mode with vertical_align=bottom, text is near the bottom of the frame."""
+    layer = {
+        "type": "text", "x": 0, "y": 0,
+        "width": 400, "height": 400,
+        "text": "Hello",
+        "font_size": 48, "fill": "#ffffff",
+        "stroke": "#000000", "stroke_width": 0,
+        "text_align": "left",
+        "vertical_align": "bottom",
+        "auto_height": False,
+    }
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
+        path = f.name
+    try:
+        render_text_layer(layer, 1080, 1920, path)
+        with Image.open(path) as img:
+            arr = np.array(img)
+        top_row = _topmost_nonzero_row(arr)
+        # Bottom-aligned in a 400px frame: single line (~58px) starts around row 342
+        # Allow +-20px tolerance
+        assert 320 <= top_row <= 400, f"Expected text near row 342, got {top_row}"
+    finally:
+        os.unlink(path)
+
+def test_vertical_align_ignored_in_autoheight():
+    """vertical_align has no effect when auto_height=True (default behaviour)."""
+    base = {
+        "type": "text", "x": 0, "y": 0,
+        "width": 400, "height": 400,
+        "text": "Hello",
+        "font_size": 48, "fill": "#ffffff",
+        "stroke": "#000000", "stroke_width": 0,
+        "text_align": "left",
+        "auto_height": True,
+    }
+    results = {}
+    for v in ("top", "middle", "bottom"):
+        layer = {**base, "vertical_align": v}
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
+            path = f.name
+        render_text_layer(layer, 1080, 1920, path)
+        with Image.open(path) as img:
+            results[v] = _topmost_nonzero_row(np.array(img))
+        os.unlink(path)
+    assert results["top"] == results["middle"] == results["bottom"], \
+        "vertical_align must not affect autoHeight rendering"
