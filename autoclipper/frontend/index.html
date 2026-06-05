@@ -640,7 +640,7 @@ button,input,select{font-family:inherit}
 
 <!-- FONT PICKER PANEL -->
 <div id="fp-panel">
-  <input id="fp-search" type="text" placeholder="Search fonts…" oninput="renderFontList(this.value)" autocomplete="off">
+  <input id="fp-search" type="text" placeholder="Search fonts…" oninput="fpExpMode ? renderFontListExp() : renderFontList(this.value)" autocomplete="off">
   <div id="fp-list"></div>
 </div>
 
@@ -1745,6 +1745,7 @@ Object.values(EMOJI_DATA).flat().forEach(({e})=>preloadTwemojiImg(e));
 
 // ── FONT PICKER ────────────────────────────────────────────────────────────
 let fpOpen=false;
+let fpExpMode=false;
 
 function toggleFontPicker(triggerEl){
   const panel=document.getElementById('fp-panel');
@@ -1762,12 +1763,32 @@ function toggleFontPicker(triggerEl){
   searchEl.focus();
 }
 
+function toggleFontPickerExp(triggerEl){
+  if(fpOpen){ closeFontPicker(); return; }
+  fpExpMode = true;
+  const panel = document.getElementById('fp-panel');
+  const rect = triggerEl.getBoundingClientRect();
+  panel.style.top = (rect.bottom + 4) + 'px';
+  panel.style.left = rect.left + 'px';
+  panel.style.width = rect.width + 'px';
+  panel.classList.add('open');
+  triggerEl.classList.add('open');
+  fpOpen = true;
+  const searchEl = document.getElementById('fp-search');
+  searchEl.value = '';
+  renderFontListExp();
+  searchEl.focus();
+}
+
 function closeFontPicker(){
   const panel=document.getElementById('fp-panel');
   panel.classList.remove('open');
   fpOpen=false;
-  const trigger=document.getElementById('fp-trigger');
-  if(trigger)trigger.classList.remove('open');
+  fpExpMode=false;
+  const t1=document.getElementById('fp-trigger');
+  if(t1) t1.classList.remove('open');
+  const t2=document.getElementById('fp-trigger-exp');
+  if(t2) t2.classList.remove('open');
 }
 
 function renderFontList(query){
@@ -1790,15 +1811,46 @@ function renderFontList(query){
   }
 }
 
-function selectFont(fontName){
-  sp('fontFamily',fontName);
-  closeFontPicker();
-  const trigger=document.getElementById('fp-trigger');
-  if(trigger){
-    trigger.style.fontFamily=fontName;
-    const nameEl=trigger.querySelector('.fp-trigger-name');
-    if(nameEl)nameEl.textContent=fontName;
+function renderFontListExp(){
+  const list = document.getElementById('fp-list');
+  if(!list) return;
+  const obj = getTitleObj();
+  const curFont = obj ? (obj.fontFamily||'Inter').replace(/^"|"$/g,'').split(',')[0].trim() : 'Inter';
+  const searchEl = document.getElementById('fp-search');
+  const q = (searchEl ? searchEl.value : '').toLowerCase();
+  const filtered = q ? GOOGLE_FONTS.filter(f=>f.toLowerCase().includes(q)) : GOOGLE_FONTS;
+  function he(s){return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  list.innerHTML = filtered.map(f =>
+    `<div class="fp-item${f===curFont?' on':''}" style="font-family:${CSS.escape(f)}" data-font="${he(f)}">${he(f)}</div>`
+  ).join('');
+  if(!list._fpListenerAttached){
+    list._fpListenerAttached = true;
+    list.addEventListener('click', function(e){
+      const item = e.target.closest('[data-font]');
+      if(item) selectFont(item.dataset.font);
+    });
   }
+}
+
+function selectFont(fontName){
+  if(fpExpMode){
+    spTitle('fontFamily', fontName);
+    const trigger = document.getElementById('fp-trigger-exp');
+    if(trigger){
+      trigger.style.fontFamily = fontName;
+      const nameEl = trigger.querySelector('.fp-trigger-name');
+      if(nameEl) nameEl.textContent = fontName;
+    }
+  } else {
+    sp('fontFamily', fontName);
+    const trigger = document.getElementById('fp-trigger');
+    if(trigger){
+      trigger.style.fontFamily = fontName;
+      const nameEl = trigger.querySelector('.fp-trigger-name');
+      if(nameEl) nameEl.textContent = fontName;
+    }
+  }
+  closeFontPicker();
 }
 
 document.addEventListener('click',e=>{
