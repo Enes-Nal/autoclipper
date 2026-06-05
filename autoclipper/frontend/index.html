@@ -1688,6 +1688,62 @@ renderEmoGrid();
 renderMyEmojiGrid();
 Object.values(EMOJI_DATA).flat().forEach(({e})=>preloadTwemojiImg(e));
 
+// ── FONT PICKER ────────────────────────────────────────────────────────────
+let fpOpen=false;
+
+function toggleFontPicker(triggerEl){
+  const panel=document.getElementById('fp-panel');
+  if(fpOpen){closeFontPicker();return;}
+  const rect=triggerEl.getBoundingClientRect();
+  panel.style.top=(rect.bottom+4)+'px';
+  panel.style.left=rect.left+'px';
+  panel.style.width=rect.width+'px';
+  panel.classList.add('open');
+  triggerEl.classList.add('open');
+  fpOpen=true;
+  const searchEl=document.getElementById('fp-search');
+  searchEl.value='';
+  renderFontList('');
+  searchEl.focus();
+}
+
+function closeFontPicker(){
+  const panel=document.getElementById('fp-panel');
+  panel.classList.remove('open');
+  fpOpen=false;
+  const trigger=document.getElementById('fp-trigger');
+  if(trigger)trigger.classList.remove('open');
+}
+
+function renderFontList(query){
+  const list=document.getElementById('fp-list');
+  if(!list)return;
+  const obj=cv?.getActiveObject();
+  const curFont=(obj?.fontFamily||'Inter').replace(/^"|"$/g,'').split(',')[0].trim();
+  const q=query.toLowerCase();
+  const filtered=q?GOOGLE_FONTS.filter(f=>f.toLowerCase().includes(q)):GOOGLE_FONTS;
+  list.innerHTML=filtered.map(f=>
+    `<div class="fp-item${f===curFont?' on':''}" style="font-family:'${f}'" onclick="selectFont('${f.replace(/'/g,"\\'")}')">${f}</div>`
+  ).join('');
+}
+
+function selectFont(fontName){
+  sp('fontFamily',fontName);
+  closeFontPicker();
+  const trigger=document.getElementById('fp-trigger');
+  if(trigger){
+    trigger.style.fontFamily=`'${fontName}'`;
+    const nameEl=trigger.querySelector('.fp-trigger-name');
+    if(nameEl)nameEl.textContent=fontName;
+  }
+}
+
+document.addEventListener('click',e=>{
+  if(fpOpen&&!e.target.closest('#fp-panel')&&!e.target.closest('#fp-trigger')){
+    closeFontPicker();
+  }
+});
+
 // ── CANVAS INIT ────────────────────────────────────────────────────────────
 function initCanvas(f){
   fmt=f;
@@ -2735,11 +2791,13 @@ function openSfxChangePicker() {
 
 // ── PROPERTIES ─────────────────────────────────────────────────────────────
 function clearProps(){
+  closeFontPicker();
   document.getElementById('right').innerHTML='<div class="no-sel"><div class="no-sel-ico" style="display:flex;justify-content:center"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" width="32" height="32" style="opacity:.2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.042 21.672 13.684 16.6m0 0-2.51 2.225.569-9.47 5.227 7.917-3.286-.672ZM12 2.25V4.5m5.834.166-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243-1.59-1.59"/></svg></div>Select an element<br>to edit its properties</div>';
   document.getElementById('del-btn').style.display='none';
 }
 
 function updateProps(){
+  closeFontPicker();
   let obj=cv?.getActiveObject();
   if(obj?._isMaskEditor) obj=obj._maskTarget; // show video props when editor is selected
   if(!obj){clearProps();return;}
@@ -2861,6 +2919,14 @@ function updateProps(){
     const fill=typeof obj.fill==='string'?obj.fill:'#ffffff';
     const fs=Math.round(obj.fontSize||48),sw=Math.round(obj.strokeWidth||0);
     html+=`<div class="psec"><div class="psec-title"><svg class="psec-title-icon cur-path" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"/></svg>Text</div>
+    <div class="prow"><span class="plbl">Font</span>
+      <div class="fp-wrap">
+        <button class="fp-trigger" id="fp-trigger" onclick="toggleFontPicker(this)" style="font-family:'${(obj.fontFamily||'Inter').replace(/^"|"$/g,'').split(',')[0].trim()}'">
+          <span class="fp-trigger-name">${(obj.fontFamily||'Inter').replace(/^"|"$/g,'').split(',')[0].trim()}</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+      </div>
+    </div>
     <div class="prow"><span class="plbl">Size</span>
       <div class="slrow">
         <input type="range" class="psl" min="8" max="180" value="${fs}"
@@ -2907,7 +2973,7 @@ function updateProps(){
     </div></div>
     <div class="psec"><div class="psec-title"><svg class="psec-title-icon gear-path" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>Emoji</div>
       <button class="emo-btn" onclick="toggleEmojiPicker(this)">😊 Add Emoji</button>
-      <p class="pnote">Inserts Twemoji at cursor in this text. If no cursor position is saved, appends to end. Without a text selection, adds as a standalone image layer.</p>
+      <p class="pnote">Inserts emoji at cursor. Without a text selection, adds as a standalone image layer.</p>
     </div>`;
   }
 
