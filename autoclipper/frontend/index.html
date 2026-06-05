@@ -4034,7 +4034,7 @@ function spTitle(k, v){
   if(!o) return;
   o.set(k, v);
   cv.renderAll();
-  refreshExpPreview();
+  if(_expPreviewOpen) refreshExpPreview();
 }
 function renderExpTitleControls(obj){
   const fill = typeof obj.fill === 'string' ? obj.fill : '#ffffff';
