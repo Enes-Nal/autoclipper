@@ -223,8 +223,8 @@ button,input,select{font-family:inherit}
 .no-sel{padding:28px 14px;text-align:center;color:var(--sub);font-size:12px;line-height:1.8}
 .no-sel-ico{margin-bottom:8px;opacity:.2;display:flex;justify-content:center}
 /* Modals */
-#dl-modal,#exp-modal,#save-tpl-modal{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:400;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
-#dl-modal.open,#exp-modal.open,#save-tpl-modal.open{display:flex}
+#dl-modal,#exp-modal,#save-tpl-modal,#alert-modal,#confirm-modal{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:400;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+#dl-modal.open,#exp-modal.open,#save-tpl-modal.open,#alert-modal.open,#confirm-modal.open{display:flex}
 .modal-box{background:var(--s1);border:1px solid var(--b1);border-radius:16px;padding:28px;width:480px;box-shadow:0 24px 80px rgba(0,0,0,.9)}
 
 /* ── transitions-dev ─────────────────────────────────────── */
@@ -1529,21 +1529,38 @@ function preloadTwemojiImg(emoji){
   if(TWEMOJI_IMGS.has(emoji))return;
   TWEMOJI_IMGS.set(emoji,null);
   const img=new Image();img.crossOrigin='anonymous';
-  img.onload=()=>{TWEMOJI_IMGS.set(emoji,img);cv&&cv.requestRenderAll();};
+  img.onload=()=>{TWEMOJI_IMGS.set(emoji,img);cv&&cv.requestRenderAll();if(_expPreviewOpen)setTimeout(refreshExpPreview,50);};
   img.src=twemojiUrl(emoji);
 }
 const _emojiRe=/\p{Extended_Pictographic}/u;
 const _emojiReExact=/^\p{Extended_Pictographic}[️⃣]?$/u;
 const _origRC=fabric.Text.prototype._renderChar;
 fabric.Text.prototype._renderChar=function(method,ctx,lineIndex,charIndex,_char,left,top){
-  // Only treat _char as an emoji if the ENTIRE string is a single emoji.
-  // Fabric.js batches whole lines into one _renderChar call when isEmptyStyles()=true,
-  // so _char can be a full sentence like "Hello 🔥" — we must NOT skip stroke in that case.
+  // Single emoji — render as image
   if(EMOJI_SET.has(_char)||_emojiReExact.test(_char)){
     if(method==='strokeText')return;
     if(!TWEMOJI_IMGS.has(_char))preloadTwemojiImg(_char);
     const img=TWEMOJI_IMGS.get(_char);
     if(img){const sz=this.fontSize;ctx.drawImage(img,left,top-sz,sz,sz);return;}
+    // image not yet loaded — fall through to native rendering
+  } else if(_char.length>2&&_emojiRe.test(_char)){
+    // Fabric batched a whole line containing emoji(s) — split and render char by char
+    const chars=[..._char];
+    let x=left;
+    for(const ch of chars){
+      if(EMOJI_SET.has(ch)||_emojiReExact.test(ch)){
+        if(method!=='strokeText'){
+          if(!TWEMOJI_IMGS.has(ch))preloadTwemojiImg(ch);
+          const img=TWEMOJI_IMGS.get(ch);
+          if(img){const sz=this.fontSize;ctx.drawImage(img,x,top-sz,sz,sz);x+=sz;continue;}
+        }
+        x+=this.fontSize;continue;
+      }
+      if(method==='fillText')ctx.fillText(ch,x,top);
+      else ctx.strokeText(ch,x,top);
+      x+=ctx.measureText(ch).width;
+    }
+    return;
   }
   _origRC.call(this,method,ctx,lineIndex,charIndex,_char,left,top);
 };
@@ -1926,6 +1943,17 @@ function initCanvas(f){
   cv.on('object:moved',()=>{snapLines={x:null,y:null};setPhoneGlow(false);cv.requestRenderAll();});
   cv.on('object:scaling', e => {
     if (e.target?._isMaskEditor) { syncMaskFromEditor(e.target); return; }
+    const corner = e.transform?.corner;
+    const isSide = corner==='ml'||corner==='mr'||corner==='mt'||corner==='mb';
+    if (isSide && e.e?.shiftKey) {
+      const obj = e.target;
+      const aspect = obj.width / obj.height;
+      if (corner==='ml'||corner==='mr') {
+        obj.scaleY = obj.scaleX / aspect;
+      } else {
+        obj.scaleX = obj.scaleY * aspect;
+      }
+    }
     onSnapScale(e);
     if (e.target?._type==='video') _updateMaskEditorForVideo(e.target);
   });
@@ -1933,11 +1961,23 @@ function initCanvas(f){
     const o=e.target;if(o&&o._type==='video'){o._frameW=o.getScaledWidth();o._frameH=o.getScaledHeight();}
   });
   cv.on('after:render',drawGuides);
+  function syncTextHandles(obj) {
+    if (obj._autoHeight !== false) {
+      obj.setControlsVisibility({mt:false,mb:false,tl:false,tr:false,bl:false,br:false});
+    } else {
+      obj.setControlsVisibility({mt:true,mb:true,tl:true,tr:true,bl:true,br:true});
+    }
+  }
+
   cv.on('object:added',e=>{
     if(e.target._type==='text'){
-      // Show ml/mr so users can drag to resize the text frame width.
-      // Hide mt/mb (height is auto-sized by Textbox).
-      e.target.setControlsVisibility({mt:false,mb:false});
+      e.target.set({
+        borderColor:'#2563eb',
+        cornerColor:'#2563eb',
+        cornerSize:9,
+        transparentCorners:false,
+      });
+      syncTextHandles(e.target);
     }
   });
   zl=1;updZoom();saveHist();
@@ -2294,6 +2334,7 @@ function doZoom(d){
   cv.setZoom(zl);cv.setWidth(w*zl);cv.setHeight(h*zl);
   const p=document.getElementById('phone');
   p.style.width=w*zl+'px';p.style.height=h*zl+'px';
+  localStorage.setItem('acZoom',zl);
   updZoom();
 }
 function fitZoom(){doZoom(1-zl);}
@@ -2365,7 +2406,7 @@ function addText(){
     fontSize:sc(52),fontFamily:'"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji","Inter",sans-serif',
     fontWeight:'900',fill:'#ffffff',stroke:'#000',strokeWidth:sc(3),
     paintFirst:'stroke',textAlign:'center',_type:'text',_label:'Text Block',
-    _isTitle:true,_overflow:'wrap',
+    _isTitle:true,_overflow:'wrap',_autoHeight:true,_verticalAlign:'top',
   });
   cv.add(t);cv.setActiveObject(t);cv.renderAll();
 }
@@ -2519,7 +2560,7 @@ async function onAudioFile(e){
   try {
     const resp = await fetch('/api/upload-audio', {method:'POST', body:fd});
     const data = await resp.json();
-    if(!resp.ok) { alert(data.error||'Upload failed'); return; }
+    if(!resp.ok) { await showAlert(data.error||'Upload failed','Upload Failed'); return; }
     setAudioLayer({
       type: 'audio',
       src: data.path,
@@ -2530,7 +2571,7 @@ async function onAudioFile(e){
     });
     saveHist();
   } catch(err) {
-    alert('Upload failed: ' + err.message);
+    await showAlert('Upload failed: ' + err.message,'Upload Failed');
   }
   // Reset so the same file can be re-selected
   e.target.value = '';
@@ -2647,12 +2688,12 @@ async function onSfxFile(e) {
   try {
     const resp = await fetch('/api/sfx/upload', {method: 'POST', body: fd});
     const data = await resp.json();
-    if (!resp.ok) { alert(data.error || 'Upload failed'); return; }
+    if (!resp.ok) { await showAlert(data.error || 'Upload failed','Upload Failed'); return; }
     sfxLibrary.push(data);
     renderSfxLibrary();
     document.getElementById('sfx-panel').classList.add('open');
   } catch(err) {
-    alert('Upload failed: ' + err.message);
+    await showAlert('Upload failed: ' + err.message,'Upload Failed');
   }
   e.target.value = '';
 }
@@ -3827,14 +3868,14 @@ function confirmSaveTemplate(){
   fetch('/api/templates',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(tpl)})
     .then(r=>r.json())
     .then(()=>{renderTplGrid();switchTab('tpl');})
-    .catch(()=>alert('Save failed'));
+    .catch(()=>showAlert('Save failed','Save Failed'));
 }
 
 async function applySavedTpl(file){
   let tpl;
   try{tpl=await fetch(`/api/templates/${encodeURIComponent(file)}`).then(r=>r.json());}
-  catch(e){alert('Failed to load template');return;}
-  if(tpl.error){alert('Template not found');return;}
+  catch(e){await showAlert('Failed to load template','Error');return;}
+  if(tpl.error){await showAlert('Template not found','Error');return;}
 
   histLock=true;
   dbClearProject(acProjectId);
@@ -3894,7 +3935,7 @@ async function applySavedTpl(file){
         fontWeight:layer.font_weight||'900',fill:layer.fill||'#ffffff',
         stroke:layer.stroke||'#000',strokeWidth:(layer.stroke_width||0)*s,
         paintFirst:'stroke',textAlign:layer.text_align||'center',
-        _type:'text',_label:'Text Block',opacity:op,_isTitle:isTitle,
+        _type:'text',_label:'Text Block',opacity:op,_isTitle:isTitle,_autoHeight:true,_verticalAlign:'top',
         _overflow:layer.overflow_mode||'wrap',
       });
       cv.add(t2);
@@ -4026,7 +4067,7 @@ function refreshExpPreview(){
   const height = bottom - top;
   if(width <= 0 || height <= 0) return;
 
-  const dataURL = cv.toDataURL({ format: 'png', left, top, width, height, multiplier: 0.5 });
+  const dataURL = cv.toDataURL({ format: 'png', left, top, width, height, multiplier: 1 });
   img.src = dataURL;
 }
 
@@ -4170,7 +4211,7 @@ function startExport(){
   st.style.color='var(--sub)';
 
   fetch('/api/export',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({video_path:downloadedVideoPath,template:tpl,title,emoji_source:activeEmoTab})})
+    body:JSON.stringify({video_path:downloadedVideoPath,template:tpl,title,emoji_source:activeEmoTab==='mypack'?'emojipack':activeEmoTab})})
     .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
     .then(({job_id,error})=>{
       if(error){st.textContent='Error: '+error;st.style.color='var(--danger)';pw.style.display='none';return;}
@@ -4224,6 +4265,8 @@ function startExport(){
   // 4. Initialise canvas (histLock prevents saveHist firing during setup)
   histLock=true;
   initCanvas(localStorage.getItem('acFmt')||'9:16');
+  const _savedZoom=parseFloat(localStorage.getItem('acZoom'));
+  if(_savedZoom&&_savedZoom!==1)doZoom(_savedZoom-zl);
 
   // 5. Restore latest state or add default elements
   if(histIdx>=0){
@@ -4492,8 +4535,50 @@ async function _ctxDuplicateTpl(file, name){
   } catch(e){ _ctxToast('Duplicate failed'); }
 }
 
+function _openModalBox(overlayId){
+  const overlay=document.getElementById(overlayId);
+  const box=overlay.querySelector('.t-modal');
+  overlay.classList.add('open');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>box.classList.add('is-open')));
+}
+function _closeModalBox(overlayId){
+  const overlay=document.getElementById(overlayId);
+  const box=overlay.querySelector('.t-modal');
+  const ms=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--modal-close-dur'))||150;
+  box.classList.remove('is-open');
+  box.classList.add('is-closing');
+  setTimeout(()=>{overlay.classList.remove('open');box.classList.remove('is-closing');},ms);
+}
+
+function showAlert(msg, title='Notice'){
+  return new Promise(resolve=>{
+    document.getElementById('alert-modal-title').textContent=title;
+    document.getElementById('alert-modal-msg').textContent=msg;
+    _openModalBox('alert-modal');
+    const btn=document.getElementById('alert-modal-ok');
+    const handler=()=>{btn.removeEventListener('click',handler);_closeModalBox('alert-modal');resolve();};
+    btn.addEventListener('click',handler);
+  });
+}
+
+function showConfirm(msg, title='Confirm', okLabel='Delete'){
+  return new Promise(resolve=>{
+    document.getElementById('confirm-modal-title').textContent=title;
+    document.getElementById('confirm-modal-msg').textContent=msg;
+    document.getElementById('confirm-modal-ok').textContent=okLabel;
+    _openModalBox('confirm-modal');
+    const okBtn=document.getElementById('confirm-modal-ok');
+    const cancelBtn=document.getElementById('confirm-modal-cancel');
+    const cleanup=()=>{okBtn.removeEventListener('click',onOk);cancelBtn.removeEventListener('click',onCancel);_closeModalBox('confirm-modal');};
+    const onOk=()=>{cleanup();resolve(true);};
+    const onCancel=()=>{cleanup();resolve(false);};
+    okBtn.addEventListener('click',onOk);
+    cancelBtn.addEventListener('click',onCancel);
+  });
+}
+
 async function _ctxDeleteTpl(file, name){
-  if(!confirm(`Delete template "${name}"?`)) return;
+  if(!await showConfirm(`Delete template "${name}"?`,'Delete Template','Delete')) return;
   try{
     const res = await fetch(`/api/templates/${encodeURIComponent(file)}`, {method:'DELETE'});
     if(!res.ok) throw new Error();
@@ -4503,5 +4588,27 @@ async function _ctxDeleteTpl(file, name){
 }
 </script>
 <div id="ctx-menu"></div>
+
+<div id="alert-modal">
+  <div class="modal-box t-modal" style="width:360px">
+    <div class="modal-title" id="alert-modal-title">Notice</div>
+    <div id="alert-modal-msg" style="font-size:13px;color:var(--sub);margin-bottom:20px;line-height:1.5"></div>
+    <div class="modal-row" style="justify-content:flex-end">
+      <button class="btn btn-primary" id="alert-modal-ok">OK</button>
+    </div>
+  </div>
+</div>
+
+<div id="confirm-modal">
+  <div class="modal-box t-modal" style="width:360px">
+    <div class="modal-title" id="confirm-modal-title">Confirm</div>
+    <div id="confirm-modal-msg" style="font-size:13px;color:var(--sub);margin-bottom:20px;line-height:1.5"></div>
+    <div class="modal-row" style="justify-content:flex-end">
+      <button class="btn btn-ghost" id="confirm-modal-cancel">Cancel</button>
+      <button class="btn btn-danger" id="confirm-modal-ok">Delete</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
