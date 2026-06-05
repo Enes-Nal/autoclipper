@@ -68,6 +68,33 @@ def save_template():
     return jsonify({"saved": name})
 
 
+@app.patch("/api/templates/<name>")
+def rename_template(name):
+    p = TEMPLATES_DIR / f"{name}.json"
+    if not p.exists() or "builtin" in str(p):
+        return jsonify({"error": "not found"}), 404
+    new_name = (request.json or {}).get("name", "").replace(" ", "-").lower()
+    if not new_name:
+        return jsonify({"error": "name required"}), 400
+    data = json.loads(p.read_text(encoding="utf-8"))
+    data["name"] = (request.json or {}).get("name", new_name)
+    new_p = TEMPLATES_DIR / f"{new_name}.json"
+    new_p.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    if new_p != p:
+        p.unlink()
+    return jsonify({"renamed": new_name})
+
+
+@app.delete("/api/templates/<name>")
+def delete_template(name):
+    p = TEMPLATES_DIR / f"{name}.json"
+    if not p.exists() or "builtin" in str(p):
+        return jsonify({"error": "not found"}), 404
+    p.unlink()
+    return jsonify({"deleted": name})
+
+
+
 # ── Download ─────────────────────────────────────────────────────────────────
 @app.post("/api/download")
 def start_download():
@@ -156,6 +183,11 @@ def export_progress(job_id):
         mimetype="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@app.get("/emoji-pack/<filename>")
+def serve_emoji_pack(filename):
+    return send_from_directory(str((BASE_DIR / "EmojiPack").resolve()), filename)
 
 
 @app.get("/api/downloads/<filename>")
