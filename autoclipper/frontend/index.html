@@ -4128,15 +4128,15 @@ function closeExpModal(){
   setTimeout(()=>{box.classList.remove('is-closing');overlay.classList.remove('open');},ms);
 }
 
-function saveExpTemplateStyles(){
+function saveExpTemplateStyles(tpl){
   const name = document.getElementById('proj-name-input').value.trim();
   if(!name) return;
-  const tpl = canvasToTemplate();
   fetch('/api/templates', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(tpl)
-  }).catch(() => {/* silent — export already succeeded */});
+  }).then(r=>{ if(!r.ok) console.warn('Template update failed:', r.status); })
+    .catch(() => {/* silent — export already succeeded */});
 }
 
 function startExport(){
@@ -4164,7 +4164,7 @@ function startExport(){
           es.close();pf.style.width='100%';pl.textContent='Done';
           st.innerHTML=`Exported: <a href="/api/exports/${msg.filename}" style="color:var(--acc)" download>${msg.filename}</a>`;
           st.style.color='var(--ok)';
-          if(updateTpl) saveExpTemplateStyles();
+          if(updateTpl) saveExpTemplateStyles(tpl);
           const a=document.createElement('a');a.href=`/api/exports/${msg.filename}`;a.download=msg.filename;document.body.appendChild(a);a.click();document.body.removeChild(a);
         } else if(msg.type==='error'){
           es.close();st.textContent='Error: '+msg.message;st.style.color='var(--danger)';pw.style.display='none';
