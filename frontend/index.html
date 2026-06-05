@@ -1854,7 +1854,7 @@ function selectFont(fontName){
 }
 
 document.addEventListener('click',e=>{
-  if(fpOpen&&!e.target.closest('#fp-panel')&&!e.target.closest('#fp-trigger')){
+  if(fpOpen&&!e.target.closest('#fp-panel')&&!e.target.closest('#fp-trigger')&&!e.target.closest('#fp-trigger-exp')){
     closeFontPicker();
   }
 });
