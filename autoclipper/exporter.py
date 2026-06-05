@@ -87,10 +87,13 @@ def build_filter_graph(layers: list, cw: int, ch: int,
                     f"pad={w}:{h}:(ow-iw)/2:(oh-ih)/2:color=black[{scaled}]"
                 )
             elif fit == "cover":
+                # Always scale/crop to full canvas so the center of the source
+                # is visible regardless of how small the layer frame is.
                 parts.append(
-                    f"[{raw}]scale={w}:{h}:force_original_aspect_ratio=increase,"
-                    f"crop={w}:{h}[{scaled}]"
+                    f"[{raw}]scale={cw}:{ch}:force_original_aspect_ratio=increase,"
+                    f"crop={cw}:{ch}[{scaled}]"
                 )
+                x, y = 0, 0  # cover fills the canvas from top-left
             else:
                 parts.append(f"[{raw}]scale={w}:{h}[{scaled}]")
             # Apply mask if present
@@ -111,7 +114,18 @@ def build_filter_graph(layers: list, cw: int, ch: int,
                 parts.append(f"[{current}][{composited}]overlay=x={x}:y={y}[{out}]")
                 current = out
             else:
-                current = composited
+                # Video is the first layer — x/y must still be applied.
+                # Without a background stream to overlay onto, use pad to
+                # position the video at (x, y) within a black canvas.
+                if x == 0 and y == 0:
+                    current = composited
+                else:
+                    positioned = lbl()
+                    parts.append(
+                        f"[{composited}]pad='max(iw+{x},{cw})':'max(ih+{y},{ch})':{x}:{y}"
+                        f":color=black[{positioned}]"
+                    )
+                    current = positioned
 
         elif t == "text":
             if i in text_pngs:
@@ -120,7 +134,7 @@ def build_filter_graph(layers: list, cw: int, ch: int,
                 parts.append(f"[{current}][{idx}:v]overlay=x=0:y=0[{out}]")
                 current = out
 
-        elif t == "image" and i in image_inputs:
+        elif t in ("image", "emoji") and i in image_inputs:
             idx = image_inputs[i]
             x, y = layer.get("x", 0), layer.get("y", 0)
             out = lbl()
@@ -256,7 +270,7 @@ def build_audio_cmd_parts(
 
 
 def export_video(video_path: str, template: dict, title: str = "",
-                 on_progress=None) -> str:
+                 on_progress=None, emoji_source: str = "twemoji") -> str:
     """Build and run the FFmpeg command. Returns output file path."""
     job_id = uuid.uuid4().hex[:8]
     all_layers = [dict(l) for l in template["layers"]]
@@ -275,10 +289,10 @@ def export_video(video_path: str, template: dict, title: str = "",
     for i, l in enumerate(layers):
         if l["type"] == "text":
             p = str(TEMP_DIR / f"{job_id}_t{i}.png")
-            render_text_layer(l, cw, ch, p)
+            render_text_layer(l, cw, ch, p, emoji_source=emoji_source)
             text_pngs[i] = len(extra_inputs) + 1
             extra_inputs.append(p)
-        elif l["type"] == "image" and os.path.exists(l.get("src", "")):
+        elif l["type"] in ("image", "emoji") and os.path.exists(l.get("src", "")):
             image_inputs[i] = len(extra_inputs) + 1
             extra_inputs.append(l["src"])
 
