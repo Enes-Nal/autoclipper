@@ -257,6 +257,7 @@ button,input,select{font-family:inherit}
 #fp-panel{position:fixed;background:var(--s1);border:1px solid var(--b2);border-radius:var(--rs);z-index:300;box-shadow:0 8px 24px rgba(0,0,0,.6);display:none;flex-direction:column;min-width:180px}
 #fp-panel.open{display:flex}
 #fp-search{background:var(--s2);border:none;border-bottom:1px solid var(--b1);color:var(--tx);font-size:11px;padding:7px 10px;outline:none;font-family:'Inter',sans-serif;width:100%;border-radius:var(--rs) var(--rs) 0 0}
+#fp-search:focus{border-color:var(--acc)}
 #fp-list{max-height:200px;overflow-y:auto}
 #fp-list::-webkit-scrollbar{width:3px}
 #fp-list::-webkit-scrollbar-thumb{background:var(--mut);border-radius:2px}
@@ -267,9 +268,10 @@ button,input,select{font-family:inherit}
 .emo-tabs{display:flex;border-bottom:1px solid var(--b1);flex-shrink:0}
 .emo-tab{flex:1;padding:7px 0;font-size:11px;font-weight:700;cursor:pointer;background:transparent;border:none;color:var(--sub);border-bottom:2px solid transparent;transition:.12s;font-family:'Inter',sans-serif}
 .emo-tab.on{color:var(--acc);border-bottom-color:var(--acc)}
+.emo-tab:hover{color:var(--tx)}
 .emo-tab-body{display:none;flex-direction:column;overflow:hidden}
 .emo-tab-body.on{display:flex}
-.myemo-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;max-height:220px;overflow-y:auto;padding:6px;flex-shrink:0}
+.myemo-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;max-height:190px;overflow-y:auto;padding:6px;flex-shrink:0}
 .myemo-grid::-webkit-scrollbar{width:3px}
 .myemo-grid::-webkit-scrollbar-thumb{background:var(--mut);border-radius:2px}
 .modal-title{font-size:16px;font-weight:800;margin-bottom:6px}
