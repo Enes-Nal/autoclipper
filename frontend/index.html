@@ -1751,6 +1751,7 @@ document.addEventListener('click',e=>{
     closeFontPicker();
   }
 });
+document.addEventListener('scroll',()=>{if(fpOpen)closeFontPicker();},true);
 
 // ── CANVAS INIT ────────────────────────────────────────────────────────────
 function initCanvas(f){
@@ -3779,7 +3780,7 @@ async function applySavedTpl(file){
       if(layer.src){
         await new Promise(res=>{
           fabric.Image.fromURL(layer.src,img=>{
-            img.set({left:lx,top:ly,opacity:op,_type:layer.type,_label:layer.label||'Image'});
+            img.set({left:lx,top:ly,opacity:op,_type:layer.type,_label:layer.label||'Image',_src:layer.src});
             img.scaleToWidth(lw);cv.add(img);res();
           });
         });
