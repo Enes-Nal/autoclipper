@@ -614,15 +614,30 @@ button,input,select{font-family:inherit}
 
 <!-- EMOJI POPUP -->
 <div id="emo-popup" class="t-dropdown" data-origin="top-left">
-  <div class="emo-cats">
-    <button class="emo-cat-btn on" data-cat="smileys" onclick="switchEmoCat('smileys')" title="Smileys">😀</button>
-    <button class="emo-cat-btn" data-cat="people" onclick="switchEmoCat('people')" title="People">👋</button>
-    <button class="emo-cat-btn" data-cat="fire" onclick="switchEmoCat('fire')" title="Trending">🔥</button>
-    <button class="emo-cat-btn" data-cat="objects" onclick="switchEmoCat('objects')" title="Objects">🎮</button>
-    <button class="emo-cat-btn" data-cat="symbols" onclick="switchEmoCat('symbols')" title="Symbols">❤️</button>
+  <div class="emo-tabs">
+    <button class="emo-tab on" onclick="switchEmoTab('mypack')">My Emojis</button>
+    <button class="emo-tab" onclick="switchEmoTab('twemoji')">Twemoji</button>
   </div>
-  <input class="emo-search" id="emo-search" placeholder="Search emoji…" oninput="filterEmoji(this.value)">
-  <div class="emo-grid" id="emo-grid"></div>
+  <div class="emo-tab-body on" id="emo-tab-mypack">
+    <div class="myemo-grid" id="myemo-grid"></div>
+  </div>
+  <div class="emo-tab-body" id="emo-tab-twemoji">
+    <div class="emo-cats">
+      <button class="emo-cat-btn on" data-cat="smileys" onclick="switchEmoCat('smileys')" title="Smileys">😀</button>
+      <button class="emo-cat-btn" data-cat="people" onclick="switchEmoCat('people')" title="People">👋</button>
+      <button class="emo-cat-btn" data-cat="fire" onclick="switchEmoCat('fire')" title="Trending">🔥</button>
+      <button class="emo-cat-btn" data-cat="objects" onclick="switchEmoCat('objects')" title="Objects">🎮</button>
+      <button class="emo-cat-btn" data-cat="symbols" onclick="switchEmoCat('symbols')" title="Symbols">❤️</button>
+    </div>
+    <input class="emo-search" id="emo-search" placeholder="Search emoji…" oninput="filterEmoji(this.value)">
+    <div class="emo-grid" id="emo-grid"></div>
+  </div>
+</div>
+
+<!-- FONT PICKER PANEL -->
+<div id="fp-panel">
+  <input id="fp-search" type="text" placeholder="Search fonts…" oninput="renderFontList(this.value)" autocomplete="off">
+  <div id="fp-list"></div>
 </div>
 
 <!-- AUDIO TRIMMER MODAL -->
