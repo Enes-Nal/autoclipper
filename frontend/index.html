@@ -4128,8 +4128,20 @@ function closeExpModal(){
   setTimeout(()=>{box.classList.remove('is-closing');overlay.classList.remove('open');},ms);
 }
 
+function saveExpTemplateStyles(){
+  const name = document.getElementById('proj-name-input').value.trim();
+  if(!name) return;
+  const tpl = canvasToTemplate();
+  fetch('/api/templates', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(tpl)
+  }).catch(() => {/* silent — export already succeeded */});
+}
+
 function startExport(){
   const title=document.getElementById('exp-title').value.trim();
+  const updateTpl = document.getElementById('exp-update-tpl')?.checked;
   const tpl=canvasToTemplate();
   const pw=document.getElementById('exp-prog-wrap');
   const pf=document.getElementById('exp-prog-fill');
@@ -4152,6 +4164,7 @@ function startExport(){
           es.close();pf.style.width='100%';pl.textContent='Done';
           st.innerHTML=`Exported: <a href="/api/exports/${msg.filename}" style="color:var(--acc)" download>${msg.filename}</a>`;
           st.style.color='var(--ok)';
+          if(updateTpl) saveExpTemplateStyles();
           const a=document.createElement('a');a.href=`/api/exports/${msg.filename}`;a.download=msg.filename;document.body.appendChild(a);a.click();document.body.removeChild(a);
         } else if(msg.type==='error'){
           es.close();st.textContent='Error: '+msg.message;st.style.color='var(--danger)';pw.style.display='none';
