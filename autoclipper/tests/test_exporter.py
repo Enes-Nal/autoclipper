@@ -295,14 +295,22 @@ def test_no_segments_returns_passthrough():
     assert vlabel == '0:v'
     assert alabel == '0:a'
 
-def test_single_segment_returns_passthrough():
+def test_single_segment_with_no_color_still_trims():
     segs = [{'sourceStart': 0, 'sourceEnd': 30, 'trackStart': 0,
              'color': {'brightness': 0, 'contrast': 0, 'saturation': 0, 'hue': 0}}]
     parts, vlabel, alabel = build_segment_filter(segs)
-    # Single full segment with no color = passthrough
-    assert parts == []
-    assert vlabel == '0:v'
-    assert alabel == '0:a'
+    # Single segment always emits trim filter so sourceEnd trimming is respected
+    assert any('trim' in p for p in parts), f"Expected trim, got: {parts}"
+    assert vlabel != '0:v'
+    assert alabel != '0:a'
+
+def test_single_segment_with_trim_emits_filter():
+    segs = [{'sourceStart': 5, 'sourceEnd': 20, 'trackStart': 0,
+             'color': {'brightness': 0, 'contrast': 0, 'saturation': 0, 'hue': 0}}]
+    parts, vlabel, alabel = build_segment_filter(segs)
+    assert any('trim=start=5' in p for p in parts), f"Expected trim=start=5, got: {parts}"
+    assert vlabel != '0:v'
+    assert alabel != '0:a'
 
 def test_two_segments_generates_concat():
     segs = [
