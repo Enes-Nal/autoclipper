@@ -5263,7 +5263,6 @@ function tlRenderSpeedLane() {
     </svg>`;
 
   lane.querySelectorAll('.tl-speed-dot').forEach(el => { el.style.pointerEvents = 'all'; });
-  lane.addEventListener('click', tlSpeedLaneClick, { once: false });
 }
 
 function tlRenderRuler() {
