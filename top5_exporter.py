@@ -107,18 +107,20 @@ def concat_segments(temp_files: list[str], job_id: str) -> str:
             f.write(f"file '{p.replace(chr(92), '/')}'\n")
 
     out_path = str(EXPORTS_DIR / f"top5_{job_id}.mp4")
-    result = subprocess.run(
-        ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", list_path,
-         "-c", "copy", out_path],
-        capture_output=True,
-    )
     try:
-        os.remove(list_path)
-    except OSError:
-        pass
+        result = subprocess.run(
+            ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", list_path,
+             "-c", "copy", out_path],
+            capture_output=True,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"Concat failed:\n{result.stderr.decode()[-2000:]}")
+    finally:
+        try:
+            os.remove(list_path)
+        except OSError:
+            pass
 
-    if result.returncode != 0:
-        raise RuntimeError(f"Concat failed:\n{result.stderr.decode()[-2000:]}")
     return out_path
 
 
