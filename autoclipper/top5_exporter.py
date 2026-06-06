@@ -1,9 +1,9 @@
-import os, subprocess, uuid
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import os, subprocess, uuid  # used by render_slot / export_top5 (added in later tasks)
+from concurrent.futures import ThreadPoolExecutor, as_completed  # used by export_top5 (added in later tasks)
 from pathlib import Path
 
-from exporter import build_filter_graph
-from text_renderer import render_text_layer
+from exporter import build_filter_graph  # used by render_slot (added in later tasks)
+from text_renderer import render_text_layer  # used by render_slot (added in later tasks)
 
 EXPORTS_DIR = Path(__file__).parent / "exports"
 TEMP_DIR    = Path(__file__).parent / "temp"
