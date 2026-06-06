@@ -5063,6 +5063,7 @@ function tlClipMousedown(e, segId) {
   if (window._tlTrimState) return;
   tlSelectedSegId = (tlSelectedSegId === segId) ? null : segId;
   if (tlColorOpen) tlSyncColorStrip();
+  else if (!tlSelectedSegId) tlApplyPreviewFilter({ brightness: 0, contrast: 0, saturation: 0, hue: 0 });
   window._tlDragSeg = { segId, startX: e.clientX, origTrackStart: tlSegments.find(s => s.id === segId)?.trackStart ?? 0 };
   tlRender();
 }
