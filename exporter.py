@@ -1,4 +1,5 @@
-import subprocess, uuid, os
+import subprocess, uuid, os, re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from text_renderer import render_text_layer
 
@@ -31,9 +32,78 @@ def render_mask_png(shape: str, w: int, h: int, radius: int,
     img.save(path)
 
 
+def build_segment_filter(segments: list) -> tuple[list, str, str]:
+    """
+    Build trim+concat filter parts for video segments.
+    Returns (filter_parts, video_label, audio_label).
+    Returns ([], '0:v', '0:a') when no segments or single no-op segment.
+    """
+    if not segments:
+        return [], '0:v', '0:a'
+
+    segs = sorted(segments, key=lambda s: s.get('trackStart', 0))
+
+    # Single segment with no color grading = passthrough
+    if len(segs) == 1:
+        s = segs[0]
+        c = s.get('color', {})
+        no_color = all(float(c.get(k, 0)) == 0 for k in ('brightness', 'contrast', 'saturation', 'hue'))
+        if no_color:
+            return [], '0:v', '0:a'
+
+    n = [0]
+    def lbl(prefix='s'):
+        n[0] += 1
+        return f"{prefix}{n[0]}"
+
+    parts = []
+    vlabels = []
+    alabels = []
+
+    for seg in segs:
+        ss  = float(seg.get('sourceStart', 0))
+        se  = float(seg.get('sourceEnd',   0))
+        c   = seg.get('color', {})
+        brightness = float(c.get('brightness', 0))
+        contrast   = float(c.get('contrast',   0))
+        saturation = float(c.get('saturation', 0))
+        hue        = float(c.get('hue',        0))
+
+        vl = lbl('sv')
+        al = lbl('sa')
+
+        vtrim = f"[0:v]trim=start={ss}:end={se},setpts=PTS-STARTPTS"
+        eq_parts = []
+        if brightness != 0:
+            eq_parts.append(f"brightness={brightness/100:.3f}")
+        if contrast != 0:
+            eq_parts.append(f"contrast={1.0 + contrast/100:.3f}")
+        if saturation != 0:
+            eq_parts.append(f"saturation={1.0 + saturation/100:.3f}")
+        color_filters = (',eq=' + ':'.join(eq_parts)) if eq_parts else ''
+        if hue != 0:
+            color_filters += f",hue=h={hue}"
+        parts.append(f"{vtrim}{color_filters}[{vl}]")
+        vlabels.append(vl)
+
+        parts.append(f"[0:a]atrim=start={ss}:end={se},asetpts=PTS-STARTPTS[{al}]")
+        alabels.append(al)
+
+    n_segs = len(segs)
+    if n_segs == 1:
+        return parts, vlabels[0], alabels[0]
+
+    vout = lbl('vc')
+    parts.append(''.join(f'[{l}]' for l in vlabels) + f'concat=n={n_segs}:v=1:a=0[{vout}]')
+    aout = lbl('ac')
+    parts.append(''.join(f'[{l}]' for l in alabels) + f'concat=n={n_segs}:v=0:a=1[{aout}]')
+    return parts, vout, aout
+
+
 def build_filter_graph(layers: list, cw: int, ch: int,
                        text_pngs: dict, image_inputs: dict,
-                       mask_inputs: dict = None) -> tuple[list, str]:
+                       mask_inputs: dict = None,
+                       src_video_label: str = '0:v') -> tuple[list, str]:
     if mask_inputs is None:
         mask_inputs = {}
     """
@@ -54,10 +124,10 @@ def build_filter_graph(layers: list, cw: int, ch: int,
     raw_uses = sum(1 for l in layers if l["type"] in ("blur_video", "video"))
     if raw_uses >= 2:
         split_labels = [f"sv{i}" for i in range(raw_uses)]
-        parts.append(f"[0:v]split={raw_uses}{''.join(f'[{lb}]' for lb in split_labels)}")
+        parts.append(f"[{src_video_label}]split={raw_uses}{''.join(f'[{lb}]' for lb in split_labels)}")
         _raw_iter = iter(split_labels)
     else:
-        _raw_iter = iter(["0:v"] if raw_uses == 1 else [])
+        _raw_iter = iter([src_video_label] if raw_uses == 1 else [])
 
     def next_raw():
         return next(_raw_iter)
@@ -175,6 +245,7 @@ def build_audio_cmd_parts(
     layers: list,
     audio_layer,
     next_input_idx: int,
+    src_audio_label: str = '0:a',
 ):
     """
     Build FFmpeg audio filter parts for video layer volume/mute, SFX layers,
@@ -207,10 +278,10 @@ def build_audio_cmd_parts(
     effective_vol = 0.0 if video_muted else video_vol
     if effective_vol != 1.0:
         out = albl()
-        filter_parts.append(f"[0:a]volume={effective_vol}[{out}]")
+        filter_parts.append(f"[{src_audio_label}]volume={effective_vol}[{out}]")
         vid_audio_label = out
     else:
-        vid_audio_label = "0:a"
+        vid_audio_label = src_audio_label
 
     # ── Step 2: SFX layers ───────────────────────────────────────────────────
     active_sfx = [
@@ -275,7 +346,8 @@ def build_audio_cmd_parts(
 
 
 def export_video(video_path: str, template: dict, title: str = "",
-                 on_progress=None, emoji_source: str = "twemoji") -> str:
+                 on_progress=None, emoji_source: str = "twemoji",
+                 segments: list = None) -> str:
     """Build and run the FFmpeg command. Returns output file path."""
     job_id = uuid.uuid4().hex[:8]
     all_layers = [dict(l) for l in template["layers"]]
@@ -290,22 +362,22 @@ def export_video(video_path: str, template: dict, title: str = "",
     audio_layer = next((l for l in all_layers if l["type"] == "audio"), None)
     layers = [l for l in all_layers if l["type"] != "audio"]
 
-    extra_inputs, text_pngs, image_inputs = [], {}, {}
+    # Collect text/mask render jobs so they can run in parallel
+    text_jobs = []   # (layer_index, path, render_layer)
+    mask_jobs = []   # (layer_index, path, lw, lh, radius, points, shape)
+    image_entries = []  # (layer_index, src)
+
     for i, l in enumerate(layers):
         if l["type"] == "text":
             p = str(TEMP_DIR / f"{job_id}_t{i}.png")
             render_layer = dict(l)
             render_layer["auto_height"] = l.get("_autoHeight", True)
             render_layer["vertical_align"] = l.get("_verticalAlign", "top")
-            render_text_layer(render_layer, cw, ch, p, emoji_source=emoji_source)
-            text_pngs[i] = len(extra_inputs) + 1
-            extra_inputs.append(p)
+            render_layer["emoji_offset"] = l.get("_emojiOffset", 0)
+            text_jobs.append((i, p, render_layer))
         elif l["type"] in ("image", "emoji") and os.path.exists(l.get("src", "")):
-            image_inputs[i] = len(extra_inputs) + 1
-            extra_inputs.append(l["src"])
+            image_entries.append((i, l["src"]))
 
-    # Mask pre-processing: render mask PNGs for masked video layers
-    mask_inputs = {}
     for i, l in enumerate(layers):
         shape = l.get("mask", {}).get("shape", "none")
         if shape != "none":
@@ -313,18 +385,57 @@ def export_video(video_path: str, template: dict, title: str = "",
             lw, lh = l.get("width", cw), l.get("height", ch)
             radius = l.get("mask", {}).get("radius", 20)
             points = l.get("mask", {}).get("points", [])
-            render_mask_png(shape, lw, lh, radius, points, p)
-            mask_inputs[i] = len(extra_inputs) + 1
-            extra_inputs.append(p)
+            mask_jobs.append((i, p, lw, lh, radius, points, shape))
 
-    filter_parts, final_video = build_filter_graph(layers, cw, ch, text_pngs, image_inputs, mask_inputs)
+    def _render_text(args):
+        _, p, render_layer = args
+        render_text_layer(render_layer, cw, ch, p, emoji_source=emoji_source)
+
+    def _render_mask(args):
+        _, p, lw, lh, radius, points, shape = args
+        render_mask_png(shape, lw, lh, radius, points, p)
+
+    all_render_jobs = [("text", j) for j in text_jobs] + [("mask", j) for j in mask_jobs]
+    if all_render_jobs:
+        with ThreadPoolExecutor(max_workers=min(len(all_render_jobs), os.cpu_count() or 4)) as ex:
+            futs = {
+                ex.submit(_render_text if kind == "text" else _render_mask, j): (kind, j)
+                for kind, j in all_render_jobs
+            }
+            for fut in as_completed(futs):
+                fut.result()  # re-raise any exception
+
+    # Assign input indices in layer order
+    extra_inputs, text_pngs, image_inputs = [], {}, {}
+    for layer_idx, p, _ in text_jobs:
+        text_pngs[layer_idx] = len(extra_inputs) + 1
+        extra_inputs.append(p)
+    for layer_idx, src in image_entries:
+        image_inputs[layer_idx] = len(extra_inputs) + 1
+        extra_inputs.append(src)
+
+    mask_inputs = {}
+    for layer_idx, p, *_ in mask_jobs:
+        mask_inputs[layer_idx] = len(extra_inputs) + 1
+        extra_inputs.append(p)
+
+    # ── Segment trim/color filter ─────────────────────────────────────────────
+    seg_parts, seg_vlabel, seg_alabel = build_segment_filter(segments or [])
+
+    filter_parts, final_video = build_filter_graph(
+        layers, cw, ch, text_pngs, image_inputs, mask_inputs,
+        src_video_label=seg_vlabel
+    )
 
     # next free input index = 1 (video) + len(extra_inputs)
     music_extra, sfx_extra, audio_filter_parts, audio_label = build_audio_cmd_parts(
-        layers, audio_layer, next_input_idx=1 + len(extra_inputs)
+        layers, audio_layer, next_input_idx=1 + len(extra_inputs),
+        src_audio_label=seg_alabel
     )
 
-    out_path = str(EXPORTS_DIR / f"{job_id}.mp4")
+    safe = re.sub(r'[^\w\s\-]', '', title, flags=re.UNICODE).strip()
+    safe = re.sub(r'[\s]+', '_', safe)[:80] if safe else job_id
+    out_path = str(EXPORTS_DIR / f"{safe}.mp4")
 
     cmd = ["ffmpeg", "-y", "-i", video_path]
     for inp in extra_inputs:
@@ -346,16 +457,11 @@ def export_video(video_path: str, template: dict, title: str = "",
                 cmd += ["-to", str(trim_end)]
         cmd += ["-i", music_extra[0]]
 
-    all_filter_parts = filter_parts + audio_filter_parts
-    if filter_parts and audio_filter_parts:
-        # Both video and audio filters: final_video is a filter label
-        cmd += ["-filter_complex", ";".join(all_filter_parts), "-map", f"[{final_video}]"]
-    elif filter_parts:
-        # Video filters only: final_video is a filter label
-        cmd += ["-filter_complex", ";".join(filter_parts), "-map", f"[{final_video}]"]
-    elif audio_filter_parts:
-        # Audio filters only: final_video is a raw stream specifier, not a label
-        cmd += ["-filter_complex", ";".join(audio_filter_parts), "-map", "0:v"]
+    all_filter_parts = seg_parts + filter_parts + audio_filter_parts
+    if all_filter_parts:
+        cmd += ["-filter_complex", ";".join(all_filter_parts)]
+    if filter_parts or seg_parts:
+        cmd += ["-map", f"[{final_video}]"]
     else:
         cmd += ["-map", "0:v"]
 
@@ -365,7 +471,7 @@ def export_video(video_path: str, template: dict, title: str = "",
         cmd += ["-map", f"[{audio_label}]"]
 
     cmd += [
-        "-c:v", "libx264", "-preset", "fast", "-crf", "23",
+        "-c:v", "libx264", "-preset", "ultrafast", "-crf", "23",
         "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart",
         out_path,
     ]
