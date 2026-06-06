@@ -60,7 +60,42 @@ def build_segment_filter(segments: list) -> tuple[list, str, str]:
     vlabels = []
     alabels = []
 
-    for seg in segs:
+    n_segs = len(segs)
+
+    if n_segs == 1:
+        # Only one segment (has color grading, since no-color returned above)
+        seg = segs[0]
+        ss = float(seg.get('sourceStart', 0))
+        se = float(seg.get('sourceEnd',   0))
+        c  = seg.get('color', {})
+        brightness = float(c.get('brightness', 0))
+        contrast   = float(c.get('contrast',   0))
+        saturation = float(c.get('saturation', 0))
+        hue        = float(c.get('hue',        0))
+        vl = lbl('sv')
+        al = lbl('sa')
+        vtrim = f"[0:v]trim=start={ss}:end={se},setpts=PTS-STARTPTS"
+        eq_parts = []
+        if brightness != 0:
+            eq_parts.append(f"brightness={brightness/100:.3f}")
+        if contrast != 0:
+            eq_parts.append(f"contrast={1.0 + contrast/100:.3f}")
+        if saturation != 0:
+            eq_parts.append(f"saturation={1.0 + saturation/100:.3f}")
+        color_filters = (',eq=' + ':'.join(eq_parts)) if eq_parts else ''
+        if hue != 0:
+            color_filters += f",hue=h={hue}"
+        parts.append(f"{vtrim}{color_filters}[{vl}]")
+        parts.append(f"[0:a]atrim=start={ss}:end={se},asetpts=PTS-STARTPTS[{al}]")
+        return parts, vl, al
+
+    # Multiple segments — fan out source streams so each trim can consume its own copy
+    vsplit_labels = [lbl('vin') for _ in segs]
+    asplit_labels = [lbl('ain') for _ in segs]
+    parts.append(f"[0:v]split={n_segs}{''.join(f'[{l}]' for l in vsplit_labels)}")
+    parts.append(f"[0:a]asplit={n_segs}{''.join(f'[{l}]' for l in asplit_labels)}")
+
+    for i, seg in enumerate(segs):
         ss  = float(seg.get('sourceStart', 0))
         se  = float(seg.get('sourceEnd',   0))
         c   = seg.get('color', {})
@@ -72,7 +107,7 @@ def build_segment_filter(segments: list) -> tuple[list, str, str]:
         vl = lbl('sv')
         al = lbl('sa')
 
-        vtrim = f"[0:v]trim=start={ss}:end={se},setpts=PTS-STARTPTS"
+        vtrim = f"[{vsplit_labels[i]}]trim=start={ss}:end={se},setpts=PTS-STARTPTS"
         eq_parts = []
         if brightness != 0:
             eq_parts.append(f"brightness={brightness/100:.3f}")
@@ -86,12 +121,8 @@ def build_segment_filter(segments: list) -> tuple[list, str, str]:
         parts.append(f"{vtrim}{color_filters}[{vl}]")
         vlabels.append(vl)
 
-        parts.append(f"[0:a]atrim=start={ss}:end={se},asetpts=PTS-STARTPTS[{al}]")
+        parts.append(f"[{asplit_labels[i]}]atrim=start={ss}:end={se},asetpts=PTS-STARTPTS[{al}]")
         alabels.append(al)
-
-    n_segs = len(segs)
-    if n_segs == 1:
-        return parts, vlabels[0], alabels[0]
 
     vout = lbl('vc')
     parts.append(''.join(f'[{l}]' for l in vlabels) + f'concat=n={n_segs}:v=1:a=0[{vout}]')
@@ -435,7 +466,7 @@ def export_video(video_path: str, template: dict, title: str = "",
 
     safe = re.sub(r'[^\w\s\-]', '', title, flags=re.UNICODE).strip()
     safe = re.sub(r'[\s]+', '_', safe)[:80] if safe else job_id
-    out_path = str(EXPORTS_DIR / f"{safe}.mp4")
+    out_path = str(EXPORTS_DIR / f"{safe}_{job_id}.mp4")
 
     cmd = ["ffmpeg", "-y", "-i", video_path]
     for inp in extra_inputs:
