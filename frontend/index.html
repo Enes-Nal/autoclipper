@@ -5009,7 +5009,8 @@ function tlInterpolateSpeed(keyframes, t) {
   for (let i = 0; i < sorted.length - 1; i++) {
     const a = sorted[i], b = sorted[i + 1];
     if (t >= a.t && t <= b.t) {
-      const frac = (t - a.t) / (b.t - a.t);
+      const denom = b.t - a.t;
+      const frac = denom === 0 ? 0 : (t - a.t) / denom;
       return a.speed + frac * (b.speed - a.speed);
     }
   }
