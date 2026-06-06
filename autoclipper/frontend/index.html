@@ -4042,10 +4042,28 @@ function updateTplPreviews(url){
   if(vidEl.readyState>=3)swapVideoLayer();
   else vidEl.addEventListener('canplay',swapVideoLayer,{once:true});
   if (vidEl.readyState >= 1 && vidEl.duration) {
-    tlInit(vidEl.duration);
+    if (downloadedVideoPath) {
+      const fn = downloadedVideoPath.split(/[\\/]/).pop();
+      tlInit({
+        id: 'clip_' + Math.random().toString(36).slice(2, 9),
+        path: downloadedVideoPath,
+        url: downloadedVideoURL || '/api/downloads/' + encodeURIComponent(fn),
+        caption: downloadedVideoCaption || '',
+        duration: vidEl.duration,
+      });
+    }
   } else {
     vidEl.addEventListener('loadedmetadata', function() {
-      tlInit(vidEl.duration || 0);
+      if (downloadedVideoPath) {
+        const fn = downloadedVideoPath.split(/[\\/]/).pop();
+        tlInit({
+          id: 'clip_' + Math.random().toString(36).slice(2, 9),
+          path: downloadedVideoPath,
+          url: downloadedVideoURL || '/api/downloads/' + encodeURIComponent(fn),
+          caption: downloadedVideoCaption || '',
+          duration: vidEl.duration || 0,
+        });
+      }
     }, { once: true });
   }
 }
@@ -4317,13 +4335,23 @@ function startDownload(){
           pl.textContent=Math.round(msg.percent)+'%';
         } else if(msg.type==='done'){
           es.close();pf.style.width='100%';pl.textContent='Done';
-          downloadedVideoPath=msg.path;
-          downloadedVideoCaption=msg.title||'';
           const filename=msg.path.split(/[\\/]/).pop();
-          updateTplPreviews('/api/downloads/'+encodeURIComponent(filename));
-          document.getElementById('vid-card').style.display='';
-          document.getElementById('vid-filename').textContent=filename;
-          document.getElementById('vid-meta').textContent=`${msg.width}×${msg.height} · ${Math.round(msg.duration)}s`;
+          const clip = {
+            id: 'clip_' + Math.random().toString(36).slice(2, 9),
+            path: msg.path,
+            url: '/api/downloads/' + encodeURIComponent(filename),
+            caption: msg.title || '',
+            duration: msg.duration,
+          };
+          if (window._dlMode === 'append' && tlClips.length > 0) {
+            tlAddClip(clip);
+          } else {
+            downloadedVideoPath = msg.path; // keep for export guard compat
+            downloadedVideoCaption = clip.caption;
+            updateTplPreviews(clip.url);
+            tlInit(clip);
+          }
+          if (typeof tlRenderClipList === 'function') tlRenderClipList();
           st.textContent='Downloaded successfully';st.style.color='var(--ok)';
           setTimeout(closeDlModal,1200);
         } else if(msg.type==='error'){
@@ -4968,10 +4996,12 @@ function tlNewSeg(sourceStart, sourceEnd, trackStart, color, clipId) {
   };
 }
 
-function tlInit(durationSecs) {
+function tlInit(clip) {
   if (!ENABLE_TIMELINE) return;
-  tlDuration = durationSecs;
-  tlSegments = [tlNewSeg(0, durationSecs, 0)];
+  tlClips = [clip];
+  _tlActiveClipId = clip.id;
+  tlDuration = clip.duration; // kept for trim guard (per-clip guard added in Task 6)
+  tlSegments = [tlNewSeg(0, clip.duration, 0, null, clip.id)];
   tlSelectedSegId = null;
   tlPlayheadTime = 0;
   tlColorOpen = false;
@@ -4982,6 +5012,19 @@ function tlInit(durationSecs) {
   const panel = document.getElementById('timeline-panel');
   if (panel) panel.classList.toggle('tl-open', tlOpen);
   tlRender();
+}
+
+function tlAddClip(clip) {
+  if (!ENABLE_TIMELINE) return;
+  tlClips.push(clip);
+  const lastSeg = tlSegments.reduce(
+    (a, b) => (a.trackStart + (a.sourceEnd - a.sourceStart) > b.trackStart + (b.sourceEnd - b.sourceStart)) ? a : b,
+    tlSegments[0]
+  );
+  const afterEnd = lastSeg ? lastSeg.trackStart + (lastSeg.sourceEnd - lastSeg.sourceStart) : 0;
+  tlSegments.push(tlNewSeg(0, clip.duration, afterEnd, null, clip.id));
+  tlRender();
+  if (typeof saveHist === 'function') saveHist();
 }
 
 function tlToggleOpen() {
