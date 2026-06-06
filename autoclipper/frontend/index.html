@@ -4407,14 +4407,14 @@ function startDownload(){
 
 // ── EXPORT ─────────────────────────────────────────────────────────────────
 function openExpModal(){
-  if(!downloadedVideoPath){alert('Download a video first.');return;}
+  if(!tlClips.length){alert('Download a video first.');return;}
   const overlay=document.getElementById('exp-modal');
   const box=overlay.querySelector('.t-modal');
   overlay.classList.add('open');
   box.classList.remove('is-closing');
   box.classList.add('is-open');
-  const filename=downloadedVideoPath.split(/[\\/]/).pop();
-  document.getElementById('exp-video-info').textContent='Video: '+filename;
+  const clipNames = tlClips.map(c => c.path.split(/[\\/]/).pop()).join(', ');
+  document.getElementById('exp-video-info').textContent = tlClips.length === 1 ? 'Video: ' + clipNames : tlClips.length + ' clips: ' + clipNames;
   const expTitleEl=document.getElementById('exp-title');
   if(!expTitleEl.value&&downloadedVideoCaption) expTitleEl.value=downloadedVideoCaption;
   expTitleEl.focus();
@@ -4610,7 +4610,15 @@ function startExport(){
   st.style.color='var(--sub)';
 
   fetch('/api/export',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({video_path:downloadedVideoPath,template:tpl,title,emoji_source:activeEmoTab==='mypack'?'emojipack':activeEmoTab,segments:typeof ENABLE_TIMELINE!=='undefined'&&ENABLE_TIMELINE?tlSegments:null})})
+    body:JSON.stringify({
+      clips: tlClips.map(clip => ({
+        video_path: clip.path,
+        segments: tlSegments.filter(s => s.clipId === clip.id)
+      })),
+      template:tpl,
+      title,
+      emoji_source:activeEmoTab==='mypack'?'emojipack':activeEmoTab
+    })})
     .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
     .then(({job_id,error})=>{
       if(error){st.textContent='Error: '+error;st.style.color='var(--danger)';pw.style.display='none';return;}
