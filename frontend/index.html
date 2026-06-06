@@ -1769,6 +1769,7 @@ function renderMyEmojiGrid(){
 }
 
 function insertEmojiPackImg(path){
+  trackEmoRecent(path);
   // Extract unicode character from the codepoint suffix in the filename
   const filename=path.split('/').pop().replace('.png','');
   const cpStr=filename.replace(/.*_/,'');
