@@ -4,6 +4,7 @@ from flask import Flask, request, jsonify, Response, send_from_directory
 from flask_cors import CORS
 from downloader import download_video
 from exporter import export_video
+from top5_exporter import export_top5
 
 app = Flask(__name__, static_folder="frontend", static_url_path="")
 CORS(app)
@@ -13,6 +14,12 @@ TEMPLATES_DIR = BASE_DIR / "templates"
 EXPORTS_DIR   = BASE_DIR / "exports"
 UPLOADS_DIR   = BASE_DIR / "uploads"
 UPLOADS_DIR.mkdir(exist_ok=True)
+
+TOP5_TEMPLATES_DIR = BASE_DIR / "templates" / "top5"
+TOP5_TEMPLATES_DIR.mkdir(parents=True, exist_ok=True)
+DOWNLOADS_DIR = BASE_DIR / "downloads"
+ALLOWED_VIDEO_EXTS = {'.mp4', '.mov', '.mkv', '.webm', '.avi'}
+
 ALLOWED_AUDIO_EXTS = {'.mp3', '.wav', '.ogg', '.m4a', '.aac'}
 
 SFX_DIR = BASE_DIR / "sfx"
@@ -29,6 +36,11 @@ _jobs: dict[str, queue.Queue] = {}
 @app.get("/")
 def index():
     return send_from_directory("frontend", "index.html")
+
+
+@app.get("/top5")
+def top5_page():
+    return send_from_directory("frontend", "top5.html")
 
 
 # ── Templates ───────────────────────────────────────────────────────────────
@@ -93,6 +105,45 @@ def delete_template(name):
     p.unlink()
     return jsonify({"deleted": name})
 
+
+# ── Top 5 Templates ──────────────────────────────────────────────────────────
+@app.get("/api/top5/templates")
+def list_top5_templates():
+    results = []
+    for p in sorted(TOP5_TEMPLATES_DIR.glob("*.json")):
+        try:
+            data = json.loads(p.read_text(encoding="utf-8"))
+            results.append({"name": data.get("name", p.stem), "file": p.stem,
+                            "builtin": p.parent.name == "builtin"})
+        except Exception:
+            pass
+    return jsonify(results)
+
+
+@app.get("/api/top5/templates/<name>")
+def get_top5_template(name):
+    p = TOP5_TEMPLATES_DIR / f"{name}.json"
+    if p.exists():
+        return jsonify(json.loads(p.read_text(encoding="utf-8")))
+    return jsonify({"error": "not found"}), 404
+
+
+@app.post("/api/top5/templates")
+def save_top5_template():
+    data = request.json
+    name = data.get("name", "untitled").replace(" ", "-").lower()
+    path = TOP5_TEMPLATES_DIR / f"{name}.json"
+    path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    return jsonify({"saved": name})
+
+
+@app.delete("/api/top5/templates/<name>")
+def delete_top5_template(name):
+    p = TOP5_TEMPLATES_DIR / f"{name}.json"
+    if not p.exists():
+        return jsonify({"error": "not found"}), 404
+    p.unlink()
+    return jsonify({"deleted": name})
 
 
 # ── Download ─────────────────────────────────────────────────────────────────
@@ -298,6 +349,86 @@ def delete_sfx(sfx_id):
     if file_path.exists():
         file_path.unlink()
     return jsonify({"deleted": sfx_id})
+
+
+# ── Clips ─────────────────────────────────────────────────────────────────────
+@app.get("/api/clips")
+def list_clips():
+    clips = []
+    if DOWNLOADS_DIR.exists():
+        for p in sorted(DOWNLOADS_DIR.glob("*.mp4"), key=lambda x: x.stat().st_mtime, reverse=True):
+            clips.append({"filename": p.name, "path": str(p),
+                          "size": p.stat().st_size})
+    return jsonify(clips)
+
+
+@app.post("/api/upload-video")
+def upload_video():
+    f = request.files.get("file")
+    if not f:
+        return jsonify({"error": "file required"}), 400
+    if not f.filename:
+        return jsonify({"error": "no filename provided"}), 400
+    ext = Path(f.filename).suffix.lower()
+    if ext not in ALLOWED_VIDEO_EXTS:
+        return jsonify({"error": f"extension {ext} not allowed"}), 400
+    uid = uuid.uuid4().hex[:8]
+    filename = f"{uid}{ext}"
+    dest = UPLOADS_DIR / filename
+    f.save(str(dest))
+    return jsonify({"path": str(dest), "filename": filename})
+
+
+# ── Top 5 Export ──────────────────────────────────────────────────────────────
+@app.post("/api/top5/export")
+def start_top5_export():
+    body = request.json or {}
+    slots    = body.get("clips", [])
+    template = body.get("template", {})
+
+    if len(slots) != 5:
+        return jsonify({"error": "exactly 5 clips required"}), 400
+    for i, s in enumerate(slots):
+        if not s.get("path") or not os.path.exists(s["path"]):
+            return jsonify({"error": f"clip {i+1} path not found"}), 400
+        if not s.get("title", "").strip():
+            return jsonify({"error": f"clip {i+1} title required"}), 400
+
+    job_id = uuid.uuid4().hex[:8]
+    q: queue.Queue = queue.Queue()
+    _jobs[job_id] = q
+
+    def run():
+        try:
+            def on_progress(event):
+                q.put({"type": "progress", **event})
+            out = export_top5(slots, template, job_id, on_progress=on_progress)
+            q.put({"type": "done", "output_path": out, "filename": Path(out).name})
+        except Exception as e:
+            q.put({"type": "error", "message": str(e)})
+
+    threading.Thread(target=run, daemon=True).start()
+    return jsonify({"job_id": job_id})
+
+
+@app.get("/api/top5/export/<job_id>/progress")
+def top5_export_progress(job_id):
+    q = _jobs.get(job_id)
+    if not q:
+        return jsonify({"error": "unknown job"}), 404
+
+    def stream():
+        while True:
+            msg = q.get()
+            yield f"data: {json.dumps(msg)}\n\n"
+            if msg["type"] in ("done", "error"):
+                break
+
+    return Response(
+        stream(),
+        mimetype="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 if __name__ == "__main__":
