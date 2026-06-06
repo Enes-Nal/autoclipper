@@ -413,6 +413,46 @@ button,input,select{font-family:inherit}
 .ctx-item svg{flex-shrink:0;color:var(--sub)}
 .ctx-item:hover svg{color:var(--tx)}
 .ctx-item.danger:hover svg{color:var(--danger)}
+
+/* ─── TIMELINE MODULE ────────────────────────────────── */
+#timeline-panel{flex-shrink:0;background:var(--s1);border-top:2px solid var(--b1);display:none;flex-direction:column;overflow:hidden;transition:border-color .2s}
+#timeline-panel.tl-open{display:flex;border-top-color:rgba(34,197,94,0.4)}
+#tl-toolbar{display:flex;align-items:center;gap:6px;padding:6px 10px;border-bottom:1px solid var(--b1);flex-shrink:0}
+#tl-toolbar .tl-sep{width:1px;height:16px;background:var(--b1);flex-shrink:0}
+.tl-btn{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:var(--rs);border:1px solid var(--b1);background:transparent;color:var(--sub);font-size:10px;font-weight:600;cursor:pointer;transition:.12s;white-space:nowrap}
+.tl-btn:hover{background:var(--s3);color:var(--tx);border-color:var(--b2)}
+.tl-btn.on{background:var(--accdim);color:var(--acc);border-color:rgba(34,197,94,0.4)}
+.tl-btn:disabled{opacity:.35;cursor:default}
+#tl-time{font-size:10px;color:var(--sub);font-family:monospace;min-width:70px;text-align:right}
+#tl-ruler{height:18px;background:var(--bg);border-bottom:1px solid var(--b1);position:relative;overflow:hidden;flex-shrink:0;display:flex;padding-left:90px}
+#tl-ruler-inner{flex:1;position:relative;overflow:hidden}
+#tl-tracks{flex:1;overflow-x:auto;overflow-y:hidden;display:flex;min-height:0;position:relative}
+#tl-tracks::-webkit-scrollbar{height:4px}
+#tl-tracks::-webkit-scrollbar-thumb{background:var(--mut);border-radius:2px}
+#tl-labels{width:90px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--b1)}
+.tl-track-label{height:28px;display:flex;align-items:center;padding:0 8px;font-size:9px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--b1);flex-shrink:0}
+#tl-clips-area{flex:1;position:relative;display:flex;flex-direction:column;min-width:600px}
+.tl-track-row{height:28px;border-bottom:1px solid var(--b1);position:relative;flex-shrink:0}
+.tl-clip{position:absolute;top:3px;height:22px;border-radius:3px;cursor:pointer;user-select:none;display:flex;align-items:center;padding:0 6px;font-size:9px;font-weight:600;overflow:hidden;white-space:nowrap;transition:filter .1s}
+.tl-clip.sel{box-shadow:0 0 0 1.5px #fff inset;filter:brightness(1.2)}
+.tl-clip:hover:not(.sel){filter:brightness(1.1)}
+.tl-clip .tl-handle{position:absolute;top:0;width:6px;height:100%;cursor:ew-resize;background:rgba(255,255,255,0.25);border-radius:2px;opacity:0;transition:opacity .1s}
+.tl-clip:hover .tl-handle,.tl-clip.sel .tl-handle{opacity:1}
+.tl-clip .tl-handle-l{left:0;border-radius:2px 0 0 2px}
+.tl-clip .tl-handle-r{right:0;border-radius:0 2px 2px 0}
+#tl-playhead{position:absolute;top:0;bottom:0;width:1px;background:#fff;pointer-events:none;z-index:10}
+#tl-playhead::before{content:'';position:absolute;top:-1px;left:-4px;width:9px;height:9px;background:#fff;border-radius:50%}
+#tl-color-strip{background:var(--s2);border-top:1px solid var(--b1);padding:8px 12px;display:none;align-items:center;gap:14px;flex-shrink:0;flex-wrap:wrap}
+#tl-color-strip.vis{display:flex}
+.tl-cs-lbl{font-size:9px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.8px;white-space:nowrap}
+.tl-cs-row{display:flex;align-items:center;gap:6px}
+.tl-cs-name{font-size:9px;color:var(--sub);min-width:58px}
+.tl-cs-sl{width:90px;cursor:pointer;-webkit-appearance:none;appearance:none;height:3px;border-radius:99px;background:var(--b2);outline:none}
+.tl-cs-sl::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:12px;height:12px;border-radius:50%;background:var(--acc);cursor:pointer;border:2px solid var(--bg)}
+.tl-cs-val{font-size:9px;color:var(--acc);min-width:28px;text-align:right;font-family:monospace}
+.tl-toggle-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:var(--rs);border:1px solid var(--b1);background:transparent;color:var(--sub);font-size:10px;font-weight:600;cursor:pointer;transition:.12s}
+.tl-toggle-btn:hover{background:var(--s3);color:var(--tx)}
+.tl-toggle-btn.tl-open{color:var(--acc);border-color:rgba(34,197,94,0.3)}
 </style>
 </head>
 <body>
@@ -587,6 +627,10 @@ button,input,select{font-family:inherit}
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="13" height="13"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3.75H6.912a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H15M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859M12 3v8.25m0 0-3-3m3 3 3-3"/></svg>
             Snap ON
           </button>
+        <div class="tsep"></div>
+        <button class="tl-toggle-btn" id="tl-toggle-btn" onclick="tlToggleOpen()" style="display:none">
+          &#9650; Timeline
+        </button>
         </div>
       </div>
     <!-- SFX STRIP -->
@@ -639,6 +683,78 @@ button,input,select{font-family:inherit}
     </div>
 
   </div><!-- /workspace -->
+
+<!-- TIMELINE START -->
+<div id="timeline-panel">
+  <!-- toolbar -->
+  <div id="tl-toolbar">
+    <button class="tl-btn" id="tl-split-btn" onclick="tlSplit()" disabled title="Split at playhead (S)">
+      <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+      Split
+    </button>
+    <button class="tl-btn" id="tl-color-btn" onclick="tlToggleColor()" disabled>
+      <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+      Color
+    </button>
+    <button class="tl-btn" id="tl-delete-btn" onclick="tlDeleteSeg()" disabled>
+      <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+      Delete
+    </button>
+    <div class="tl-sep"></div>
+    <button class="tl-btn" id="tl-play-btn" onclick="tlTogglePlay()">&#9654; Play</button>
+    <button class="tl-btn" onclick="tlSeek(0)">&#9194;</button>
+    <div class="tl-sep"></div>
+    <span id="tl-time">0:00 / 0:00</span>
+    <div style="margin-left:auto"></div>
+    <button class="tl-btn" onclick="tlClose()">&#9660; Hide</button>
+  </div>
+  <!-- ruler -->
+  <div id="tl-ruler">
+    <div id="tl-ruler-inner"></div>
+  </div>
+  <!-- tracks -->
+  <div id="tl-tracks">
+    <div id="tl-labels">
+      <div class="tl-track-label">Video</div>
+      <div class="tl-track-label">Text</div>
+      <div class="tl-track-label">Audio</div>
+      <div class="tl-track-label">SFX</div>
+    </div>
+    <div id="tl-clips-area">
+      <div class="tl-track-row" id="tl-track-video"></div>
+      <div class="tl-track-row" id="tl-track-text"></div>
+      <div class="tl-track-row" id="tl-track-audio"></div>
+      <div class="tl-track-row" id="tl-track-sfx"></div>
+      <div id="tl-playhead"></div>
+    </div>
+  </div>
+  <!-- color strip -->
+  <div id="tl-color-strip">
+    <span class="tl-cs-lbl">Color</span>
+    <div class="tl-cs-row">
+      <span class="tl-cs-name">Brightness</span>
+      <input type="range" class="tl-cs-sl" id="tl-cs-bright" min="-100" max="100" value="0" oninput="tlColorChange('brightness',this.value)">
+      <span class="tl-cs-val" id="tl-cs-bright-v">0</span>
+    </div>
+    <div class="tl-cs-row">
+      <span class="tl-cs-name">Contrast</span>
+      <input type="range" class="tl-cs-sl" id="tl-cs-contrast" min="-100" max="100" value="0" oninput="tlColorChange('contrast',this.value)">
+      <span class="tl-cs-val" id="tl-cs-contrast-v">0</span>
+    </div>
+    <div class="tl-cs-row">
+      <span class="tl-cs-name">Saturation</span>
+      <input type="range" class="tl-cs-sl" id="tl-cs-sat" min="-100" max="100" value="0" oninput="tlColorChange('saturation',this.value)">
+      <span class="tl-cs-val" id="tl-cs-sat-v">0</span>
+    </div>
+    <div class="tl-cs-row">
+      <span class="tl-cs-name">Hue</span>
+      <input type="range" class="tl-cs-sl" id="tl-cs-hue" min="-180" max="180" value="0" oninput="tlColorChange('hue',this.value)">
+      <span class="tl-cs-val" id="tl-cs-hue-v">0&#176;</span>
+    </div>
+  </div>
+</div>
+<!-- TIMELINE END -->
+
 </div><!-- /main -->
 </div><!-- /app -->
 
