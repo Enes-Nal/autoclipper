@@ -60,7 +60,7 @@ def test_render_slot_calls_ffmpeg(tmp_path):
     }
     slot = {"rank": 5, "title": "Test Clip", "path": "/fake/clip.mp4", "start": 0.0, "end": 5.0}
 
-    with mock.patch("subprocess.run") as mock_run:
+    with mock.patch("top5_exporter.subprocess.run") as mock_run:
         mock_run.return_value = mock.Mock(returncode=0, stderr=b"")
         from top5_exporter import render_slot
         out = render_slot(slot, [slot], 0, template, "testjob", tmp_path)
@@ -85,7 +85,7 @@ def test_render_slot_raises_on_ffmpeg_error(tmp_path):
     }
     slot = {"rank": 5, "title": "Test", "path": "/fake.mp4", "start": 0.0, "end": 5.0}
 
-    with mock.patch("subprocess.run") as mock_run:
+    with mock.patch("top5_exporter.subprocess.run") as mock_run:
         mock_run.return_value = mock.Mock(returncode=1, stderr=b"some ffmpeg error")
         from top5_exporter import render_slot
         try:
