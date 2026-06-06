@@ -32,95 +32,98 @@ def render_mask_png(shape: str, w: int, h: int, radius: int,
     img.save(path)
 
 
-def build_segment_filter(segments: list) -> tuple[list, str, str]:
+def _color_filter_suffix(c: dict) -> str:
+    """Return eq/hue filter suffix string (e.g. ',eq=brightness=0.1,hue=h=10') or ''."""
+    brightness = float(c.get('brightness', 0))
+    contrast   = float(c.get('contrast',   0))
+    saturation = float(c.get('saturation', 0))
+    hue        = float(c.get('hue',        0))
+    eq_parts = []
+    if brightness != 0:
+        eq_parts.append(f"brightness={brightness/100:.3f}")
+    if contrast != 0:
+        eq_parts.append(f"contrast={1.0 + contrast/100:.3f}")
+    if saturation != 0:
+        eq_parts.append(f"saturation={1.0 + saturation/100:.3f}")
+    suffix = (',eq=' + ':'.join(eq_parts)) if eq_parts else ''
+    if hue != 0:
+        suffix += f",hue=h={hue}"
+    return suffix
+
+
+def build_segment_inputs(video_path: str, segments: list, input_offset: int = 0) -> tuple[list, list, list, str, str, int]:
     """
-    Build trim+concat filter parts for video segments.
-    Returns (filter_parts, video_label, audio_label).
-    Returns ([], '0:v', '0:a') when no segments.
+    Use input-level -ss/-to seeking instead of trim filters so FFmpeg can seek
+    directly to the segment start rather than decoding the whole video.
+
+    Returns:
+        main_pre_args   – seek args to insert before the main -i video_path
+                          (empty when no segments)
+        extra_vid_inputs – list of (pre_args, path) for segments 1..N-1
+                          (empty for single/no segment)
+        filter_parts    – filter_complex fragments (color grading + concat)
+        video_label     – stream label to use as src_video_label downstream
+        audio_label     – stream label to use as src_audio_label downstream
+        n_video_inputs  – total video -i entries added (always ≥1)
     """
     if not segments:
-        return [], '0:v', '0:a'
+        return [], [], [], '0:v', '0:a', 1
 
     segs = sorted(segments, key=lambda s: s.get('trackStart', 0))
+    n_segs = len(segs)
 
     n = [0]
     def lbl(prefix='s'):
         n[0] += 1
         return f"{prefix}{n[0]}"
 
-    parts = []
-    vlabels = []
-    alabels = []
-
-    n_segs = len(segs)
-
     if n_segs == 1:
-        # Single segment: always emit trim so sourceEnd trimming is respected
         seg = segs[0]
         ss = float(seg.get('sourceStart', 0))
         se = float(seg.get('sourceEnd',   0))
         c  = seg.get('color', {})
-        brightness = float(c.get('brightness', 0))
-        contrast   = float(c.get('contrast',   0))
-        saturation = float(c.get('saturation', 0))
-        hue        = float(c.get('hue',        0))
-        vl = lbl('sv')
-        al = lbl('sa')
-        vtrim = f"[0:v]trim=start={ss}:end={se},setpts=PTS-STARTPTS"
-        eq_parts = []
-        if brightness != 0:
-            eq_parts.append(f"brightness={brightness/100:.3f}")
-        if contrast != 0:
-            eq_parts.append(f"contrast={1.0 + contrast/100:.3f}")
-        if saturation != 0:
-            eq_parts.append(f"saturation={1.0 + saturation/100:.3f}")
-        color_filters = (',eq=' + ':'.join(eq_parts)) if eq_parts else ''
-        if hue != 0:
-            color_filters += f",hue=h={hue}"
-        parts.append(f"{vtrim}{color_filters}[{vl}]")
-        parts.append(f"[0:a]atrim=start={ss}:end={se},asetpts=PTS-STARTPTS[{al}]")
-        return parts, vl, al
+        main_pre_args = ["-ss", str(ss), "-to", str(se)]
+        color_suffix = _color_filter_suffix(c)
+        if color_suffix:
+            vl = lbl('sv')
+            al = lbl('sa')
+            filter_parts = [
+                f"[{input_offset}:v]setpts=PTS-STARTPTS{color_suffix}[{vl}]",
+                f"[{input_offset}:a]asetpts=PTS-STARTPTS[{al}]",
+            ]
+            return main_pre_args, [], filter_parts, vl, al, 1
+        return main_pre_args, [], [], f'{input_offset}:v', f'{input_offset}:a', 1
 
-    # Multiple segments — fan out source streams so each trim can consume its own copy
-    vsplit_labels = [lbl('vin') for _ in segs]
-    asplit_labels = [lbl('ain') for _ in segs]
-    parts.append(f"[0:v]split={n_segs}{''.join(f'[{l}]' for l in vsplit_labels)}")
-    parts.append(f"[0:a]asplit={n_segs}{''.join(f'[{l}]' for l in asplit_labels)}")
+    # Multiple segments: each gets its own -i entry with input-level seek
+    filter_parts = []
+    vlabels = []
+    alabels = []
+    extra_vid_inputs = []
 
     for i, seg in enumerate(segs):
-        ss  = float(seg.get('sourceStart', 0))
-        se  = float(seg.get('sourceEnd',   0))
-        c   = seg.get('color', {})
-        brightness = float(c.get('brightness', 0))
-        contrast   = float(c.get('contrast',   0))
-        saturation = float(c.get('saturation', 0))
-        hue        = float(c.get('hue',        0))
+        ss = float(seg.get('sourceStart', 0))
+        se = float(seg.get('sourceEnd',   0))
+        c  = seg.get('color', {})
+        pre_args = ["-ss", str(ss), "-to", str(se)]
+        if i == 0:
+            main_pre_args = pre_args
+        else:
+            extra_vid_inputs.append((pre_args, video_path))
 
+        stream_i = input_offset + i
         vl = lbl('sv')
         al = lbl('sa')
-
-        vtrim = f"[{vsplit_labels[i]}]trim=start={ss}:end={se},setpts=PTS-STARTPTS"
-        eq_parts = []
-        if brightness != 0:
-            eq_parts.append(f"brightness={brightness/100:.3f}")
-        if contrast != 0:
-            eq_parts.append(f"contrast={1.0 + contrast/100:.3f}")
-        if saturation != 0:
-            eq_parts.append(f"saturation={1.0 + saturation/100:.3f}")
-        color_filters = (',eq=' + ':'.join(eq_parts)) if eq_parts else ''
-        if hue != 0:
-            color_filters += f",hue=h={hue}"
-        parts.append(f"{vtrim}{color_filters}[{vl}]")
+        color_suffix = _color_filter_suffix(c)
+        filter_parts.append(f"[{stream_i}:v]setpts=PTS-STARTPTS{color_suffix}[{vl}]")
+        filter_parts.append(f"[{stream_i}:a]asetpts=PTS-STARTPTS[{al}]")
         vlabels.append(vl)
-
-        parts.append(f"[{asplit_labels[i]}]atrim=start={ss}:end={se},asetpts=PTS-STARTPTS[{al}]")
         alabels.append(al)
 
     vout = lbl('vc')
-    parts.append(''.join(f'[{l}]' for l in vlabels) + f'concat=n={n_segs}:v=1:a=0[{vout}]')
+    filter_parts.append(''.join(f'[{l}]' for l in vlabels) + f'concat=n={n_segs}:v=1:a=0[{vout}]')
     aout = lbl('ac')
-    parts.append(''.join(f'[{l}]' for l in alabels) + f'concat=n={n_segs}:v=0:a=1[{aout}]')
-    return parts, vout, aout
+    filter_parts.append(''.join(f'[{l}]' for l in alabels) + f'concat=n={n_segs}:v=0:a=1[{aout}]')
+    return main_pre_args, extra_vid_inputs, filter_parts, vout, aout, n_segs
 
 
 def build_filter_graph(layers: list, cw: int, ch: int,
@@ -368,10 +371,13 @@ def build_audio_cmd_parts(
     return music_inputs, sfx_inputs, filter_parts, mixed
 
 
-def export_video(video_path: str, template: dict, title: str = "",
+def export_video(video_path: str = None, template: dict = None, title: str = "",
                  on_progress=None, emoji_source: str = "twemoji",
-                 segments: list = None) -> str:
+                 segments: list = None, clips: list = None) -> str:
     """Build and run the FFmpeg command. Returns output file path."""
+    # Normalize to clips format for multi-source support
+    if clips is None:
+        clips = [{"video_path": video_path, "segments": segments or []}]
     job_id = uuid.uuid4().hex[:8]
     all_layers = [dict(l) for l in template["layers"]]
     cw = template["canvas"]["width"]
@@ -428,31 +434,79 @@ def export_video(video_path: str, template: dict, title: str = "",
             for fut in as_completed(futs):
                 fut.result()  # re-raise any exception
 
-    # Assign input indices in layer order
+    # ── Segment seek: use input-level -ss/-to for fast native seeking ────────────
+    # build_segment_inputs returns pre-seek args for each video -i, plus any
+    # filter_complex fragments for color grading / multi-segment concat.
+    # Build FFmpeg input args and filter fragments across all clips
+    all_seg_pre_args = []
+    all_extra_vid_inputs = []
+    all_seg_parts = []
+    clip_vlabels = []
+    clip_alabels = []
+    n_vid = 0
+    _first_video_path = clips[0]["video_path"]
+
+    for clip_entry in clips:
+        cp = clip_entry["video_path"]
+        cs = clip_entry.get("segments") or []
+        pre, extra, parts, vl, al, nv = build_segment_inputs(cp, cs, input_offset=n_vid)
+        if n_vid == 0:
+            all_seg_pre_args = pre
+        else:
+            # First segment of each clip after the first is a new top-level -i
+            all_extra_vid_inputs.append((pre, cp))
+        all_extra_vid_inputs.extend(extra)
+        all_seg_parts.extend(parts)
+        clip_vlabels.append(vl)
+        clip_alabels.append(al)
+        n_vid += nv
+
+    # If multiple clips, concatenate their outputs
+    if len(clips) > 1:
+        _cn = [0]
+        def _clbl(p='cc'):
+            _cn[0] += 1
+            return f"{p}{_cn[0]}"
+        vc_out = _clbl('cv')
+        ac_out = _clbl('ca')
+        all_seg_parts.append(
+            ''.join(f'[{l}]' for l in clip_vlabels) + f'concat=n={len(clips)}:v=1:a=0[{vc_out}]'
+        )
+        all_seg_parts.append(
+            ''.join(f'[{l}]' for l in clip_alabels) + f'concat=n={len(clips)}:v=0:a=1[{ac_out}]'
+        )
+        seg_vlabel, seg_alabel = vc_out, ac_out
+    else:
+        seg_vlabel, seg_alabel = clip_vlabels[0], clip_alabels[0]
+
+    seg_pre_args = all_seg_pre_args
+    extra_vid_inputs = all_extra_vid_inputs
+    seg_parts = all_seg_parts
+    video_path = _first_video_path
+
+    # Assign input indices in layer order.
+    # Video inputs occupy indices 0..n_vid-1; extra_inputs start at n_vid.
     extra_inputs, text_pngs, image_inputs = [], {}, {}
     for layer_idx, p, _ in text_jobs:
-        text_pngs[layer_idx] = len(extra_inputs) + 1
+        text_pngs[layer_idx] = len(extra_inputs) + n_vid
         extra_inputs.append(p)
     for layer_idx, src in image_entries:
-        image_inputs[layer_idx] = len(extra_inputs) + 1
+        image_inputs[layer_idx] = len(extra_inputs) + n_vid
         extra_inputs.append(src)
 
     mask_inputs = {}
     for layer_idx, p, *_ in mask_jobs:
-        mask_inputs[layer_idx] = len(extra_inputs) + 1
+        mask_inputs[layer_idx] = len(extra_inputs) + n_vid
         extra_inputs.append(p)
-
-    # ── Segment trim/color filter ─────────────────────────────────────────────
-    seg_parts, seg_vlabel, seg_alabel = build_segment_filter(segments or [])
 
     filter_parts, final_video = build_filter_graph(
         layers, cw, ch, text_pngs, image_inputs, mask_inputs,
         src_video_label=seg_vlabel
     )
 
-    # next free input index = 1 (video) + len(extra_inputs)
+    # next free input index = n_vid (video inputs) + len(extra_inputs)
     music_extra, sfx_extra, audio_filter_parts, audio_label = build_audio_cmd_parts(
-        layers, audio_layer, next_input_idx=1 + len(extra_inputs),
+        layers, audio_layer, next_input_idx=n_vid + len(extra_inputs),
         src_audio_label=seg_alabel
     )
 
@@ -460,7 +514,11 @@ def export_video(video_path: str, template: dict, title: str = "",
     safe = re.sub(r'[\s]+', '_', safe)[:80] if safe else job_id
     out_path = str(EXPORTS_DIR / f"{safe}_{job_id}.mp4")
 
-    cmd = ["ffmpeg", "-y", "-i", video_path]
+    # Main video input with optional seek args
+    cmd = ["ffmpeg", "-y"] + seg_pre_args + ["-i", video_path]
+    # Additional video inputs for multi-segment (same file, different seek points)
+    for pre_args, path in extra_vid_inputs:
+        cmd += pre_args + ["-i", path]
     for inp in extra_inputs:
         cmd += ["-i", inp]
 
@@ -483,7 +541,7 @@ def export_video(video_path: str, template: dict, title: str = "",
     all_filter_parts = seg_parts + filter_parts + audio_filter_parts
     if all_filter_parts:
         cmd += ["-filter_complex", ";".join(all_filter_parts)]
-    if filter_parts or seg_parts:
+    if filter_parts or seg_parts or n_vid > 1:
         cmd += ["-map", f"[{final_video}]"]
     else:
         cmd += ["-map", "0:v"]
