@@ -226,9 +226,11 @@ button,input,select{font-family:inherit}
 .emo-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;max-height:190px;overflow-y:auto;padding:0 6px 6px;flex-shrink:0}
 .emo-grid::-webkit-scrollbar{width:3px}
 .emo-grid::-webkit-scrollbar-thumb{background:var(--mut);border-radius:2px}
-.ec{width:36px;height:36px;cursor:pointer;padding:4px;border-radius:5px;transition:.1s;display:flex;align-items:center;justify-content:center}
+.ec{position:relative;width:36px;height:36px;cursor:pointer;padding:4px;border-radius:5px;transition:.1s;display:flex;align-items:center;justify-content:center}
 .ec img{width:28px;height:28px;object-fit:contain}
 .ec:hover{background:var(--s3)}
+.ec:hover .ec-star{opacity:.5}
+.ec:hover .ec-star.fav{opacity:1}
 .pnote{font-size:10px;color:var(--sub);margin-top:5px;line-height:1.5}
 .no-sel{padding:28px 14px;text-align:center;color:var(--sub);font-size:12px;line-height:1.8}
 .no-sel-ico{margin-bottom:8px;opacity:.2;display:flex;justify-content:center}
@@ -281,9 +283,14 @@ button,input,select{font-family:inherit}
 .emo-tab:hover{color:var(--tx)}
 .emo-tab-body{display:none;flex-direction:column;overflow:hidden}
 .emo-tab-body.on{display:flex}
-.myemo-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;max-height:190px;overflow-y:auto;padding:6px;flex-shrink:0}
-.myemo-grid::-webkit-scrollbar{width:3px}
-.myemo-grid::-webkit-scrollbar-thumb{background:var(--mut);border-radius:2px}
+.myemo-wrap{display:flex;flex-direction:column;max-height:280px;overflow-y:auto;flex-shrink:0}
+.myemo-wrap::-webkit-scrollbar{width:3px}
+.myemo-wrap::-webkit-scrollbar-thumb{background:var(--mut);border-radius:2px}
+.myemo-sgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:4px 6px 6px}
+.myemo-shdr{font-size:10px;font-weight:700;color:var(--sub);padding:6px 8px 2px;text-transform:uppercase;letter-spacing:.05em;flex-shrink:0}
+.myemo-div{border-top:1px solid var(--b1);margin:4px 6px}
+.ec-star{position:absolute;top:1px;right:1px;font-size:10px;line-height:1;background:none;border:none;padding:1px;cursor:pointer;opacity:0;transition:opacity .1s;color:var(--sub);pointer-events:auto}
+.ec-star.fav{opacity:1;color:#f59e0b}
 .modal-title{font-size:16px;font-weight:800;margin-bottom:6px}
 .modal-sub{font-size:12px;color:var(--sub);margin-bottom:20px}
 .modal-input{width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);color:var(--tx);font-family:'Inter',sans-serif;font-size:13px;padding:10px 12px;outline:none;margin-bottom:12px;transition:.1s}
@@ -643,7 +650,7 @@ button,input,select{font-family:inherit}
   </div>
   <div class="emo-tab-body on" id="emo-tab-mypack">
     <input class="emo-search" id="myemo-search" placeholder="Search emojis…" oninput="filterMyEmoji(this.value)">
-    <div class="myemo-grid" id="myemo-grid"></div>
+    <div class="myemo-wrap" id="myemo-grid"></div>
   </div>
   <div class="emo-tab-body" id="emo-tab-twemoji">
     <div class="emo-cats">
