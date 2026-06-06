@@ -5130,10 +5130,10 @@ function tlClose() {
 function tlRender() {
   if (!ENABLE_TIMELINE || !tlOpen) return;
   tlRenderRuler();
-  tlRenderTrack('tl-track-video', tlSegments, 'rgba(34,197,94,0.3)');
-  tlRenderTrack('tl-track-text',  [], 'rgba(99,102,241,0.3)');
-  tlRenderTrack('tl-track-audio', [], 'rgba(245,158,11,0.3)');
-  tlRenderTrack('tl-track-sfx',   [], 'rgba(239,68,68,0.3)');
+  tlRenderTrack('tl-track-video', tlSegments);
+  tlRenderTrack('tl-track-text',  []);
+  tlRenderTrack('tl-track-audio', []);
+  tlRenderTrack('tl-track-sfx',   []);
   tlRenderPlayhead();
   tlRenderTime();
   tlUpdateToolbar();
@@ -5151,26 +5151,27 @@ function tlXToSecs(x)    { return x / tlPixelsPerSec; }
 function tlRenderRuler() {
   const inner = document.getElementById('tl-ruler-inner');
   if (!inner) return;
-  const totalWidth = Math.max(tlDuration * tlPixelsPerSec + 60, inner.offsetWidth || 600);
+  const totalWidth = Math.max(tlTotalDuration() * tlPixelsPerSec + 60, inner.offsetWidth || 600);
   inner.style.width = totalWidth + 'px';
-  const step = tlDuration > 60 ? 10 : 5;
+  const step = tlTotalDuration() > 60 ? 10 : 5;
   let html = '';
-  for (let t = 0; t <= tlDuration + step; t += step) {
+  for (let t = 0; t <= tlTotalDuration() + step; t += step) {
     const x = tlSecsToX(t);
     html += `<span style="position:absolute;left:${x}px;font-size:8px;color:var(--sub);top:3px;transform:translateX(-50%);pointer-events:none">${tlFmt(t)}</span>`;
   }
   inner.innerHTML = html;
 }
 
-function tlRenderTrack(trackId, clips, color) {
+function tlRenderTrack(trackId, clips) {
   const row = document.getElementById(trackId);
   if (!row) return;
-  const totalWidth = Math.max(tlDuration * tlPixelsPerSec + 60, 600);
+  const totalWidth = Math.max(tlTotalDuration() * tlPixelsPerSec + 60, 600);
   row.style.width = totalWidth + 'px';
   row.innerHTML = clips.map(seg => {
     const x = tlSecsToX(seg.trackStart);
     const w = Math.max(4, tlSecsToX(seg.sourceEnd - seg.sourceStart));
     const sel = seg.id === tlSelectedSegId;
+    const color = tlClipColor(seg.clipId);
     return `<div class="tl-clip${sel ? ' sel' : ''}" data-seg="${seg.id}"
       style="left:${x}px;width:${w}px;background:${color};border:1.5px solid ${sel ? '#fff' : color}"
       onmousedown="tlClipMousedown(event,'${seg.id}')">
