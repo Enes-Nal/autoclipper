@@ -828,7 +828,7 @@ button,input,select{font-family:inherit}
   <div class="modal-box t-modal">
     <div class="modal-title">Download Video</div>
     <div class="modal-sub">Paste any Twitter/X, YouTube, TikTok, or Instagram URL</div>
-    <input class="modal-input" id="dl-url" placeholder="https://twitter.com/…" />
+    <input class="modal-input" id="dl-url" placeholder="https://twitter.com/…" autocomplete="off" />
     <div class="modal-row">
       <button class="btn btn-primary" onclick="startDownload()">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
@@ -905,7 +905,7 @@ button,input,select{font-family:inherit}
   </div>
 </div>
 
-<video id="preview-video" autoplay loop playsinline style="position:absolute;width:0;height:0;opacity:0;pointer-events:none"></video>
+<video id="preview-video" autoplay muted loop playsinline style="position:absolute;width:0;height:0;opacity:0;pointer-events:none"></video>
 <input type="file" id="img-pick" accept="image/*" style="display:none" onchange="onImgFile(event)">
 
 <script>
@@ -1054,7 +1054,12 @@ function syncCanvasMuteBtn(){
 function toggleCanvasMute(){
   _canvasMuted=!_canvasMuted;
   const vidEl=document.getElementById('preview-video');
-  if(vidEl)vidEl.muted=_canvasMuted;
+  if(vidEl){
+    vidEl.muted=_canvasMuted;
+    // If unmuting and video is paused (e.g. play() was blocked), restart from
+    // user-gesture context so the browser allows audio output.
+    if(!_canvasMuted && vidEl.paused) vidEl.play().catch(()=>{});
+  }
   syncCanvasMuteBtn();
 }
 function stripToggleMute(){
@@ -4930,10 +4935,32 @@ let tlPixelsPerSec = 30;
 let _tlPlaying = false;
 let _tlRafId = null;
 let _tlVideoEl = null;
+let tlClips = [];           // [{id, path, url, caption, duration}]
+let _tlActiveClipId = null; // clipId currently loaded in preview-video src
 
-function tlNewSeg(sourceStart, sourceEnd, trackStart, color) {
+function tlClipById(clipId) {
+  return tlClips.find(c => c.id === clipId) || null;
+}
+function tlClipIndex(clipId) {
+  return tlClips.findIndex(c => c.id === clipId);
+}
+function tlClipColor(clipId) {
+  const colors = [
+    'rgba(34,197,94,0.3)',
+    'rgba(99,102,241,0.3)',
+    'rgba(245,158,11,0.3)',
+  ];
+  const idx = tlClipIndex(clipId);
+  return colors[idx % colors.length] || colors[0];
+}
+function tlClipDuration(clipId) {
+  return tlClipById(clipId)?.duration ?? 0;
+}
+
+function tlNewSeg(sourceStart, sourceEnd, trackStart, color, clipId) {
   return {
     id: 'seg_' + Math.random().toString(36).slice(2, 9),
+    clipId: clipId || null,
     sourceStart,
     sourceEnd,
     trackStart,
