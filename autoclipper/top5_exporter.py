@@ -96,3 +96,47 @@ def render_slot(slot: dict, all_slots: list[dict], slot_idx: int,
                 os.remove(p)
             except OSError:
                 pass
+
+
+def concat_segments(temp_files: list[str], job_id: str) -> str:
+    """Concatenate temp mp4 files into a single exports/ output. Returns output path."""
+    list_path = str(TEMP_DIR / f"{job_id}_concat.txt")
+    with open(list_path, "w") as f:
+        for p in temp_files:
+            # FFmpeg concat demuxer requires forward slashes even on Windows
+            f.write(f"file '{p.replace(chr(92), '/')}'\n")
+
+    out_path = str(EXPORTS_DIR / f"top5_{job_id}.mp4")
+    result = subprocess.run(
+        ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", list_path,
+         "-c", "copy", out_path],
+        capture_output=True,
+    )
+    try:
+        os.remove(list_path)
+    except OSError:
+        pass
+
+    if result.returncode != 0:
+        raise RuntimeError(f"Concat failed:\n{result.stderr.decode()[-2000:]}")
+    return out_path
+
+
+def export_top5(slots: list[dict], template: dict, job_id: str,
+                on_progress=None) -> str:
+    """Render each slot, concat, return output path."""
+    temp_files = []
+    for i, slot in enumerate(slots):
+        if on_progress:
+            on_progress({"type": "progress", "slot": i + 1, "total": len(slots)})
+        temp_files.append(render_slot(slot, slots, i, template, job_id, TEMP_DIR))
+
+    out = concat_segments(temp_files, job_id)
+
+    for p in temp_files:
+        try:
+            os.remove(p)
+        except OSError:
+            pass
+
+    return out

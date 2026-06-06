@@ -93,3 +93,45 @@ def test_render_slot_raises_on_ffmpeg_error(tmp_path):
             assert False, "should have raised"
         except RuntimeError as e:
             assert "slot 0" in str(e)
+
+
+def test_export_top5_calls_render_and_concat(tmp_path):
+    slots = [
+        {"rank": 5, "title": "A", "path": "/a.mp4", "start": 0.0, "end": 5.0},
+        {"rank": 4, "title": "B", "path": "/b.mp4", "start": 0.0, "end": 5.0},
+    ]
+    template = {
+        "canvas": {"width": 1080, "height": 1920},
+        "layers": [{"id": "v", "type": "video", "x": 0, "y": 0,
+                    "width": 1080, "height": 1920, "fit": "cover"}]
+    }
+
+    rendered = ["/tmp/slot0.mp4", "/tmp/slot1.mp4"]
+    with mock.patch("top5_exporter.render_slot", side_effect=rendered) as mock_render, \
+         mock.patch("top5_exporter.concat_segments", return_value="/out/top5.mp4") as mock_concat, \
+         mock.patch("os.remove"):
+        from top5_exporter import export_top5
+        out = export_top5(slots, template, "abc123")
+
+    assert mock_render.call_count == 2
+    mock_concat.assert_called_once_with(rendered, "abc123")
+    assert out == "/out/top5.mp4"
+
+def test_export_top5_reports_progress():
+    slots = [
+        {"rank": 5, "title": "A", "path": "/a.mp4", "start": 0.0, "end": 5.0},
+    ]
+    template = {
+        "canvas": {"width": 1080, "height": 1920},
+        "layers": [{"id": "v", "type": "video", "x": 0, "y": 0,
+                    "width": 1080, "height": 1920, "fit": "cover"}]
+    }
+    progress_events = []
+
+    with mock.patch("top5_exporter.render_slot", return_value="/tmp/s.mp4"), \
+         mock.patch("top5_exporter.concat_segments", return_value="/out/top5.mp4"), \
+         mock.patch("os.remove"):
+        from top5_exporter import export_top5
+        export_top5(slots, template, "abc123", on_progress=progress_events.append)
+
+    assert any(e.get("slot") == 1 for e in progress_events)
