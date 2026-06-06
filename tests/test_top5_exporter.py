@@ -1,3 +1,6 @@
+import unittest.mock as mock
+from pathlib import Path
+
 from top5_exporter import resolve_placeholders
 
 SLOTS = [
@@ -43,3 +46,50 @@ def test_multiple_tokens_in_one_string():
     text = "<slot1:rank>  <slot1:title> | <slot2:rank>  <slot2:title>"
     result = resolve_placeholders(text, SLOTS, 3)
     assert result == "5  Clip Five | 3  Clip Three"
+
+
+def test_render_slot_calls_ffmpeg(tmp_path):
+    template = {
+        "canvas": {"width": 1080, "height": 1920},
+        "layers": [
+            {"id": "bg", "type": "shape", "x": 0, "y": 0,
+             "width": 1080, "height": 1920, "fill": "#000000", "opacity": 1.0},
+            {"id": "vid", "type": "video", "x": 0, "y": 0,
+             "width": 1080, "height": 1920, "fit": "cover"},
+        ]
+    }
+    slot = {"rank": 5, "title": "Test Clip", "path": "/fake/clip.mp4", "start": 0.0, "end": 5.0}
+
+    with mock.patch("subprocess.run") as mock_run:
+        mock_run.return_value = mock.Mock(returncode=0, stderr=b"")
+        from top5_exporter import render_slot
+        out = render_slot(slot, [slot], 0, template, "testjob", tmp_path)
+
+    assert mock_run.called
+    cmd = mock_run.call_args[0][0]
+    assert "ffmpeg" in cmd
+    assert "/fake/clip.mp4" in cmd
+    assert "-ss" in cmd
+    assert "0.0" in cmd
+    assert "-to" in cmd
+    assert "5.0" in cmd
+    assert out == str(tmp_path / "testjob_slot0.mp4")
+
+def test_render_slot_raises_on_ffmpeg_error(tmp_path):
+    template = {
+        "canvas": {"width": 1080, "height": 1920},
+        "layers": [
+            {"id": "vid", "type": "video", "x": 0, "y": 0,
+             "width": 1080, "height": 1920, "fit": "cover"},
+        ]
+    }
+    slot = {"rank": 5, "title": "Test", "path": "/fake.mp4", "start": 0.0, "end": 5.0}
+
+    with mock.patch("subprocess.run") as mock_run:
+        mock_run.return_value = mock.Mock(returncode=1, stderr=b"some ffmpeg error")
+        from top5_exporter import render_slot
+        try:
+            render_slot(slot, [slot], 0, template, "testjob", tmp_path)
+            assert False, "should have raised"
+        except RuntimeError as e:
+            assert "slot 0" in str(e)
