@@ -5084,14 +5084,135 @@ function tlHandleMousedown(e, segId, handle) {
   document.body.style.cursor = 'ew-resize';
 }
 
-function tlSplit() { /* Task 5 */ }
-function tlDeleteSeg() { /* Task 7 */ }
-function tlToggleColor() { /* Task 9 */ }
-function tlSyncColorStrip() { /* Task 9 */ }
-function tlColorChange(prop, val) { /* Task 9 */ }
-function tlColorReset() { /* Task 9 */ }
-function tlTogglePlay() { /* Task 4 */ }
-function tlZoom(delta) { /* Task 11 */ }
+// ── Task 4: Playback controls ────────────────────────────
+function tlTogglePlay() {
+  if (!ENABLE_TIMELINE || !_tlVideoEl) return;
+  if (_tlPlaying) {
+    _tlVideoEl.pause();
+    _tlPlaying = false;
+    cancelAnimationFrame(_tlRafId);
+    const btn = document.getElementById('tl-play-btn');
+    if (btn) btn.textContent = '▶ Play';
+  } else {
+    _tlVideoEl.play().catch(() => {});
+    _tlPlaying = true;
+    function frame() {
+      if (!_tlPlaying) return;
+      tlPlayheadTime = _tlVideoEl.currentTime;
+      tlRenderPlayhead();
+      tlRenderTime();
+      tlUpdateToolbar();
+      _tlRafId = requestAnimationFrame(frame);
+    }
+    _tlRafId = requestAnimationFrame(frame);
+    const btn = document.getElementById('tl-play-btn');
+    if (btn) btn.textContent = '⏸ Pause';
+  }
+}
+
+// ── Task 5: Split ────────────────────────────────────────
+function tlSplit() {
+  if (!ENABLE_TIMELINE) return;
+  const seg = tlSegments.find(s => s.id === tlSelectedSegId);
+  if (!seg) return;
+  const t = tlPlayheadTime;
+  if (t <= seg.sourceStart + 0.05 || t >= seg.sourceEnd - 0.05) return;
+  const left  = tlNewSeg(seg.sourceStart, t, seg.trackStart, Object.assign({}, seg.color));
+  const rightTrackStart = seg.trackStart + (t - seg.sourceStart);
+  const right = tlNewSeg(t, seg.sourceEnd, rightTrackStart, Object.assign({}, seg.color));
+  const idx = tlSegments.indexOf(seg);
+  tlSegments.splice(idx, 1, left, right);
+  tlSelectedSegId = left.id;
+  tlRender();
+  if (typeof saveHist === 'function') saveHist();
+}
+
+// ── Task 7: Delete segment ───────────────────────────────
+function tlDeleteSeg() {
+  if (!ENABLE_TIMELINE) return;
+  if (tlSegments.length <= 1) return;
+  const idx = tlSegments.findIndex(s => s.id === tlSelectedSegId);
+  if (idx === -1) return;
+  tlSegments.splice(idx, 1);
+  tlCompact();
+  tlSelectedSegId = tlSegments[Math.min(idx, tlSegments.length - 1)]?.id || null;
+  tlRender();
+  if (typeof saveHist === 'function') saveHist();
+}
+
+// ── Task 9: Color grading ────────────────────────────────
+function tlToggleColor() {
+  if (!ENABLE_TIMELINE) return;
+  tlColorOpen = !tlColorOpen;
+  document.getElementById('tl-color-strip')?.classList.toggle('vis', tlColorOpen);
+  document.getElementById('tl-color-btn')?.classList.toggle('on', tlColorOpen);
+  if (tlColorOpen) tlSyncColorStrip();
+}
+
+function tlSyncColorStrip() {
+  const seg = tlSegments.find(s => s.id === tlSelectedSegId);
+  const c = seg?.color || { brightness: 0, contrast: 0, saturation: 0, hue: 0 };
+  function set(slId, valId, v, suffix) {
+    const sl  = document.getElementById(slId);
+    const lbl = document.getElementById(valId);
+    if (sl)  sl.value        = v;
+    if (lbl) lbl.textContent = v + (suffix || '');
+  }
+  set('tl-cs-bright',   'tl-cs-bright-v',   c.brightness, '');
+  set('tl-cs-contrast', 'tl-cs-contrast-v', c.contrast,   '');
+  set('tl-cs-sat',      'tl-cs-sat-v',      c.saturation, '');
+  set('tl-cs-hue',      'tl-cs-hue-v',      c.hue,        '°');
+  tlApplyPreviewFilter(c);
+}
+
+function tlApplyPreviewFilter(c) {
+  const vid = document.getElementById('preview-video');
+  if (!vid) return;
+  const brightness = 1 + c.brightness / 100;
+  const contrast   = 1 + c.contrast   / 100;
+  const saturation = 1 + c.saturation / 100;
+  const hue        = c.hue || 0;
+  vid.style.filter = `brightness(${brightness}) contrast(${contrast}) saturate(${saturation}) hue-rotate(${hue}deg)`;
+}
+
+function tlColorChange(prop, rawVal) {
+  const v = parseFloat(rawVal);
+  const seg = tlSegments.find(s => s.id === tlSelectedSegId);
+  if (!seg) return;
+  seg.color[prop] = v;
+  const suffix = prop === 'hue' ? '°' : '';
+  const valMap = {
+    brightness: 'tl-cs-bright-v',
+    contrast:   'tl-cs-contrast-v',
+    saturation: 'tl-cs-sat-v',
+    hue:        'tl-cs-hue-v'
+  };
+  const el = document.getElementById(valMap[prop]);
+  if (el) el.textContent = v + suffix;
+  tlApplyPreviewFilter(seg.color);
+}
+
+function tlColorReset() {
+  const seg = tlSegments.find(s => s.id === tlSelectedSegId);
+  if (!seg) return;
+  seg.color = { brightness: 0, contrast: 0, saturation: 0, hue: 0 };
+  tlSyncColorStrip();
+}
+
+// ── Task 11 stub: Zoom ───────────────────────────────────
+function tlZoom(delta) {
+  tlPixelsPerSec = Math.max(10, Math.min(200, tlPixelsPerSec + delta));
+  tlRender();
+}
+
+// ── Keyboard shortcuts ───────────────────────────────────
+document.addEventListener('keydown', function(e) {
+  if (!ENABLE_TIMELINE || !tlOpen) return;
+  const tag = document.activeElement?.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+  if (e.code === 'Space' && !e.ctrlKey && !e.metaKey) { e.preventDefault(); tlTogglePlay(); }
+  if (e.code === 'KeyS'  && !e.ctrlKey && !e.metaKey) { e.preventDefault(); tlSplit(); }
+});
 
 // ── Global mouse event handlers ─────────────────────────
 let _tlPlayheadDrag = false;
