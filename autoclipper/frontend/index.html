@@ -4032,11 +4032,13 @@ function updateTplPreviews(url){
   vidEl.play().catch(()=>{});
   if(vidEl.readyState>=3)swapVideoLayer();
   else vidEl.addEventListener('canplay',swapVideoLayer,{once:true});
-  vidEl.addEventListener('loadedmetadata', function onMeta() {
-    vidEl.removeEventListener('loadedmetadata', onMeta);
-    tlInit(vidEl.duration || 0);
-  }, { once: true });
-  if (vidEl.readyState >= 1 && vidEl.duration) tlInit(vidEl.duration);
+  if (vidEl.readyState >= 1 && vidEl.duration) {
+    tlInit(vidEl.duration);
+  } else {
+    vidEl.addEventListener('loadedmetadata', function() {
+      tlInit(vidEl.duration || 0);
+    }, { once: true });
+  }
 }
 renderTplGrid();
 
@@ -5164,7 +5166,7 @@ document.addEventListener('click', function(e) {
 });
 
 // ── Clips-area click for playhead drag ──────────────────
-document.addEventListener('DOMContentLoaded', function() {
+(function() {
   const area = document.getElementById('tl-clips-area');
   if (area) {
     area.addEventListener('mousedown', function(e) {
@@ -5176,7 +5178,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Sync playhead from preview-video timeupdate
   const vid = document.getElementById('preview-video');
   if (vid) {
     vid.addEventListener('timeupdate', function() {
@@ -5193,7 +5194,7 @@ document.addEventListener('DOMContentLoaded', function() {
       tlUpdateToolbar();
     });
   }
-});
+})();
 </script>
 <div id="ctx-menu"></div>
 
