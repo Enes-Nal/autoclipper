@@ -5170,6 +5170,7 @@ function tlRender() {
   tlRenderTrack('tl-track-text',  []);
   tlRenderTrack('tl-track-audio', []);
   tlRenderTrack('tl-track-sfx',   []);
+  tlRenderSpeedLane();
   tlRenderPlayhead();
   tlRenderTime();
   tlUpdateToolbar();
@@ -5183,6 +5184,78 @@ function tlFmt(s) {
 
 function tlSecsToX(secs) { return secs * tlPixelsPerSec; }
 function tlXToSecs(x)    { return x / tlPixelsPerSec; }
+
+const TL_SPEED_MIN = 0.1, TL_SPEED_MAX = 8;
+
+function tlSpeedToY(speed, h) {
+  return h * (1 - (speed - TL_SPEED_MIN) / (TL_SPEED_MAX - TL_SPEED_MIN));
+}
+function tlYToSpeed(y, h) {
+  const raw = TL_SPEED_MIN + (1 - y / h) * (TL_SPEED_MAX - TL_SPEED_MIN);
+  return Math.max(TL_SPEED_MIN, Math.min(TL_SPEED_MAX, raw));
+}
+
+function tlRenderSpeedLane() {
+  const lane = document.getElementById('tl-track-speed');
+  if (!lane) return;
+  const totalWidth = Math.max(tlTotalDuration() * tlPixelsPerSec + 60, 600);
+  lane.style.width = totalWidth + 'px';
+
+  const H = 64;
+  const y1x  = tlSpeedToY(1,   H);
+  const y05x = tlSpeedToY(0.5, H);
+  const y2x  = tlSpeedToY(2,   H);
+
+  let points = [];
+  let dots = [];
+  const sorted = [...tlSegments].sort((a, b) => a.trackStart - b.trackStart);
+
+  for (const seg of sorted) {
+    const dur = seg.sourceEnd - seg.sourceStart;
+    const kfs = seg.speedKeyframes || [];
+
+    if (kfs.length === 0) {
+      const x0 = tlSecsToX(seg.trackStart);
+      const x1 = tlSecsToX(seg.trackStart + dur);
+      points.push([x0, tlSpeedToY(1, H)], [x1, tlSpeedToY(1, H)]);
+    } else {
+      const sortedKfs = [...kfs].sort((a, b) => a.t - b.t);
+      const x0 = tlSecsToX(seg.trackStart);
+      points.push([x0, tlSpeedToY(sortedKfs[0].speed, H)]);
+      for (const kf of sortedKfs) {
+        const x = tlSecsToX(seg.trackStart + kf.t);
+        const y = tlSpeedToY(kf.speed, H);
+        points.push([x, y]);
+        dots.push({ segId: seg.id, kfT: kf.t, x, y });
+      }
+      const x1 = tlSecsToX(seg.trackStart + dur);
+      points.push([x1, tlSpeedToY(sortedKfs[sortedKfs.length - 1].speed, H)]);
+    }
+  }
+
+  const ptStr = points.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+
+  const dotsSvg = dots.map(d =>
+    `<circle class="tl-speed-dot" cx="${d.x.toFixed(1)}" cy="${d.y.toFixed(1)}" r="5"
+      fill="var(--acc)" stroke="#0d0d0d" stroke-width="1.5"
+      onmousedown="tlSpeedDotMousedown(event,'${d.segId}',${d.kfT})"
+      oncontextmenu="tlSpeedDotRightClick(event,'${d.segId}',${d.kfT})"
+    />`
+  ).join('');
+
+  lane.innerHTML = `
+    <svg class="tl-speed-svg" style="pointer-events:none" viewBox="0 0 ${totalWidth} ${H}" preserveAspectRatio="none"
+         width="${totalWidth}" height="${H}">
+      <line x1="0" y1="${y05x.toFixed(1)}" x2="${totalWidth}" y2="${y05x.toFixed(1)}" class="tl-speed-grid-line"/>
+      <line x1="0" y1="${y1x.toFixed(1)}"  x2="${totalWidth}" y2="${y1x.toFixed(1)}"  class="tl-speed-baseline"/>
+      <line x1="0" y1="${y2x.toFixed(1)}"  x2="${totalWidth}" y2="${y2x.toFixed(1)}"  class="tl-speed-grid-line"/>
+      <polyline points="${ptStr}" fill="none" stroke="var(--acc)" stroke-width="1.5" opacity="0.8"/>
+      ${dotsSvg}
+    </svg>`;
+
+  lane.querySelectorAll('.tl-speed-dot').forEach(el => { el.style.pointerEvents = 'all'; });
+  lane.addEventListener('click', tlSpeedLaneClick, { once: false });
+}
 
 function tlRenderRuler() {
   const inner = document.getElementById('tl-ruler-inner');
