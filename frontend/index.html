@@ -708,6 +708,8 @@ button,input,select{font-family:inherit}
     <div class="tl-sep"></div>
     <button class="tl-btn" onclick="tlZoom(-5)" title="Zoom out timeline">&#8722;</button>
     <button class="tl-btn" onclick="tlZoom(5)" title="Zoom in timeline">&#43;</button>
+    <div class="tl-sep"></div>
+    <button class="tl-btn" id="tl-addclip-btn" onclick="tlOpenAddClip()" style="display:none">+ Add clip</button>
   </div>
   <!-- ruler -->
   <div id="tl-ruler">
@@ -4306,6 +4308,7 @@ function openDlModal(){
   document.getElementById('dl-url').focus();
 }
 function closeDlModal(){
+  window._dlMode = null;
   const overlay=document.getElementById('dl-modal');
   const box=overlay.querySelector('.t-modal');
   const ms=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--modal-close-dur'))||150;
@@ -5202,6 +5205,8 @@ function tlUpdateToolbar() {
   if (splitBtn) splitBtn.disabled = !canSplit;
   if (colorBtn) colorBtn.disabled = !hasSel;
   if (delBtn)   delBtn.disabled   = !hasSel || tlSegments.length <= 1;
+  const addClipBtn = document.getElementById('tl-addclip-btn');
+  if (addClipBtn) addClipBtn.style.display = tlClips.length ? '' : 'none';
 }
 
 // ── Segment coordinate helpers ───────────────────────────
@@ -5410,6 +5415,12 @@ function tlColorReset() {
 function tlZoom(delta) {
   tlPixelsPerSec = Math.max(10, Math.min(200, tlPixelsPerSec + delta));
   tlRender();
+}
+
+function tlOpenAddClip() {
+  if (!tlClips.length) return;
+  window._dlMode = 'append';
+  openDlModal();
 }
 
 // ── Keyboard shortcuts ───────────────────────────────────
