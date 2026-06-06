@@ -229,8 +229,7 @@ button,input,select{font-family:inherit}
 .ec{position:relative;width:36px;height:36px;cursor:pointer;padding:4px;border-radius:5px;transition:.1s;display:flex;align-items:center;justify-content:center}
 .ec img{width:28px;height:28px;object-fit:contain}
 .ec:hover{background:var(--s3)}
-.ec:hover .ec-star{opacity:.5}
-.ec:hover .ec-star.fav{opacity:1}
+.ec.fav{box-shadow:inset 0 0 0 2px #f59e0b}
 .pnote{font-size:10px;color:var(--sub);margin-top:5px;line-height:1.5}
 .no-sel{padding:28px 14px;text-align:center;color:var(--sub);font-size:12px;line-height:1.8}
 .no-sel-ico{margin-bottom:8px;opacity:.2;display:flex;justify-content:center}
@@ -289,8 +288,6 @@ button,input,select{font-family:inherit}
 .myemo-sgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:4px 6px 6px}
 .myemo-shdr{font-size:10px;font-weight:700;color:var(--sub);padding:6px 8px 2px;text-transform:uppercase;letter-spacing:.05em;flex-shrink:0}
 .myemo-div{border-top:1px solid var(--b1);margin:4px 6px}
-.ec-star{position:absolute;top:1px;right:1px;font-size:10px;line-height:1;background:none;border:none;padding:1px;cursor:pointer;opacity:0;transition:opacity .1s;color:var(--sub);pointer-events:auto}
-.ec-star.fav{opacity:1;color:#f59e0b}
 .modal-title{font-size:16px;font-weight:800;margin-bottom:6px}
 .modal-sub{font-size:12px;color:var(--sub);margin-bottom:20px}
 .modal-input{width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);color:var(--tx);font-family:'Inter',sans-serif;font-size:13px;padding:10px 12px;outline:none;margin-bottom:12px;transition:.1s}
@@ -1841,9 +1838,8 @@ function _emoCell(path){
   function _he(s){return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   const label=_emoLabel(path);
   const isFav=emoFav.has(path);
-  return `<div class="ec" data-path="${_he(path)}" title="${_he(label)}">` +
+  return `<div class="ec${isFav?' fav':''}" data-path="${_he(path)}" title="${_he(label)}">` +
     `<img src="${_he(path)}" alt="${_he(label)}" loading="lazy" width="28" height="28" style="display:block">` +
-    `<button class="ec-star${isFav?' fav':''}" data-star="1" title="${isFav?'Unfavorite':'Favorite'}">${isFav?'⭐':'☆'}</button>` +
     `</div>`;
 }
 function renderMyEmojiGrid(){
@@ -1873,13 +1869,17 @@ function renderMyEmojiGrid(){
   if(!wrap._emoPackListenerAttached){
     wrap._emoPackListenerAttached=true;
     wrap.addEventListener('click',function(e){
-      if(e.target.closest('[data-star]')){
-        const cell=e.target.closest('[data-path]');
-        if(cell)toggleEmoFav(cell.dataset.path);
-        return;
-      }
       const cell=e.target.closest('[data-path]');
       if(cell)insertEmojiPackImg(cell.dataset.path);
+    });
+    wrap.addEventListener('contextmenu',function(e){
+      const cell=e.target.closest('[data-path]');
+      if(!cell)return;
+      const path=cell.dataset.path;
+      const isFav=emoFav.has(path);
+      openCtxMenu(e,[
+        {icon:_CTX_ICO.star,label:isFav?'Remove from Favorites':'Add to Favorites',action:()=>toggleEmoFav(path)},
+      ]);
     });
   }
 }
@@ -4656,6 +4656,7 @@ const _CTX_ICO = {
   copy:      _ctxIcon('<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'),
   paste:     _ctxIcon('<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/>'),
   trash:     _ctxIcon('<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>'),
+  star:      _ctxIcon('<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>'),
 };
 
 function _ctxDuplicate(o){
