@@ -1805,22 +1805,19 @@ function insertEmojiPackImg(path){
   }
 }
 
-function filterMyEmoji(q){
-  const grid=document.getElementById('myemo-grid');
-  if(!grid)return;
-  function _he(s){return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-  const lower=q.toLowerCase().trim();
-  const items=lower
-    ?EMOJIPACK_FILES.map((path,i)=>({path,i})).filter(({path})=>{
-        const label=path.split('/').pop().replace(/_[^_]+\.png$/,'').replace(/-/g,' ');
-        return label.includes(lower);
-      })
-    :EMOJIPACK_FILES.map((path,i)=>({path,i}));
-  grid.innerHTML=items.map(({path,i})=>{
-    const label=path.split('/').pop().replace(/_[^_]+\.png$/,'').replace(/-/g,' ');
-    return `<div class="ec" data-idx="${i}" title="${_he(label)}"><img src="${path}" alt="${_he(label)}" loading="lazy" width="28" height="28" style="display:block"></div>`;
-  }).join('');
+function _filterMyEmoji(q){
+  const words=q.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  if(!words.length)return[];
+  const scored=[];
+  for(const path of EMOJIPACK_FILES){
+    const label=_emoLabel(path).toLowerCase();
+    if(!words.every(w=>label.includes(w)))continue;
+    scored.push({path,score:label.startsWith(words[0])?0:1});
+  }
+  scored.sort((a,b)=>a.score-b.score||_emoLabel(a.path).localeCompare(_emoLabel(b.path)));
+  return scored.map(x=>x.path);
 }
+function filterMyEmoji(q){renderMyEmojiGrid();}
 
 // ── EMOJI FAVORITES & RECENT STATE ─────────────────────────────────────────
 let emoFav=new Set();
