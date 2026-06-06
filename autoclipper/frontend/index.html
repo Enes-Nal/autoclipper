@@ -5038,12 +5038,11 @@ function tlRenderClipList() {
   const colors = ['#22c55e','#6366f1','#f59e0b'];
   list.innerHTML = tlClips.map((clip, i) => {
     const dot = colors[i % colors.length];
-    const name = clip.path.split(/[\\/]/).pop();
     const dur = Math.round(clip.duration);
     return `<div class="clip-card">
       <div class="clip-card-dot" style="background:${dot}"></div>
       <div class="clip-card-body">
-        <div class="clip-card-name">${name}</div>
+        <div class="clip-card-name"></div>
         <div class="clip-card-meta">${dur}s</div>
       </div>
       <button class="clip-card-rm" onclick="tlRemoveClip('${clip.id}')" title="Remove clip">
@@ -5051,6 +5050,11 @@ function tlRenderClipList() {
       </button>
     </div>`;
   }).join('');
+  // Set filenames safely via textContent (prevents XSS)
+  Array.from(list.children).forEach((card, i) => {
+    const nameEl = card.querySelector('.clip-card-name');
+    if (nameEl) nameEl.textContent = tlClips[i].path.split(/[\\/]/).pop();
+  });
 }
 
 function tlRemoveClip(clipId) {
@@ -5070,7 +5074,13 @@ function tlRemoveClip(clipId) {
   } else if (_tlActiveClipId === clipId) {
     _tlActiveClipId = tlClips[0].id;
     const vid = document.getElementById('preview-video');
-    if (vid) vid.src = tlClips[0].url;
+    if (vid) {
+      vid.pause();
+      vid.src = tlClips[0].url;
+    }
+    _tlPlaying = false;
+    const btn = document.getElementById('tl-play-btn');
+    if (btn) btn.textContent = '▶ Play';
   }
   tlRenderClipList();
   tlRender();
