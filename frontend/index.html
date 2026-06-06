@@ -5001,6 +5001,7 @@ let tlColorOpen = false;
 let tlOpen = false;
 let tlPixelsPerSec = 30;
 let _tlPlaying = false;
+let _tlClipLoading = false;
 let _tlRafId = null;
 let _tlVideoEl = null;
 let tlClips = [];           // [{id, path, url, caption, duration}]
@@ -5326,6 +5327,7 @@ function tlTotalDuration() {
   return tlSegments.reduce((sum, s) => sum + (s.sourceEnd - s.sourceStart), 0);
 }
 
+let _tlEnsureSeq = 0;
 function tlEnsureClipLoaded(clipId, onReady) {
   const clip = tlClipById(clipId);
   if (!clip) return;
@@ -5338,7 +5340,10 @@ function tlEnsureClipLoaded(clipId, onReady) {
   _tlActiveClipId = clipId;
   vid.src = clip.url;
   if (onReady) {
-    vid.addEventListener('canplay', () => onReady(vid), { once: true });
+    const seq = ++_tlEnsureSeq;
+    vid.addEventListener('canplay', () => {
+      if (_tlEnsureSeq === seq) onReady(vid);
+    }, { once: true });
   }
   vid.load();
 }
@@ -5355,9 +5360,10 @@ function tlTimelineToVideoTime(timelineSecs) {
   return last ? { clipId: last.clipId, videoTime: last.sourceEnd } : { clipId: null, videoTime: 0 };
 }
 
-function tlVideoToTimelineTime(videoSecs) {
+function tlVideoToTimelineTime(videoSecs, clipId) {
   // Map a source video time → timeline position
-  for (const seg of tlSegments) {
+  const segs = clipId ? tlSegments.filter(s => s.clipId === clipId) : tlSegments;
+  for (const seg of segs) {
     if (videoSecs >= seg.sourceStart && videoSecs < seg.sourceEnd) {
       return seg.trackStart + (videoSecs - seg.sourceStart);
     }
@@ -5409,6 +5415,7 @@ function tlTogglePlay() {
     const vid = document.getElementById('preview-video');
     if (vid) vid.pause();
     _tlPlaying = false;
+    _tlClipLoading = false;
     cancelAnimationFrame(_tlRafId);
     const btn = document.getElementById('tl-play-btn');
     if (btn) btn.textContent = '▶ Play';
@@ -5431,11 +5438,15 @@ function tlTogglePlay() {
         const sorted = [...tlSegments].sort((a, b) => a.trackStart - b.trackStart);
         const nextSeg = sorted.find(s => s.trackStart > tlPlayheadTime);
         if (nextSeg) {
-          tlEnsureClipLoaded(nextSeg.clipId, v => {
-            v.currentTime = nextSeg.sourceStart;
-            v.play().catch(() => {});
-          });
-          tlPlayheadTime = nextSeg.trackStart;
+          if (!_tlClipLoading) {
+            _tlClipLoading = true;
+            tlEnsureClipLoaded(nextSeg.clipId, v => {
+              _tlClipLoading = false;
+              v.currentTime = nextSeg.sourceStart;
+              v.play().catch(() => {});
+            });
+            tlPlayheadTime = nextSeg.trackStart;
+          }
         } else {
           // Past the last segment — stop playback
           vid.pause();
@@ -5587,7 +5598,8 @@ document.addEventListener('mousemove', function(e) {
     } else {
       seg.sourceEnd = Math.max(window._tlTrimState.origStart + 0.1, Math.min(tlClipDuration(seg.clipId), window._tlTrimState.origEnd + dt));
     }
-    if (_tlVideoEl) _tlVideoEl.currentTime = window._tlTrimState.handle === 'l' ? seg.sourceStart : seg.sourceEnd;
+    const _trimVid = document.getElementById('preview-video');
+    if (_trimVid) _trimVid.currentTime = window._tlTrimState.handle === 'l' ? seg.sourceStart : seg.sourceEnd;
     tlRender();
   } else if (window._tlDragSeg) {
     const dx = e.clientX - window._tlDragSeg.startX;
@@ -5663,7 +5675,7 @@ document.addEventListener('click', function(e) {
     vid.addEventListener('timeupdate', function() {
       if (!ENABLE_TIMELINE || !_tlVideoEl || _tlPlayheadDrag || _tlPlaying) return;
       // Only sync from video when NOT in the RAF loop (paused / scrubbing externally)
-      tlPlayheadTime = tlVideoToTimelineTime(vid.currentTime);
+      tlPlayheadTime = tlVideoToTimelineTime(vid.currentTime, _tlActiveClipId);
       tlRenderPlayhead();
       tlRenderTime();
       tlUpdateToolbar();
