@@ -5039,15 +5039,17 @@ function tlRenderPlayhead() {
 
 function tlRenderTime() {
   const el = document.getElementById('tl-time');
-  if (el) el.textContent = `${tlFmt(tlPlayheadTime)} / ${tlFmt(tlDuration)}`;
+  if (el) el.textContent = `${tlFmt(tlPlayheadTime)} / ${tlFmt(tlTotalDuration())}`;
 }
 
 function tlUpdateToolbar() {
   const hasSel = tlSelectedSegId !== null;
   const seg = tlSegments.find(s => s.id === tlSelectedSegId);
+  // tlPlayheadTime is a timeline position; compare against segment's trackStart range
+  const segDur = seg ? (seg.sourceEnd - seg.sourceStart) : 0;
   const canSplit = hasSel && seg &&
-    tlPlayheadTime > seg.sourceStart + 0.1 &&
-    tlPlayheadTime < seg.sourceEnd - 0.1;
+    tlPlayheadTime > seg.trackStart + 0.1 &&
+    tlPlayheadTime < seg.trackStart + segDur - 0.1;
   const splitBtn = document.getElementById('tl-split-btn');
   const colorBtn = document.getElementById('tl-color-btn');
   const delBtn   = document.getElementById('tl-delete-btn');
@@ -5056,9 +5058,39 @@ function tlUpdateToolbar() {
   if (delBtn)   delBtn.disabled   = !hasSel || tlSegments.length <= 1;
 }
 
-function tlSeek(secs) {
-  tlPlayheadTime = Math.max(0, Math.min(tlDuration, secs));
-  if (_tlVideoEl) _tlVideoEl.currentTime = tlPlayheadTime;
+// ── Segment coordinate helpers ───────────────────────────
+function tlTotalDuration() {
+  // Sum of all segment durations (may differ from raw video duration after edits)
+  return tlSegments.reduce((sum, s) => sum + (s.sourceEnd - s.sourceStart), 0);
+}
+
+function tlTimelineToVideoTime(timelineSecs) {
+  // Map a timeline position (seconds) → source video time
+  for (const seg of tlSegments) {
+    const dur = seg.sourceEnd - seg.sourceStart;
+    if (timelineSecs >= seg.trackStart && timelineSecs < seg.trackStart + dur) {
+      return seg.sourceStart + (timelineSecs - seg.trackStart);
+    }
+  }
+  // Past all segments — clamp to end of last segment
+  const last = tlSegments[tlSegments.length - 1];
+  return last ? last.sourceEnd : 0;
+}
+
+function tlVideoToTimelineTime(videoSecs) {
+  // Map a source video time → timeline position
+  for (const seg of tlSegments) {
+    if (videoSecs >= seg.sourceStart && videoSecs < seg.sourceEnd) {
+      return seg.trackStart + (videoSecs - seg.sourceStart);
+    }
+  }
+  return tlPlayheadTime; // fallback: no change
+}
+
+function tlSeek(timelineSecs) {
+  const total = tlTotalDuration();
+  tlPlayheadTime = Math.max(0, Math.min(total, timelineSecs));
+  if (_tlVideoEl) _tlVideoEl.currentTime = tlTimelineToVideoTime(tlPlayheadTime);
   tlRender();
 }
 
@@ -5101,14 +5133,37 @@ function tlTogglePlay() {
   } else {
     _tlVideoEl.play().catch(() => {});
     _tlPlaying = true;
-    function frame() {
+    const frame = () => {
       if (!_tlPlaying) return;
-      tlPlayheadTime = _tlVideoEl.currentTime;
+      const vt = _tlVideoEl.currentTime;
+      // Find which segment the video is currently inside
+      const activeSeg = tlSegments.find(s => vt >= s.sourceStart && vt < s.sourceEnd);
+      if (activeSeg) {
+        tlPlayheadTime = activeSeg.trackStart + (vt - activeSeg.sourceStart);
+      } else {
+        // Video has passed the end of a segment — find the next one
+        const sorted = [...tlSegments].sort((a, b) => a.sourceStart - b.sourceStart);
+        const nextSeg = sorted.find(s => s.sourceStart > vt);
+        if (nextSeg) {
+          _tlVideoEl.currentTime = nextSeg.sourceStart;
+          tlPlayheadTime = nextSeg.trackStart;
+        } else {
+          // Past the last segment — stop playback
+          _tlVideoEl.pause();
+          _tlPlaying = false;
+          const btn = document.getElementById('tl-play-btn');
+          if (btn) btn.textContent = '▶ Play';
+          tlRenderPlayhead();
+          tlRenderTime();
+          tlUpdateToolbar();
+          return;
+        }
+      }
       tlRenderPlayhead();
       tlRenderTime();
       tlUpdateToolbar();
       _tlRafId = requestAnimationFrame(frame);
-    }
+    };
     _tlRafId = requestAnimationFrame(frame);
     const btn = document.getElementById('tl-play-btn');
     if (btn) btn.textContent = '⏸ Pause';
@@ -5120,11 +5175,12 @@ function tlSplit() {
   if (!ENABLE_TIMELINE) return;
   const seg = tlSegments.find(s => s.id === tlSelectedSegId);
   if (!seg) return;
-  const t = tlPlayheadTime;
-  if (t <= seg.sourceStart + 0.05 || t >= seg.sourceEnd - 0.05) return;
-  const left  = tlNewSeg(seg.sourceStart, t, seg.trackStart, Object.assign({}, seg.color));
-  const rightTrackStart = seg.trackStart + (t - seg.sourceStart);
-  const right = tlNewSeg(t, seg.sourceEnd, rightTrackStart, Object.assign({}, seg.color));
+  // tlPlayheadTime is a timeline position — convert to source video time for the split point
+  const splitVideoTime = tlTimelineToVideoTime(tlPlayheadTime);
+  if (splitVideoTime <= seg.sourceStart + 0.05 || splitVideoTime >= seg.sourceEnd - 0.05) return;
+  const left  = tlNewSeg(seg.sourceStart, splitVideoTime, seg.trackStart, Object.assign({}, seg.color));
+  const rightTrackStart = seg.trackStart + (splitVideoTime - seg.sourceStart);
+  const right = tlNewSeg(splitVideoTime, seg.sourceEnd, rightTrackStart, Object.assign({}, seg.color));
   const idx = tlSegments.indexOf(seg);
   tlSegments.splice(idx, 1, left, right);
   tlSelectedSegId = left.id;
@@ -5309,14 +5365,9 @@ document.addEventListener('click', function(e) {
   const vid = document.getElementById('preview-video');
   if (vid) {
     vid.addEventListener('timeupdate', function() {
-      if (!ENABLE_TIMELINE || !_tlVideoEl || _tlPlayheadDrag) return;
-      tlPlayheadTime = vid.currentTime;
-      if (vid.ended && _tlPlaying) {
-        _tlPlaying = false;
-        cancelAnimationFrame(_tlRafId);
-        const btn = document.getElementById('tl-play-btn');
-        if (btn) btn.textContent = '▶ Play';
-      }
+      if (!ENABLE_TIMELINE || !_tlVideoEl || _tlPlayheadDrag || _tlPlaying) return;
+      // Only sync from video when NOT in the RAF loop (paused / scrubbing externally)
+      tlPlayheadTime = tlVideoToTimelineTime(vid.currentTime);
       tlRenderPlayhead();
       tlRenderTime();
       tlUpdateToolbar();
