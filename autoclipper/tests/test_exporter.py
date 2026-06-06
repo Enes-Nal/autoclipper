@@ -16,6 +16,29 @@ def test_video_contain_layer():
     assert any("force_original_aspect_ratio=decrease" in p for p in parts)
     assert any("overlay" in p for p in parts)
 
+def test_video_first_layer_position_applied():
+    """When video is the first (only) layer with non-zero y, the position must
+    be applied via pad — not silently dropped, which would put the video at (0,0)."""
+    layers = [
+        {"type": "video", "x": 0, "y": 656, "width": 1080, "height": 608, "fit": "contain"},
+    ]
+    parts, label = build_filter_graph(layers, 1080, 1920, {}, {})
+    # y=656 must appear somewhere so the video lands at the right position
+    # (now via color+overlay rather than pad, which rejects negative offsets)
+    positioned = [p for p in parts if "656" in p]
+    assert positioned, f"Expected y=656 to appear in filter parts but got: {parts}"
+    assert any("overlay" in p and "y=656" in p for p in parts), \
+        f"Expected overlay=...y=656 in filter parts but got: {parts}"
+
+def test_video_first_layer_zero_position_no_extra_pad():
+    """When video is first with x=0, y=0, no extra pad step is needed."""
+    layers = [
+        {"type": "video", "x": 0, "y": 0, "width": 1080, "height": 608, "fit": "contain"},
+    ]
+    parts, label = build_filter_graph(layers, 1080, 1920, {}, {})
+    # The scale+internal-pad filter is present (force_original_aspect_ratio)
+    assert any("force_original_aspect_ratio=decrease" in p for p in parts)
+
 def test_shape_layer():
     layers = [
         {"type": "blur_video", "blur": 20},
@@ -263,3 +286,53 @@ def test_export_video_strips_mask_from_canvas_layers():
         from PIL import Image
         img = Image.open(extra_inputs[0]).convert("L")
         assert img.getpixel((540, 304)) == 255  # centre of circle is white
+
+from exporter import build_segment_filter
+
+def test_no_segments_returns_passthrough():
+    parts, vlabel, alabel = build_segment_filter([])
+    assert parts == []
+    assert vlabel == '0:v'
+    assert alabel == '0:a'
+
+def test_single_segment_returns_passthrough():
+    segs = [{'sourceStart': 0, 'sourceEnd': 30, 'trackStart': 0,
+             'color': {'brightness': 0, 'contrast': 0, 'saturation': 0, 'hue': 0}}]
+    parts, vlabel, alabel = build_segment_filter(segs)
+    # Single full segment with no color = passthrough
+    assert parts == []
+    assert vlabel == '0:v'
+    assert alabel == '0:a'
+
+def test_two_segments_generates_concat():
+    segs = [
+        {'sourceStart': 0,  'sourceEnd': 5,  'trackStart': 0,
+         'color': {'brightness': 0, 'contrast': 0, 'saturation': 0, 'hue': 0}},
+        {'sourceStart': 8,  'sourceEnd': 15, 'trackStart': 5,
+         'color': {'brightness': 0, 'contrast': 0, 'saturation': 0, 'hue': 0}},
+    ]
+    parts, vlabel, alabel = build_segment_filter(segs)
+    assert any('trim' in p for p in parts), f"Expected trim filter, got: {parts}"
+    assert any('concat' in p for p in parts), f"Expected concat filter, got: {parts}"
+    assert vlabel != '0:v'
+    assert alabel != '0:a'
+
+def test_color_grading_adds_eq_filter():
+    segs = [
+        {'sourceStart': 0, 'sourceEnd': 10, 'trackStart': 0,
+         'color': {'brightness': 50, 'contrast': 20, 'saturation': -30, 'hue': 0}},
+        {'sourceStart': 10, 'sourceEnd': 20, 'trackStart': 10,
+         'color': {'brightness': 0, 'contrast': 0, 'saturation': 0, 'hue': 0}},
+    ]
+    parts, vlabel, alabel = build_segment_filter(segs)
+    assert any('eq=' in p for p in parts), f"Expected eq filter, got: {parts}"
+
+def test_hue_grading_adds_hue_filter():
+    segs = [
+        {'sourceStart': 0, 'sourceEnd': 10, 'trackStart': 0,
+         'color': {'brightness': 0, 'contrast': 0, 'saturation': 0, 'hue': 90}},
+        {'sourceStart': 10, 'sourceEnd': 20, 'trackStart': 10,
+         'color': {'brightness': 0, 'contrast': 0, 'saturation': 0, 'hue': 0}},
+    ]
+    parts, vlabel, alabel = build_segment_filter(segs)
+    assert any('hue=' in p for p in parts), f"Expected hue filter, got: {parts}"
