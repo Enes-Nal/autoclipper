@@ -5253,17 +5253,33 @@ function tlTotalDuration() {
   return tlSegments.reduce((sum, s) => sum + (s.sourceEnd - s.sourceStart), 0);
 }
 
+function tlEnsureClipLoaded(clipId, onReady) {
+  const clip = tlClipById(clipId);
+  if (!clip) return;
+  const vid = document.getElementById('preview-video');
+  if (!vid) return;
+  if (_tlActiveClipId === clipId) {
+    if (onReady) onReady(vid);
+    return;
+  }
+  _tlActiveClipId = clipId;
+  vid.src = clip.url;
+  if (onReady) {
+    vid.addEventListener('canplay', () => onReady(vid), { once: true });
+  }
+  vid.load();
+}
+
 function tlTimelineToVideoTime(timelineSecs) {
-  // Map a timeline position (seconds) → source video time
-  for (const seg of tlSegments) {
+  const sorted = [...tlSegments].sort((a, b) => a.trackStart - b.trackStart);
+  for (const seg of sorted) {
     const dur = seg.sourceEnd - seg.sourceStart;
     if (timelineSecs >= seg.trackStart && timelineSecs < seg.trackStart + dur) {
-      return seg.sourceStart + (timelineSecs - seg.trackStart);
+      return { clipId: seg.clipId, videoTime: seg.sourceStart + (timelineSecs - seg.trackStart) };
     }
   }
-  // Past all segments — clamp to end of last segment
-  const last = tlSegments[tlSegments.length - 1];
-  return last ? last.sourceEnd : 0;
+  const last = sorted[sorted.length - 1];
+  return last ? { clipId: last.clipId, videoTime: last.sourceEnd } : { clipId: null, videoTime: 0 };
 }
 
 function tlVideoToTimelineTime(videoSecs) {
@@ -5279,7 +5295,10 @@ function tlVideoToTimelineTime(videoSecs) {
 function tlSeek(timelineSecs) {
   const total = tlTotalDuration();
   tlPlayheadTime = Math.max(0, Math.min(total, timelineSecs));
-  if (_tlVideoEl) _tlVideoEl.currentTime = tlTimelineToVideoTime(tlPlayheadTime);
+  const { clipId, videoTime } = tlTimelineToVideoTime(tlPlayheadTime);
+  if (clipId) {
+    tlEnsureClipLoaded(clipId, vid => { vid.currentTime = videoTime; });
+  }
   tlRender();
 }
 
@@ -5312,34 +5331,43 @@ function tlHandleMousedown(e, segId, handle) {
 
 // ── Task 4: Playback controls ────────────────────────────
 function tlTogglePlay() {
-  if (!ENABLE_TIMELINE || !_tlVideoEl) return;
+  if (!ENABLE_TIMELINE) return;
   if (_tlPlaying) {
-    _tlVideoEl.pause();
+    const vid = document.getElementById('preview-video');
+    if (vid) vid.pause();
     _tlPlaying = false;
     cancelAnimationFrame(_tlRafId);
     const btn = document.getElementById('tl-play-btn');
     if (btn) btn.textContent = '▶ Play';
   } else {
-    _tlVideoEl.play().catch(() => {});
+    const vid2 = document.getElementById('preview-video');
+    if (vid2) vid2.play().catch(() => {});
     _tlPlaying = true;
     const frame = () => {
       if (!_tlPlaying) return;
-      const vt = _tlVideoEl.currentTime;
-      // Find which segment the video is currently inside
-      const activeSeg = tlSegments.find(s => vt >= s.sourceStart && vt < s.sourceEnd);
+      const vid = document.getElementById('preview-video');
+      if (!vid) return;
+      const vt = vid.currentTime;
+      // Only match segments from the clip currently loaded in the video element
+      const clipSegs = tlSegments.filter(s => s.clipId === _tlActiveClipId);
+      const activeSeg = clipSegs.find(s => vt >= s.sourceStart && vt < s.sourceEnd);
       if (activeSeg) {
         tlPlayheadTime = activeSeg.trackStart + (vt - activeSeg.sourceStart);
       } else {
-        // Video has passed the end of a segment — find the next one
-        const sorted = [...tlSegments].sort((a, b) => a.sourceStart - b.sourceStart);
-        const nextSeg = sorted.find(s => s.sourceStart > vt);
+        // Find the next segment by trackStart order across all clips
+        const sorted = [...tlSegments].sort((a, b) => a.trackStart - b.trackStart);
+        const nextSeg = sorted.find(s => s.trackStart > tlPlayheadTime);
         if (nextSeg) {
-          _tlVideoEl.currentTime = nextSeg.sourceStart;
+          tlEnsureClipLoaded(nextSeg.clipId, v => {
+            v.currentTime = nextSeg.sourceStart;
+            v.play().catch(() => {});
+          });
           tlPlayheadTime = nextSeg.trackStart;
         } else {
           // Past the last segment — stop playback
-          _tlVideoEl.pause();
+          vid.pause();
           _tlPlaying = false;
+          cancelAnimationFrame(_tlRafId);
           const btn = document.getElementById('tl-play-btn');
           if (btn) btn.textContent = '▶ Play';
           tlRenderPlayhead();
@@ -5365,11 +5393,11 @@ function tlSplit() {
   const seg = tlSegments.find(s => s.id === tlSelectedSegId);
   if (!seg) return;
   // tlPlayheadTime is a timeline position — convert to source video time for the split point
-  const splitVideoTime = tlTimelineToVideoTime(tlPlayheadTime);
+  const { videoTime: splitVideoTime } = tlTimelineToVideoTime(tlPlayheadTime);
   if (splitVideoTime <= seg.sourceStart + 0.05 || splitVideoTime >= seg.sourceEnd - 0.05) return;
-  const left  = tlNewSeg(seg.sourceStart, splitVideoTime, seg.trackStart, Object.assign({}, seg.color));
+  const left  = tlNewSeg(seg.sourceStart, splitVideoTime, seg.trackStart, Object.assign({}, seg.color), seg.clipId);
   const rightTrackStart = seg.trackStart + (splitVideoTime - seg.sourceStart);
-  const right = tlNewSeg(splitVideoTime, seg.sourceEnd, rightTrackStart, Object.assign({}, seg.color));
+  const right = tlNewSeg(splitVideoTime, seg.sourceEnd, rightTrackStart, Object.assign({}, seg.color), seg.clipId);
   const idx = tlSegments.indexOf(seg);
   tlSegments.splice(idx, 1, left, right);
   tlSelectedSegId = left.id;
@@ -5484,7 +5512,7 @@ document.addEventListener('mousemove', function(e) {
       seg.sourceStart = Math.max(0, Math.min(window._tlTrimState.origEnd - 0.1, window._tlTrimState.origStart + dt));
       seg.trackStart = window._tlTrimState.origTrackStart + (seg.sourceStart - window._tlTrimState.origStart);
     } else {
-      seg.sourceEnd = Math.max(window._tlTrimState.origStart + 0.1, Math.min(tlDuration, window._tlTrimState.origEnd + dt));
+      seg.sourceEnd = Math.max(window._tlTrimState.origStart + 0.1, Math.min(tlClipDuration(seg.clipId), window._tlTrimState.origEnd + dt));
     }
     if (_tlVideoEl) _tlVideoEl.currentTime = window._tlTrimState.handle === 'l' ? seg.sourceStart : seg.sourceEnd;
     tlRender();
