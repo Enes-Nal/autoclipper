@@ -5012,6 +5012,7 @@ let _tlPlaying = false;
 let _tlClipLoading = false;
 let _tlRafId = null;
 let _tlVideoEl = null;
+let _tlSpeedDrag = null;
 let tlClips = [];           // [{id, path, url, caption, duration}]
 let _tlActiveClipId = null; // clipId currently loaded in preview-video src
 
@@ -5568,6 +5569,56 @@ function tlColorReset() {
   tlSyncColorStrip();
 }
 
+// ── Speed lane interactions ──────────────────────────────
+function tlSpeedLaneClick(e) {
+  if (e.target.classList.contains('tl-speed-dot')) return;
+  const lane = document.getElementById('tl-track-speed');
+  if (!lane) return;
+  const rect = lane.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const clickTimeline = tlXToSecs(x);
+  const speed = tlYToSpeed(y, 64);
+
+  const seg = tlSegments.find(s => {
+    const dur = s.sourceEnd - s.sourceStart;
+    return clickTimeline >= s.trackStart && clickTimeline < s.trackStart + dur;
+  });
+  if (!seg) return;
+
+  const t = clickTimeline - seg.trackStart;
+  const dup = seg.speedKeyframes.find(k => Math.abs(k.t - t) < 0.05);
+  if (dup) { dup.speed = parseFloat(speed.toFixed(3)); }
+  else { seg.speedKeyframes.push({ t: parseFloat(t.toFixed(3)), speed: parseFloat(speed.toFixed(3)) }); }
+
+  tlSelectedSegId = seg.id;
+  tlRender();
+  if (typeof tlSpeedOpen !== 'undefined' && tlSpeedOpen) tlRenderSpeedStrip();
+  if (typeof saveHist === 'function') saveHist();
+}
+
+function tlSpeedDotMousedown(e, segId, kfT) {
+  e.stopPropagation();
+  e.preventDefault();
+  const seg = tlSegments.find(s => s.id === segId);
+  const kf  = seg?.speedKeyframes.find(k => Math.abs(k.t - kfT) < 0.001);
+  if (!kf) return;
+  _tlSpeedDrag = { segId, kfT, startX: e.clientX, startY: e.clientY, origT: kf.t, origSpeed: kf.speed };
+  tlSelectedSegId = segId;
+  tlRender();
+}
+
+function tlSpeedDotRightClick(e, segId, kfT) {
+  e.preventDefault();
+  e.stopPropagation();
+  const seg = tlSegments.find(s => s.id === segId);
+  if (!seg) return;
+  seg.speedKeyframes = seg.speedKeyframes.filter(k => Math.abs(k.t - kfT) >= 0.001);
+  tlRender();
+  if (typeof tlSpeedOpen !== 'undefined' && tlSpeedOpen) tlRenderSpeedStrip();
+  if (typeof saveHist === 'function') saveHist();
+}
+
 // ── Task 11 stub: Zoom ───────────────────────────────────
 function tlZoom(delta) {
   tlPixelsPerSec = Math.max(10, Math.min(200, tlPixelsPerSec + delta));
@@ -5617,6 +5668,29 @@ document.addEventListener('mousemove', function(e) {
       document.body.style.cursor = 'grabbing';
       tlRender();
     }
+  } else if (_tlSpeedDrag) {
+    const seg = tlSegments.find(s => s.id === _tlSpeedDrag.segId);
+    if (!seg) return;
+    const kf = seg.speedKeyframes.find(k => Math.abs(k.t - _tlSpeedDrag.kfT) < 0.001);
+    if (!kf) return;
+
+    const dx = e.clientX - _tlSpeedDrag.startX;
+    const dy = e.clientY - _tlSpeedDrag.startY;
+    const dur = seg.sourceEnd - seg.sourceStart;
+
+    const newT = Math.max(0, Math.min(dur, _tlSpeedDrag.origT + tlXToSecs(dx)));
+    const lane = document.getElementById('tl-track-speed');
+    const H = lane ? lane.offsetHeight : 64;
+    const newSpeed = Math.max(TL_SPEED_MIN, Math.min(TL_SPEED_MAX,
+      _tlSpeedDrag.origSpeed - (dy / H) * (TL_SPEED_MAX - TL_SPEED_MIN)
+    ));
+
+    kf.t = parseFloat(newT.toFixed(3));
+    kf.speed = parseFloat(newSpeed.toFixed(3));
+    _tlSpeedDrag.kfT = kf.t;
+
+    tlRender();
+    if (typeof tlSpeedOpen !== 'undefined' && tlSpeedOpen) tlRenderSpeedStrip();
   } else if (_tlPlayheadDrag) {
     const area = document.getElementById('tl-clips-area');
     if (!area) return;
@@ -5642,6 +5716,11 @@ document.addEventListener('mouseup', function() {
     if (typeof saveHist === 'function') saveHist();
   }
   _tlPlayheadDrag = false;
+  if (_tlSpeedDrag) {
+    _tlSpeedDrag = null;
+    tlRender();
+    if (typeof saveHist === 'function') saveHist();
+  }
 });
 
 function tlCompact() {
@@ -5676,6 +5755,9 @@ document.addEventListener('click', function(e) {
       _tlPlayheadDrag = true;
     });
   }
+
+  const speedLane = document.getElementById('tl-track-speed');
+  if (speedLane) speedLane.addEventListener('click', tlSpeedLaneClick);
 
   const vid = document.getElementById('preview-video');
   if (vid) {
