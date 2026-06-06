@@ -5259,6 +5259,8 @@ document.addEventListener('mouseup', function() {
   if (window._tlTrimState) {
     window._tlTrimState = null;
     document.body.style.cursor = '';
+    tlCompact();
+    tlRender();
     if (typeof saveHist === 'function') saveHist();
   }
   if (window._tlDragSeg) {

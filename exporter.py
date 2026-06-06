@@ -36,20 +36,12 @@ def build_segment_filter(segments: list) -> tuple[list, str, str]:
     """
     Build trim+concat filter parts for video segments.
     Returns (filter_parts, video_label, audio_label).
-    Returns ([], '0:v', '0:a') when no segments or single no-op segment.
+    Returns ([], '0:v', '0:a') when no segments.
     """
     if not segments:
         return [], '0:v', '0:a'
 
     segs = sorted(segments, key=lambda s: s.get('trackStart', 0))
-
-    # Single segment with no color grading = passthrough
-    if len(segs) == 1:
-        s = segs[0]
-        c = s.get('color', {})
-        no_color = all(float(c.get(k, 0)) == 0 for k in ('brightness', 'contrast', 'saturation', 'hue'))
-        if no_color:
-            return [], '0:v', '0:a'
 
     n = [0]
     def lbl(prefix='s'):
@@ -63,7 +55,7 @@ def build_segment_filter(segments: list) -> tuple[list, str, str]:
     n_segs = len(segs)
 
     if n_segs == 1:
-        # Only one segment (has color grading, since no-color returned above)
+        # Single segment: always emit trim so sourceEnd trimming is respected
         seg = segs[0]
         ss = float(seg.get('sourceStart', 0))
         se = float(seg.get('sourceEnd',   0))
