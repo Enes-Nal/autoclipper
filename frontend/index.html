@@ -5017,11 +5017,14 @@ function tlInit(clip) {
 function tlAddClip(clip) {
   if (!ENABLE_TIMELINE) return;
   tlClips.push(clip);
-  const lastSeg = tlSegments.reduce(
-    (a, b) => (a.trackStart + (a.sourceEnd - a.sourceStart) > b.trackStart + (b.sourceEnd - b.sourceStart)) ? a : b,
-    tlSegments[0]
-  );
-  const afterEnd = lastSeg ? lastSeg.trackStart + (lastSeg.sourceEnd - lastSeg.sourceStart) : 0;
+  let afterEnd = 0;
+  if (tlSegments.length > 0) {
+    const lastSeg = tlSegments.reduce(
+      (a, b) => (a.trackStart + (a.sourceEnd - a.sourceStart) > b.trackStart + (b.sourceEnd - b.sourceStart)) ? a : b,
+      tlSegments[0]
+    );
+    afterEnd = lastSeg.trackStart + (lastSeg.sourceEnd - lastSeg.sourceStart);
+  }
   tlSegments.push(tlNewSeg(0, clip.duration, afterEnd, null, clip.id));
   tlRender();
   if (typeof saveHist === 'function') saveHist();
