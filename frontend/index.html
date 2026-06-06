@@ -1718,20 +1718,52 @@ function switchEmoTab(tab){
   }
 }
 
-function renderMyEmojiGrid(){
-  const grid=document.getElementById('myemo-grid');
-  if(!grid)return;
+function _emoLabel(path){
+  return path.split('/').pop().replace(/_[^_]+\.png$/,'').replace(/-/g,' ');
+}
+function _emoCell(path){
   function _he(s){return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-  grid.innerHTML=EMOJIPACK_FILES.map((path,i)=>{
-    const filename=path.split('/').pop();
-    const label=filename.replace(/_[^_]+\.png$/,'').replace(/-/g,' ');
-    return `<div class="ec" data-idx="${i}" title="${_he(label)}"><img src="${path}" alt="${_he(label)}" loading="lazy" width="28" height="28" style="display:block"></div>`;
-  }).join('');
-  if(!grid._emoPackListenerAttached){
-    grid._emoPackListenerAttached=true;
-    grid.addEventListener('click',function(e){
-      const cell=e.target.closest('[data-idx]');
-      if(cell)insertEmojiPackImg(EMOJIPACK_FILES[+cell.dataset.idx]);
+  const label=_emoLabel(path);
+  const isFav=emoFav.has(path);
+  return `<div class="ec" data-path="${_he(path)}" title="${_he(label)}">` +
+    `<img src="${_he(path)}" alt="${_he(label)}" loading="lazy" width="28" height="28" style="display:block">` +
+    `<button class="ec-star${isFav?' fav':''}" data-star="1" title="${isFav?'Unfavorite':'Favorite'}">${isFav?'⭐':'☆'}</button>` +
+    `</div>`;
+}
+function renderMyEmojiGrid(){
+  const wrap=document.getElementById('myemo-grid');
+  if(!wrap)return;
+  const q=(document.getElementById('myemo-search')?.value||'').trim();
+  if(q){
+    const results=_filterMyEmoji(q);
+    wrap.innerHTML=results.length
+      ?`<div class="myemo-sgrid">${results.map(_emoCell).join('')}</div>`
+      :'<div style="padding:18px 8px;text-align:center;font-size:12px;color:var(--sub)">No emojis found</div>';
+  } else {
+    const allSorted=[...EMOJIPACK_FILES].sort((a,b)=>_emoLabel(a).localeCompare(_emoLabel(b)));
+    const favPaths=[...emoFav].filter(p=>EMOJIPACK_FILES.includes(p))
+      .sort((a,b)=>_emoLabel(a).localeCompare(_emoLabel(b)));
+    const validRecent=emoRecent.filter(p=>EMOJIPACK_FILES.includes(p));
+    let html='';
+    if(favPaths.length){
+      html+=`<div class="myemo-shdr">⭐ Favorites</div><div class="myemo-sgrid">${favPaths.map(_emoCell).join('')}</div><div class="myemo-div"></div>`;
+    }
+    if(validRecent.length){
+      html+=`<div class="myemo-shdr">🕐 Recent</div><div class="myemo-sgrid">${validRecent.map(_emoCell).join('')}</div><div class="myemo-div"></div>`;
+    }
+    html+=`<div class="myemo-shdr">All</div><div class="myemo-sgrid">${allSorted.map(_emoCell).join('')}</div>`;
+    wrap.innerHTML=html;
+  }
+  if(!wrap._emoPackListenerAttached){
+    wrap._emoPackListenerAttached=true;
+    wrap.addEventListener('click',function(e){
+      if(e.target.closest('[data-star]')){
+        const cell=e.target.closest('[data-path]');
+        if(cell)toggleEmoFav(cell.dataset.path);
+        return;
+      }
+      const cell=e.target.closest('[data-path]');
+      if(cell)insertEmojiPackImg(cell.dataset.path);
     });
   }
 }
