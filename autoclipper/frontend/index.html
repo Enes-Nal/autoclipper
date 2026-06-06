@@ -4032,6 +4032,11 @@ function updateTplPreviews(url){
   vidEl.play().catch(()=>{});
   if(vidEl.readyState>=3)swapVideoLayer();
   else vidEl.addEventListener('canplay',swapVideoLayer,{once:true});
+  vidEl.addEventListener('loadedmetadata', function onMeta() {
+    vidEl.removeEventListener('loadedmetadata', onMeta);
+    tlInit(vidEl.duration || 0);
+  }, { once: true });
+  if (vidEl.readyState >= 1 && vidEl.duration) tlInit(vidEl.duration);
 }
 renderTplGrid();
 
@@ -4902,6 +4907,293 @@ async function _ctxDeleteTpl(file, name){
     _ctxToast('Template deleted');
   } catch(e){ _ctxToast('Delete failed'); }
 }
+
+// ═══════════════════════════════════════════════════════════
+// TIMELINE MODULE — feature flag: set false to disable entirely
+// ═══════════════════════════════════════════════════════════
+const ENABLE_TIMELINE = true;
+
+// ── State ──────────────────────────────────────────────────
+let tlSegments = [];
+let tlDuration = 0;
+let tlPlayheadTime = 0;
+let tlSelectedSegId = null;
+let tlColorOpen = false;
+let tlOpen = false;
+let tlPixelsPerSec = 30;
+let _tlPlaying = false;
+let _tlRafId = null;
+let _tlVideoEl = null;
+
+function tlNewSeg(sourceStart, sourceEnd, trackStart, color) {
+  return {
+    id: 'seg_' + Math.random().toString(36).slice(2, 9),
+    sourceStart,
+    sourceEnd,
+    trackStart,
+    color: color || { brightness: 0, contrast: 0, saturation: 0, hue: 0 }
+  };
+}
+
+function tlInit(durationSecs) {
+  if (!ENABLE_TIMELINE) return;
+  tlDuration = durationSecs;
+  tlSegments = [tlNewSeg(0, durationSecs, 0)];
+  tlSelectedSegId = null;
+  tlPlayheadTime = 0;
+  tlColorOpen = false;
+  _tlVideoEl = document.getElementById('preview-video');
+  const btn = document.getElementById('tl-toggle-btn');
+  if (btn) btn.style.display = 'inline-flex';
+  if (localStorage.getItem('tlOpen') === '1') tlOpen = true;
+  const panel = document.getElementById('timeline-panel');
+  if (panel) panel.classList.toggle('tl-open', tlOpen);
+  tlRender();
+}
+
+function tlToggleOpen() {
+  if (!ENABLE_TIMELINE) return;
+  tlOpen = !tlOpen;
+  localStorage.setItem('tlOpen', tlOpen ? '1' : '0');
+  const panel = document.getElementById('timeline-panel');
+  if (panel) panel.classList.toggle('tl-open', tlOpen);
+  const btn = document.getElementById('tl-toggle-btn');
+  if (btn) btn.classList.toggle('tl-open', tlOpen);
+  if (tlOpen) tlRender();
+}
+
+function tlClose() {
+  tlOpen = false;
+  localStorage.setItem('tlOpen', '0');
+  document.getElementById('timeline-panel')?.classList.remove('tl-open');
+  document.getElementById('tl-toggle-btn')?.classList.remove('tl-open');
+  const vid = document.getElementById('preview-video');
+  if (vid) vid.style.filter = '';
+}
+
+function tlRender() {
+  if (!ENABLE_TIMELINE || !tlOpen) return;
+  tlRenderRuler();
+  tlRenderTrack('tl-track-video', tlSegments, 'rgba(34,197,94,0.3)');
+  tlRenderTrack('tl-track-text',  [], 'rgba(99,102,241,0.3)');
+  tlRenderTrack('tl-track-audio', [], 'rgba(245,158,11,0.3)');
+  tlRenderTrack('tl-track-sfx',   [], 'rgba(239,68,68,0.3)');
+  tlRenderPlayhead();
+  tlRenderTime();
+  tlUpdateToolbar();
+}
+
+function tlFmt(s) {
+  const m = Math.floor(s / 60);
+  const sec = String(Math.floor(s % 60)).padStart(2, '0');
+  return `${m}:${sec}`;
+}
+
+function tlSecsToX(secs) { return secs * tlPixelsPerSec; }
+function tlXToSecs(x)    { return x / tlPixelsPerSec; }
+
+function tlRenderRuler() {
+  const inner = document.getElementById('tl-ruler-inner');
+  if (!inner) return;
+  const totalWidth = Math.max(tlDuration * tlPixelsPerSec + 60, inner.offsetWidth || 600);
+  inner.style.width = totalWidth + 'px';
+  const step = tlDuration > 60 ? 10 : 5;
+  let html = '';
+  for (let t = 0; t <= tlDuration + step; t += step) {
+    const x = tlSecsToX(t);
+    html += `<span style="position:absolute;left:${x}px;font-size:8px;color:var(--sub);top:3px;transform:translateX(-50%);pointer-events:none">${tlFmt(t)}</span>`;
+  }
+  inner.innerHTML = html;
+}
+
+function tlRenderTrack(trackId, clips, color) {
+  const row = document.getElementById(trackId);
+  if (!row) return;
+  const totalWidth = Math.max(tlDuration * tlPixelsPerSec + 60, 600);
+  row.style.width = totalWidth + 'px';
+  row.innerHTML = clips.map(seg => {
+    const x = tlSecsToX(seg.trackStart);
+    const w = Math.max(4, tlSecsToX(seg.sourceEnd - seg.sourceStart));
+    const sel = seg.id === tlSelectedSegId;
+    return `<div class="tl-clip${sel ? ' sel' : ''}" data-seg="${seg.id}"
+      style="left:${x}px;width:${w}px;background:${color};border:1.5px solid ${sel ? '#fff' : color}"
+      onmousedown="tlClipMousedown(event,'${seg.id}')">
+      <div class="tl-handle tl-handle-l" onmousedown="tlHandleMousedown(event,'${seg.id}','l')"></div>
+      <span style="pointer-events:none;padding-left:4px;opacity:.85;overflow:hidden;flex:1">${tlFmt(seg.sourceStart)}-${tlFmt(seg.sourceEnd)}</span>
+      <div class="tl-handle tl-handle-r" onmousedown="tlHandleMousedown(event,'${seg.id}','r')"></div>
+    </div>`;
+  }).join('');
+}
+
+function tlRenderPlayhead() {
+  const ph = document.getElementById('tl-playhead');
+  if (!ph) return;
+  ph.style.left = tlSecsToX(tlPlayheadTime) + 'px';
+}
+
+function tlRenderTime() {
+  const el = document.getElementById('tl-time');
+  if (el) el.textContent = `${tlFmt(tlPlayheadTime)} / ${tlFmt(tlDuration)}`;
+}
+
+function tlUpdateToolbar() {
+  const hasSel = tlSelectedSegId !== null;
+  const seg = tlSegments.find(s => s.id === tlSelectedSegId);
+  const canSplit = hasSel && seg &&
+    tlPlayheadTime > seg.sourceStart + 0.1 &&
+    tlPlayheadTime < seg.sourceEnd - 0.1;
+  const splitBtn = document.getElementById('tl-split-btn');
+  const colorBtn = document.getElementById('tl-color-btn');
+  const delBtn   = document.getElementById('tl-delete-btn');
+  if (splitBtn) splitBtn.disabled = !canSplit;
+  if (colorBtn) colorBtn.disabled = !hasSel;
+  if (delBtn)   delBtn.disabled   = !hasSel || tlSegments.length <= 1;
+}
+
+function tlSeek(secs) {
+  tlPlayheadTime = Math.max(0, Math.min(tlDuration, secs));
+  if (_tlVideoEl) _tlVideoEl.currentTime = tlPlayheadTime;
+  tlRender();
+}
+
+function tlClipMousedown(e, segId) {
+  e.stopPropagation();
+  if (window._tlTrimState) return;
+  tlSelectedSegId = (tlSelectedSegId === segId) ? null : segId;
+  if (tlColorOpen) tlSyncColorStrip();
+  window._tlDragSeg = { segId, startX: e.clientX, origTrackStart: tlSegments.find(s => s.id === segId)?.trackStart ?? 0 };
+  tlRender();
+}
+
+// Stub handlers (implemented fully in later tasks)
+function tlHandleMousedown(e, segId, handle) {
+  e.stopPropagation();
+  e.preventDefault();
+  const seg = tlSegments.find(s => s.id === segId);
+  if (!seg) return;
+  window._tlTrimState = {
+    segId, handle,
+    startX: e.clientX,
+    origStart: seg.sourceStart,
+    origEnd: seg.sourceEnd,
+    origTrackStart: seg.trackStart
+  };
+  tlSelectedSegId = segId;
+  document.body.style.cursor = 'ew-resize';
+}
+
+function tlSplit() { /* Task 5 */ }
+function tlDeleteSeg() { /* Task 7 */ }
+function tlToggleColor() { /* Task 9 */ }
+function tlSyncColorStrip() { /* Task 9 */ }
+function tlColorChange(prop, val) { /* Task 9 */ }
+function tlColorReset() { /* Task 9 */ }
+function tlTogglePlay() { /* Task 4 */ }
+function tlZoom(delta) { /* Task 11 */ }
+
+// ── Global mouse event handlers ─────────────────────────
+let _tlPlayheadDrag = false;
+
+document.addEventListener('mousemove', function(e) {
+  if (!ENABLE_TIMELINE) return;
+  if (window._tlTrimState) {
+    const dx = e.clientX - window._tlTrimState.startX;
+    const dt = tlXToSecs(dx);
+    const seg = tlSegments.find(s => s.id === window._tlTrimState.segId);
+    if (!seg) return;
+    if (window._tlTrimState.handle === 'l') {
+      seg.sourceStart = Math.max(0, Math.min(window._tlTrimState.origEnd - 0.1, window._tlTrimState.origStart + dt));
+      seg.trackStart = window._tlTrimState.origTrackStart + (seg.sourceStart - window._tlTrimState.origStart);
+    } else {
+      seg.sourceEnd = Math.max(window._tlTrimState.origStart + 0.1, Math.min(tlDuration, window._tlTrimState.origEnd + dt));
+    }
+    if (_tlVideoEl) _tlVideoEl.currentTime = window._tlTrimState.handle === 'l' ? seg.sourceStart : seg.sourceEnd;
+    tlRender();
+  } else if (window._tlDragSeg) {
+    const dx = e.clientX - window._tlDragSeg.startX;
+    const dt = tlXToSecs(dx);
+    const seg = tlSegments.find(s => s.id === window._tlDragSeg.segId);
+    if (seg) {
+      seg.trackStart = Math.max(0, window._tlDragSeg.origTrackStart + dt);
+      document.body.style.cursor = 'grabbing';
+      tlRender();
+    }
+  } else if (_tlPlayheadDrag) {
+    const area = document.getElementById('tl-clips-area');
+    if (!area) return;
+    const rect = area.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    tlSeek(tlXToSecs(x));
+  }
+});
+
+document.addEventListener('mouseup', function() {
+  if (window._tlTrimState) {
+    window._tlTrimState = null;
+    document.body.style.cursor = '';
+    if (typeof saveHist === 'function') saveHist();
+  }
+  if (window._tlDragSeg) {
+    window._tlDragSeg = null;
+    document.body.style.cursor = '';
+    tlCompact();
+    tlRender();
+    if (typeof saveHist === 'function') saveHist();
+  }
+  _tlPlayheadDrag = false;
+});
+
+function tlCompact() {
+  tlSegments.sort((a, b) => a.trackStart - b.trackStart);
+  let cursor = 0;
+  for (const seg of tlSegments) {
+    seg.trackStart = cursor;
+    cursor += seg.sourceEnd - seg.sourceStart;
+  }
+}
+
+// ── Ruler click to seek ──────────────────────────────────
+document.addEventListener('click', function(e) {
+  if (!ENABLE_TIMELINE) return;
+  const rulerInner = document.getElementById('tl-ruler-inner');
+  if (rulerInner && rulerInner.contains(e.target)) {
+    const rect = rulerInner.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    tlSeek(Math.max(0, Math.min(tlDuration, tlXToSecs(x))));
+  }
+});
+
+// ── Clips-area click for playhead drag ──────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  const area = document.getElementById('tl-clips-area');
+  if (area) {
+    area.addEventListener('mousedown', function(e) {
+      if (e.target.closest('.tl-clip')) return;
+      const rect = area.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      tlSeek(tlXToSecs(x));
+      _tlPlayheadDrag = true;
+    });
+  }
+
+  // Sync playhead from preview-video timeupdate
+  const vid = document.getElementById('preview-video');
+  if (vid) {
+    vid.addEventListener('timeupdate', function() {
+      if (!ENABLE_TIMELINE || !_tlVideoEl || _tlPlayheadDrag) return;
+      tlPlayheadTime = vid.currentTime;
+      if (vid.ended && _tlPlaying) {
+        _tlPlaying = false;
+        cancelAnimationFrame(_tlRafId);
+        const btn = document.getElementById('tl-play-btn');
+        if (btn) btn.textContent = '▶ Play';
+      }
+      tlRenderPlayhead();
+      tlRenderTime();
+      tlUpdateToolbar();
+    });
+  }
+});
 </script>
 <div id="ctx-menu"></div>
 
