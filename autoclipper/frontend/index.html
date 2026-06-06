@@ -455,6 +455,22 @@ button,input,select{font-family:inherit}
 .tl-toggle-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:var(--rs);border:1px solid var(--b1);background:transparent;color:var(--sub);font-size:10px;font-weight:600;cursor:pointer;transition:.12s}
 .tl-toggle-btn:hover{background:var(--s3);color:var(--tx)}
 .tl-toggle-btn.tl-open{color:var(--acc);border-color:rgba(34,197,94,0.3)}
+#tl-track-speed{position:relative;height:64px;background:#111;border-top:1px solid var(--b1);min-width:600px;cursor:crosshair;flex-shrink:0}
+.tl-speed-svg{position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.tl-speed-dot{cursor:grab;pointer-events:all}
+.tl-speed-dot:active{cursor:grabbing}
+.tl-speed-grid-line{stroke:var(--b1);stroke-width:1;stroke-dasharray:3 3}
+.tl-speed-baseline{stroke:rgba(34,197,94,0.2);stroke-width:1}
+#tl-speed-strip{background:var(--s2);border-top:1px solid var(--b1);padding:8px 12px;display:none;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap}
+#tl-speed-strip.vis{display:flex}
+.tl-speed-kf-row{display:flex;align-items:center;gap:6px;padding:3px 6px;border-radius:4px;background:var(--s1)}
+.tl-speed-kf-t{font-size:9px;color:var(--sub);width:34px;flex-shrink:0}
+.tl-speed-kf-sl{flex:1;accent-color:var(--acc)}
+.tl-speed-kf-val{font-size:10px;font-weight:700;font-family:monospace;width:36px;text-align:right;color:var(--tx)}
+.tl-speed-kf-del{background:none;border:none;color:var(--sub);cursor:pointer;font-size:12px;padding:0 2px;line-height:1}
+.tl-speed-kf-del:hover{color:var(--danger)}
+.tl-speed-preset{padding:2px 6px;border:1px solid var(--b1);border-radius:4px;background:var(--s2);color:var(--sub);font-size:10px;cursor:pointer}
+.tl-speed-preset:hover{border-color:var(--acc);color:var(--acc)}
 </style>
 </head>
 <body>
@@ -694,6 +710,10 @@ button,input,select{font-family:inherit}
       <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
       Color
     </button>
+    <button class="tl-btn" id="tl-speed-btn" onclick="tlToggleSpeed()" disabled>
+      <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m13 2-2 2.5h3L12 7"/><path d="M10 14 4 4"/><path d="m15.5 6.5-5 5"/><path d="M18 11a8 8 0 1 1-8.9-7.9"/></svg>
+      Speed
+    </button>
     <button class="tl-btn" id="tl-delete-btn" onclick="tlDeleteSeg()" disabled>
       <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
       Delete
@@ -722,14 +742,30 @@ button,input,select{font-family:inherit}
       <div class="tl-track-label">Text</div>
       <div class="tl-track-label">Audio</div>
       <div class="tl-track-label">SFX</div>
+      <div class="tl-track-label" style="height:64px;line-height:64px">Speed</div>
     </div>
     <div id="tl-clips-area">
       <div class="tl-track-row" id="tl-track-video"></div>
       <div class="tl-track-row" id="tl-track-text"></div>
       <div class="tl-track-row" id="tl-track-audio"></div>
       <div class="tl-track-row" id="tl-track-sfx"></div>
+      <div id="tl-track-speed"></div>
       <div id="tl-playhead"></div>
     </div>
+  </div>
+  <!-- speed strip -->
+  <div id="tl-speed-strip">
+    <span class="tl-cs-lbl">Speed</span>
+    <div id="tl-speed-kf-list" style="display:flex;gap:4px;flex-wrap:wrap;flex:1"></div>
+    <div style="display:flex;gap:3px;flex-shrink:0">
+      <button class="tl-speed-preset" onclick="tlSpeedPreset(0.25)">0.25×</button>
+      <button class="tl-speed-preset" onclick="tlSpeedPreset(0.5)">0.5×</button>
+      <button class="tl-speed-preset" style="border-color:rgba(34,197,94,0.4);color:var(--acc)" onclick="tlSpeedPreset(1)">1×</button>
+      <button class="tl-speed-preset" onclick="tlSpeedPreset(2)">2×</button>
+      <button class="tl-speed-preset" onclick="tlSpeedPreset(4)">4×</button>
+    </div>
+    <button class="tl-btn" onclick="tlSpeedAddKf()" style="flex-shrink:0">+ Add</button>
+    <button class="tl-btn" onclick="tlToggleSpeed()" style="margin-left:auto;flex-shrink:0">Close</button>
   </div>
   <!-- color strip -->
   <div id="tl-color-strip">
