@@ -5753,7 +5753,7 @@ function tlSpeedAddKf() {
 function tlSpeedPreset(speed) {
   const seg = tlSegments.find(s => s.id === tlSelectedSegId);
   if (!seg) return;
-  seg.speedKeyframes = [{ t: 0, speed }];
+  seg.speedKeyframes = [{ t: 0, speed, easeIn: { type: 'linear' }, easeOut: { type: 'linear' } }];
   tlRender();
   tlRenderSpeedStrip();
   if (typeof saveHist === 'function') saveHist();
