@@ -463,7 +463,11 @@ button,input,select{font-family:inherit}
 .tl-speed-baseline{stroke:rgba(34,197,94,0.2);stroke-width:1}
 #tl-speed-strip{background:var(--s2);border-top:1px solid var(--b1);padding:8px 12px;display:none;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap}
 #tl-speed-strip.vis{display:flex}
-.tl-speed-kf-row{display:flex;align-items:center;gap:6px;padding:3px 6px;border-radius:4px;background:var(--s1)}
+.tl-speed-kf-row{display:flex;flex-direction:column;gap:4px;padding:4px 6px;border-radius:4px;background:var(--s1)}
+.tl-speed-kf-main{display:flex;align-items:center;gap:6px}
+.tl-speed-kf-easing{display:flex;align-items:center;gap:4px;padding:0 2px}
+.tl-speed-kf-easing label{font-size:8px;color:var(--sub);min-width:22px}
+.tl-speed-kf-easing select{font-size:9px;background:var(--s2);color:var(--fg);border:1px solid var(--b1);border-radius:3px;padding:1px 3px;cursor:pointer}
 .tl-speed-kf-t{font-size:9px;color:var(--sub);width:34px;flex-shrink:0}
 .tl-speed-kf-sl{flex:1;accent-color:var(--acc)}
 .tl-speed-kf-val{font-size:10px;font-weight:700;font-family:monospace;width:36px;text-align:right;color:var(--tx)}
@@ -5704,14 +5708,45 @@ function tlRenderSpeedStrip() {
   list.innerHTML = kfs.map((kf) => {
     const mm = String(Math.floor(kf.t / 60)).padStart(1, '0');
     const ss = (kf.t % 60).toFixed(1).padStart(4, '0');
-    return `<div class="tl-speed-kf-row">
-      <span class="tl-speed-kf-t">${mm}:${ss}</span>
-      <input type="range" class="tl-speed-kf-sl" min="${TL_SPEED_MIN}" max="${TL_SPEED_MAX}" step="0.05"
-        value="${kf.speed}" style="width:80px"
-        oninput="tlSpeedKfChange('${seg.id}',${kf.t},parseFloat(this.value));this.nextElementSibling.textContent=parseFloat(this.value).toFixed(2)+'×'"
-        onchange="if(typeof saveHist==='function')saveHist()">
-      <span class="tl-speed-kf-val">${kf.speed.toFixed(2)}×</span>
-      <button class="tl-speed-kf-del" onclick="tlSpeedKfDelete('${seg.id}',${kf.t})">✕</button>
+    const easingOptions = (which) => {
+      const cur = (which === 'easeIn' ? kf.easeIn : kf.easeOut) || { type: 'linear' };
+      const builtIn = [
+        ['linear',      'Linear'],
+        ['ease-in',     'Ease In'],
+        ['ease-out',    'Ease Out'],
+        ['ease-in-out', 'Ease In Out'],
+      ];
+      const builtInHtml = builtIn.map(([val, lbl]) =>
+        `<option value="${val}" ${cur.type === val && cur.type !== 'custom' ? 'selected' : ''}>${lbl}</option>`
+      ).join('');
+      const customPresets = tlEasingPresets.map((p, i) =>
+        `<option value="custom:${i}" ${cur.type === 'custom' && JSON.stringify(cur.bezier) === JSON.stringify(p.bezier) ? 'selected' : ''}>${p.name}</option>`
+      ).join('');
+      const divider = tlEasingPresets.length ? '<option disabled>──────────</option>' : '';
+      return builtInHtml + divider + customPresets +
+        '<option disabled>──────────</option>' +
+        '<option value="__custom__">+ Custom…</option>';
+    };
+    return `<div class="tl-speed-kf-row" data-kft="${kf.t}">
+      <div class="tl-speed-kf-main">
+        <span class="tl-speed-kf-t">${mm}:${ss}</span>
+        <input type="range" class="tl-speed-kf-sl" min="${TL_SPEED_MIN}" max="${TL_SPEED_MAX}" step="0.05"
+          value="${kf.speed}" style="width:80px"
+          oninput="tlSpeedKfChange('${seg.id}',${kf.t},parseFloat(this.value));this.nextElementSibling.textContent=parseFloat(this.value).toFixed(2)+'×'"
+          onchange="if(typeof saveHist==='function')saveHist()">
+        <span class="tl-speed-kf-val">${kf.speed.toFixed(2)}×</span>
+        <button class="tl-speed-kf-del" onclick="tlSpeedKfDelete('${seg.id}',${kf.t})">✕</button>
+      </div>
+      <div class="tl-speed-kf-easing">
+        <label>In</label>
+        <select onchange="tlSpeedKfEasingChange('${seg.id}',${kf.t},'easeIn',this.value,this)">
+          ${easingOptions('easeIn')}
+        </select>
+        <label style="margin-left:6px">Out</label>
+        <select onchange="tlSpeedKfEasingChange('${seg.id}',${kf.t},'easeOut',this.value,this)">
+          ${easingOptions('easeOut')}
+        </select>
+      </div>
     </div>`;
   }).join('');
 }
@@ -5722,6 +5757,25 @@ function tlSpeedKfChange(segId, kfT, newSpeed) {
   if (!kf) return;
   kf.speed = parseFloat(newSpeed.toFixed(3));
   tlRender();
+}
+
+function tlSpeedKfEasingChange(segId, kfT, which, value, selectEl) {
+  if (value === '__custom__') {
+    tlOpenBezierEditor(segId, kfT, which, selectEl);
+    return;
+  }
+  const seg = tlSegments.find(s => s.id === segId);
+  const kf  = seg?.speedKeyframes.find(k => Math.abs(k.t - kfT) < 0.001);
+  if (!kf) return;
+  if (value.startsWith('custom:')) {
+    const idx = parseInt(value.split(':')[1], 10);
+    const preset = tlEasingPresets[idx];
+    if (preset) kf[which] = { type: 'custom', bezier: [...preset.bezier] };
+  } else {
+    kf[which] = { type: value };
+  }
+  tlRender();
+  if (typeof saveHist === 'function') saveHist();
 }
 
 function tlSpeedKfDelete(segId, kfT) {
