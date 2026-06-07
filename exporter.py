@@ -112,7 +112,8 @@ def _resolve_bezier(easing: dict | None) -> list[float]:
     if etype == 'custom':
         b = easing.get('bezier')
         if b and len(b) == 4:
-            return [float(v) for v in b]
+            x1, y1, x2, y2 = (float(v) for v in b)
+            return [max(0.0, min(1.0, x1)), y1, max(0.0, min(1.0, x2)), y2]
         return _EASING_PRESETS['linear']
     return _EASING_PRESETS.get(etype, _EASING_PRESETS['linear'])
 
