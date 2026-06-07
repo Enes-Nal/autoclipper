@@ -5,6 +5,12 @@ from pathlib import Path
 _which = shutil.which("yt-dlp") or "yt-dlp"
 _YTDLP = str(Path(_which).resolve()) if Path(_which).is_symlink() else _which
 
+_which_ff = shutil.which("ffmpeg") or "ffmpeg"
+_FFMPEG = str(Path(_which_ff).resolve()) if Path(_which_ff).is_symlink() else _which_ff
+
+_which_ffp = shutil.which("ffprobe") or "ffprobe"
+_FFPROBE = str(Path(_which_ffp).resolve()) if Path(_which_ffp).is_symlink() else _which_ffp
+
 DOWNLOADS_DIR = Path(__file__).parent / "downloads"
 
 def get_job_path(job_id: str) -> Path:
@@ -21,7 +27,7 @@ def get_video_title(url: str) -> str:
     """Fetch the video title from yt-dlp without downloading."""
     try:
         result = subprocess.run(
-            [_YTDLP, "--no-download", "--print", "title", url],
+            [_YTDLP, "--skip-download", "--print", "title", url],
             capture_output=True, text=True, timeout=15,
         )
         return result.stdout.strip()
@@ -63,7 +69,7 @@ def download_video(url: str, job_id: str, on_progress=None) -> dict:
 
 def probe_video(path: str) -> dict:
     """Return width, height, duration via ffprobe."""
-    cmd = ["ffprobe", "-v", "quiet", "-print_format", "json",
+    cmd = [_FFPROBE, "-v", "quiet", "-print_format", "json",
            "-show_streams", "-select_streams", "v:0", path]
     out = subprocess.run(cmd, capture_output=True, text=True)
     s = json.loads(out.stdout)["streams"][0]
@@ -79,7 +85,7 @@ def extract_thumbnail(video_path: str, job_id: str, base_dir: Path | None = None
         base_dir = DOWNLOADS_DIR
     thumb_path = Path(base_dir) / f"{job_id}_thumb.jpg"
     cmd = [
-        "ffmpeg", "-y",
+        _FFMPEG, "-y",
         "-ss", "1",
         "-i", video_path,
         "-vframes", "1",
