@@ -5610,7 +5610,8 @@ function tlRenderSpeedStrip() {
       <span class="tl-speed-kf-t">${mm}:${ss}</span>
       <input type="range" class="tl-speed-kf-sl" min="${TL_SPEED_MIN}" max="${TL_SPEED_MAX}" step="0.05"
         value="${kf.speed}" style="width:80px"
-        oninput="tlSpeedKfChange('${seg.id}',${kf.t},parseFloat(this.value));this.nextElementSibling.textContent=parseFloat(this.value).toFixed(2)+'×'">
+        oninput="tlSpeedKfChange('${seg.id}',${kf.t},parseFloat(this.value));this.nextElementSibling.textContent=parseFloat(this.value).toFixed(2)+'×'"
+        onchange="if(typeof saveHist==='function')saveHist()">
       <span class="tl-speed-kf-val">${kf.speed.toFixed(2)}×</span>
       <button class="tl-speed-kf-del" onclick="tlSpeedKfDelete('${seg.id}',${kf.t})">✕</button>
     </div>`;
