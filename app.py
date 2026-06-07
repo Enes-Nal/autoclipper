@@ -200,6 +200,9 @@ def start_export():
     emoji_source = body.get("emoji_source", "twemoji")
     segments     = body.get("segments", None)
 
+    if clips is not None and not clips:
+        return jsonify({"error": "clips array must not be empty"}), 400
+
     # Validate: need either clips or video_path
     if clips:
         for c in clips:
@@ -217,9 +220,15 @@ def start_export():
         try:
             def on_progress(line):
                 q.put({"type": "progress", "line": line})
-            out = export_video(video_path, template, title, on_progress,
-                               emoji_source=emoji_source, segments=segments,
-                               clips=clips)
+            out = export_video(
+                video_path=video_path if clips is None else None,
+                template=template,
+                title=title,
+                on_progress=on_progress,
+                emoji_source=emoji_source,
+                segments=segments if clips is None else None,
+                clips=clips,
+            )
             q.put({"type": "done", "output_path": out, "filename": Path(out).name})
         except Exception as e:
             q.put({"type": "error", "message": str(e)})
