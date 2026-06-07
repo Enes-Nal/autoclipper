@@ -92,10 +92,33 @@ def _speed_kfs_to_subsegs(seg: dict) -> list[tuple[float, float, float]]:
         if b - a < 0.01:  # skip sub-10ms intervals
             continue
         mid_rel = ((a + b) / 2) - ss
-        speed = interp(mid_rel)
+        speed = max(0.01, interp(mid_rel))
         result.append((a, b, round(speed, 4)))
 
     return result if result else [(ss, se, 1.0)]
+
+
+def _atempo_chain(speed: float) -> str:
+    """
+    Return a chained atempo filter string for the given speed.
+    atempo only accepts [0.5, 2.0], so extreme speeds need multiple stages.
+    Returns '' if speed is effectively 1.0.
+    """
+    if abs(speed - 1.0) <= 0.001:
+        return ''
+    filters = []
+    remaining = speed
+    if remaining > 1.0:
+        while remaining > 2.0 + 1e-9:
+            filters.append('atempo=2.0')
+            remaining /= 2.0
+        filters.append(f'atempo={remaining:.6f}')
+    else:
+        while remaining < 0.5 - 1e-9:
+            filters.append('atempo=0.5')
+            remaining /= 0.5
+        filters.append(f'atempo={remaining:.6f}')
+    return ','.join(filters)
 
 
 def build_segment_inputs(video_path: str, segments: list, input_offset: int = 0) -> tuple[list, list, list, str, str, int]:
@@ -153,9 +176,10 @@ def build_segment_inputs(video_path: str, segments: list, input_offset: int = 0)
                 f"[{input_offset}:a]asetpts=PTS-STARTPTS[{al}]",
             ]
         else:
+            atempo = _atempo_chain(speed)
             filter_parts = [
                 f"[{input_offset}:v]setpts=PTS*(1/{speed:.6f}){color_suffix}[{vl}]",
-                f"[{input_offset}:a]asetpts=PTS*(1/{speed:.6f})[{al}]",
+                f"[{input_offset}:a]{atempo}[{al}]",
             ]
         return main_pre_args, [], filter_parts, vl, al, 1
 
@@ -186,8 +210,9 @@ def build_segment_inputs(video_path: str, segments: list, input_offset: int = 0)
             filter_parts.append(f"[{stream_i}:v]setpts=PTS-STARTPTS{color_suffix}[{vl}]")
             filter_parts.append(f"[{stream_i}:a]asetpts=PTS-STARTPTS[{al}]")
         else:
+            atempo = _atempo_chain(speed)
             filter_parts.append(f"[{stream_i}:v]setpts=PTS*(1/{speed:.6f}){color_suffix}[{vl}]")
-            filter_parts.append(f"[{stream_i}:a]asetpts=PTS*(1/{speed:.6f})[{al}]")
+            filter_parts.append(f"[{stream_i}:a]{atempo}[{al}]")
         vlabels.append(vl)
         alabels.append(al)
 
