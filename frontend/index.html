@@ -5012,6 +5012,7 @@ let tlDuration = 0;
 let tlPlayheadTime = 0;
 let tlSelectedSegId = null;
 let tlColorOpen = false;
+let tlSpeedOpen = false;
 let tlOpen = false;
 let tlPixelsPerSec = 30;
 let _tlPlaying = false;
@@ -5331,6 +5332,8 @@ function tlUpdateToolbar() {
   if (splitBtn) splitBtn.disabled = !canSplit;
   if (colorBtn) colorBtn.disabled = !hasSel;
   if (delBtn)   delBtn.disabled   = !hasSel || tlSegments.length <= 1;
+  const speedBtn = document.getElementById('tl-speed-btn');
+  if (speedBtn) speedBtn.disabled = !hasSel;
   const addClipBtn = document.getElementById('tl-addclip-btn');
   if (addClipBtn) addClipBtn.style.display = tlClips.length ? '' : 'none';
 }
@@ -5403,6 +5406,7 @@ function tlClipMousedown(e, segId) {
   else if (!tlSelectedSegId) tlApplyPreviewFilter({ brightness: 0, contrast: 0, saturation: 0, hue: 0 });
   window._tlDragSeg = { segId, startX: e.clientX, origTrackStart: tlSegments.find(s => s.id === segId)?.trackStart ?? 0 };
   tlRender();
+  if (tlSpeedOpen) tlRenderSpeedStrip();
 }
 
 // Stub handlers (implemented fully in later tasks)
@@ -5575,6 +5579,82 @@ function tlColorReset() {
   tlSyncColorStrip();
 }
 
+// ── Speed strip panel ────────────────────────────────────
+function tlToggleSpeed() {
+  if (!ENABLE_TIMELINE) return;
+  tlSpeedOpen = !tlSpeedOpen;
+  document.getElementById('tl-speed-strip')?.classList.toggle('vis', tlSpeedOpen);
+  document.getElementById('tl-speed-btn')?.classList.toggle('on', tlSpeedOpen);
+  if (tlSpeedOpen) tlRenderSpeedStrip();
+}
+
+function tlRenderSpeedStrip() {
+  const list = document.getElementById('tl-speed-kf-list');
+  if (!list) return;
+  const seg = tlSegments.find(s => s.id === tlSelectedSegId);
+  if (!seg) {
+    list.innerHTML = '<span style="font-size:10px;color:var(--sub)">Select a segment</span>';
+    return;
+  }
+
+  const kfs = [...(seg.speedKeyframes || [])].sort((a, b) => a.t - b.t);
+  if (kfs.length === 0) {
+    list.innerHTML = '<span style="font-size:10px;color:var(--sub)">No keyframes — click the speed lane or use presets</span>';
+    return;
+  }
+
+  list.innerHTML = kfs.map((kf) => {
+    const mm = String(Math.floor(kf.t / 60)).padStart(1, '0');
+    const ss = (kf.t % 60).toFixed(1).padStart(4, '0');
+    return `<div class="tl-speed-kf-row">
+      <span class="tl-speed-kf-t">${mm}:${ss}</span>
+      <input type="range" class="tl-speed-kf-sl" min="${TL_SPEED_MIN}" max="${TL_SPEED_MAX}" step="0.05"
+        value="${kf.speed}" style="width:80px"
+        oninput="tlSpeedKfChange('${seg.id}',${kf.t},parseFloat(this.value));this.nextElementSibling.textContent=parseFloat(this.value).toFixed(2)+'×'">
+      <span class="tl-speed-kf-val">${kf.speed.toFixed(2)}×</span>
+      <button class="tl-speed-kf-del" onclick="tlSpeedKfDelete('${seg.id}',${kf.t})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function tlSpeedKfChange(segId, kfT, newSpeed) {
+  const seg = tlSegments.find(s => s.id === segId);
+  const kf  = seg?.speedKeyframes.find(k => Math.abs(k.t - kfT) < 0.001);
+  if (!kf) return;
+  kf.speed = parseFloat(newSpeed.toFixed(3));
+  tlRender();
+}
+
+function tlSpeedKfDelete(segId, kfT) {
+  const seg = tlSegments.find(s => s.id === segId);
+  if (!seg) return;
+  seg.speedKeyframes = seg.speedKeyframes.filter(k => Math.abs(k.t - kfT) >= 0.001);
+  tlRender();
+  tlRenderSpeedStrip();
+  if (typeof saveHist === 'function') saveHist();
+}
+
+function tlSpeedAddKf() {
+  const seg = tlSegments.find(s => s.id === tlSelectedSegId);
+  if (!seg) return;
+  const srcT = Math.max(0, Math.min(seg.sourceEnd - seg.sourceStart,
+    tlPlayheadTime - seg.trackStart));
+  const dup = seg.speedKeyframes.find(k => Math.abs(k.t - srcT) < 0.05);
+  if (!dup) seg.speedKeyframes.push({ t: parseFloat(srcT.toFixed(3)), speed: 1 });
+  tlRender();
+  tlRenderSpeedStrip();
+  if (typeof saveHist === 'function') saveHist();
+}
+
+function tlSpeedPreset(speed) {
+  const seg = tlSegments.find(s => s.id === tlSelectedSegId);
+  if (!seg) return;
+  seg.speedKeyframes = [{ t: 0, speed }];
+  tlRender();
+  tlRenderSpeedStrip();
+  if (typeof saveHist === 'function') saveHist();
+}
+
 // ── Speed lane interactions ──────────────────────────────
 function tlSpeedLaneClick(e) {
   if (e.target.classList.contains('tl-speed-dot')) return;
@@ -5599,7 +5679,7 @@ function tlSpeedLaneClick(e) {
 
   tlSelectedSegId = seg.id;
   tlRender();
-  if (typeof tlSpeedOpen !== 'undefined' && tlSpeedOpen) tlRenderSpeedStrip();
+  if (tlSpeedOpen) tlRenderSpeedStrip();
   if (typeof saveHist === 'function') saveHist();
 }
 
@@ -5621,7 +5701,7 @@ function tlSpeedDotRightClick(e, segId, kfT) {
   if (!seg) return;
   seg.speedKeyframes = seg.speedKeyframes.filter(k => Math.abs(k.t - kfT) >= 0.001);
   tlRender();
-  if (typeof tlSpeedOpen !== 'undefined' && tlSpeedOpen) tlRenderSpeedStrip();
+  if (tlSpeedOpen) tlRenderSpeedStrip();
   if (typeof saveHist === 'function') saveHist();
 }
 
@@ -5696,7 +5776,7 @@ document.addEventListener('mousemove', function(e) {
     _tlSpeedDrag.kfT = kf.t;
 
     tlRender();
-    if (typeof tlSpeedOpen !== 'undefined' && tlSpeedOpen) tlRenderSpeedStrip();
+    if (tlSpeedOpen) tlRenderSpeedStrip();
   } else if (_tlPlayheadDrag) {
     const area = document.getElementById('tl-clips-area');
     if (!area) return;
