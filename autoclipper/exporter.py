@@ -66,14 +66,18 @@ def _speed_kfs_to_subsegs(seg: dict) -> list[tuple[float, float, float]]:
     sorted_kfs = sorted(kfs, key=lambda k: float(k['t']))
 
     def interp(t_rel: float) -> float:
-        """Step/hold: return speed of last keyframe at or before t_rel."""
-        last_speed = float(sorted_kfs[0]['speed'])
-        for kf in sorted_kfs:
-            if float(kf['t']) <= t_rel:
-                last_speed = float(kf['speed'])
-            else:
-                break
-        return last_speed
+        if t_rel <= float(sorted_kfs[0]['t']):
+            return float(sorted_kfs[0]['speed'])
+        if t_rel >= float(sorted_kfs[-1]['t']):
+            return float(sorted_kfs[-1]['speed'])
+        for i in range(len(sorted_kfs) - 1):
+            a, b = sorted_kfs[i], sorted_kfs[i + 1]
+            at, bt = float(a['t']), float(b['t'])
+            if at <= t_rel <= bt:
+                denom = bt - at
+                frac = 0.0 if denom == 0 else (t_rel - at) / denom
+                return float(a['speed']) + frac * (float(b['speed']) - float(a['speed']))
+        return float(sorted_kfs[-1]['speed'])
 
     # Breakpoints: segment start, each keyframe (absolute), segment end
     abs_breakpoints = sorted(set(

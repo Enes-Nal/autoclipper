@@ -474,13 +474,13 @@ def test_speed_kfs_single_keyframe():
     assert result[0][2] == pytest.approx(0.5)
 
 def test_speed_kfs_two_keyframes():
-    # 1× for first 5s, 0.5× for last 5s
+    # kf at t=0 speed=0.0, kf at t=10 speed=2.0
+    # single interval [0, 10], midpoint t_rel=5 → linear: 0.0 + 0.5*(2.0-0.0) = 1.0
     seg = {'sourceStart': 0, 'sourceEnd': 10,
-           'speedKeyframes': [{'t': 0, 'speed': 1.0}, {'t': 5, 'speed': 0.5}]}
+           'speedKeyframes': [{'t': 0, 'speed': 0.0}, {'t': 10, 'speed': 2.0}]}
     result = _speed_kfs_to_subsegs(seg)
-    # First interval midpoint at 2.5s → speed 1.0; second midpoint at 7.5s → speed 0.5
-    assert any(abs(s[2] - 1.0) < 0.01 for s in result)
-    assert any(abs(s[2] - 0.5) < 0.01 for s in result)
+    assert len(result) == 1
+    assert result[0][2] == pytest.approx(1.0, abs=0.01)  # midpoint linear interpolation
 
 def test_speed_kfs_intervals_cover_full_range():
     seg = {'sourceStart': 2, 'sourceEnd': 8,
