@@ -108,13 +108,13 @@ def _resolve_bezier(easing: dict | None) -> list[float]:
     """Return [x1, y1, x2, y2] for an easing dict {type, bezier?}."""
     if not easing:
         return _EASING_PRESETS['linear']
-    t = easing.get('type', 'linear')
-    if t == 'custom':
+    etype = easing.get('type', 'linear')
+    if etype == 'custom':
         b = easing.get('bezier')
         if b and len(b) == 4:
             return [float(v) for v in b]
         return _EASING_PRESETS['linear']
-    return _EASING_PRESETS.get(t, _EASING_PRESETS['linear'])
+    return _EASING_PRESETS.get(etype, _EASING_PRESETS['linear'])
 
 
 def _speed_kfs_to_subsegs(seg: dict) -> list[tuple[float, float, float]]:
