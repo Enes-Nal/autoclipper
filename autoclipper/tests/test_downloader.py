@@ -19,3 +19,38 @@ def test_get_job_path():
     p = get_job_path("abc123")
     assert p.name == "abc123.mp4"
     assert p.parent.name == "downloads"
+
+
+import pytest
+from unittest.mock import patch, MagicMock
+from downloader import extract_thumbnail, DOWNLOADS_DIR
+
+
+def test_extract_thumbnail_returns_path_on_success(tmp_path):
+    """extract_thumbnail runs ffmpeg and returns the thumbnail path."""
+    fake_video = tmp_path / "abc123.mp4"
+    fake_video.write_bytes(b"fake")
+    expected_thumb = tmp_path / "abc123_thumb.jpg"
+
+    with patch("downloader.subprocess.run") as mock_run:
+        mock_run.return_value = MagicMock(returncode=0)
+        result = extract_thumbnail(str(fake_video), "abc123", base_dir=tmp_path)
+
+    assert result == str(expected_thumb)
+    mock_run.assert_called_once()
+    args = mock_run.call_args[0][0]
+    assert "-ss" in args
+    assert str(fake_video) in args
+    assert str(expected_thumb) in args
+
+
+def test_extract_thumbnail_returns_none_on_failure(tmp_path):
+    """extract_thumbnail returns None when ffmpeg fails."""
+    fake_video = tmp_path / "abc123.mp4"
+    fake_video.write_bytes(b"fake")
+
+    with patch("downloader.subprocess.run") as mock_run:
+        mock_run.return_value = MagicMock(returncode=1)
+        result = extract_thumbnail(str(fake_video), "abc123", base_dir=tmp_path)
+
+    assert result is None
