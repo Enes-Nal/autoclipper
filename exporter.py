@@ -51,10 +51,54 @@ def _color_filter_suffix(c: dict) -> str:
     return suffix
 
 
+def _speed_kfs_to_subsegs(seg: dict) -> list[tuple[float, float, float]]:
+    """
+    Convert a segment's speedKeyframes into constant-speed intervals.
+    Returns [(start, end, speed)] where start/end are absolute source times.
+    """
+    kfs = seg.get('speedKeyframes', []) or []
+    ss  = float(seg.get('sourceStart', 0))
+    se  = float(seg.get('sourceEnd',   0))
+
+    if not kfs:
+        return [(ss, se, 1.0)]
+
+    sorted_kfs = sorted(kfs, key=lambda k: float(k['t']))
+
+    def interp(t_rel: float) -> float:
+        """Step/hold: return speed of last keyframe at or before t_rel."""
+        last_speed = float(sorted_kfs[0]['speed'])
+        for kf in sorted_kfs:
+            if float(kf['t']) <= t_rel:
+                last_speed = float(kf['speed'])
+            else:
+                break
+        return last_speed
+
+    # Breakpoints: segment start, each keyframe (absolute), segment end
+    abs_breakpoints = sorted(set(
+        [ss] + [ss + float(k['t']) for k in sorted_kfs] + [se]
+    ))
+    abs_breakpoints = [max(ss, min(se, p)) for p in abs_breakpoints]
+    abs_breakpoints = sorted(set(abs_breakpoints))
+
+    result = []
+    for i in range(len(abs_breakpoints) - 1):
+        a, b = abs_breakpoints[i], abs_breakpoints[i + 1]
+        if b - a < 0.01:  # skip sub-10ms intervals
+            continue
+        mid_rel = ((a + b) / 2) - ss
+        speed = interp(mid_rel)
+        result.append((a, b, round(speed, 4)))
+
+    return result if result else [(ss, se, 1.0)]
+
+
 def build_segment_inputs(video_path: str, segments: list, input_offset: int = 0) -> tuple[list, list, list, str, str, int]:
     """
     Use input-level -ss/-to seeking instead of trim filters so FFmpeg can seek
     directly to the segment start rather than decoding the whole video.
+    Segments with speedKeyframes are expanded into constant-speed sub-clips.
 
     Returns:
         main_pre_args   – seek args to insert before the main -i video_path
@@ -70,40 +114,59 @@ def build_segment_inputs(video_path: str, segments: list, input_offset: int = 0)
         return [], [], [], f'{input_offset}:v', f'{input_offset}:a', 1
 
     segs = sorted(segments, key=lambda s: s.get('trackStart', 0))
-    n_segs = len(segs)
 
     n = [0]
     def lbl(prefix='s'):
         n[0] += 1
         return f"{prefix}{n[0]}"
 
-    if n_segs == 1:
-        seg = segs[0]
-        ss = float(seg.get('sourceStart', 0))
-        se = float(seg.get('sourceEnd',   0))
-        c  = seg.get('color', {})
+    # Expand each segment into constant-speed sub-segments
+    all_subsegs = []  # list of {sourceStart, sourceEnd, speed, color}
+    for seg in segs:
+        c = seg.get('color', {}) or {}
+        for (a, b, speed) in _speed_kfs_to_subsegs(seg):
+            all_subsegs.append({'sourceStart': a, 'sourceEnd': b, 'speed': speed, 'color': c})
+
+    n_inputs = len(all_subsegs)
+
+    # Single sub-segment fast path (no speed change or color)
+    if n_inputs == 1:
+        sub = all_subsegs[0]
+        ss = sub['sourceStart']
+        se = sub['sourceEnd']
+        speed = sub['speed']
+        c = sub['color']
         main_pre_args = ["-ss", str(ss), "-to", str(se)]
         color_suffix = _color_filter_suffix(c)
-        if color_suffix:
-            vl = lbl('sv')
-            al = lbl('sa')
+        speed_is_normal = abs(speed - 1.0) <= 0.001
+        if speed_is_normal and not color_suffix:
+            return main_pre_args, [], [], f'{input_offset}:v', f'{input_offset}:a', 1
+        vl = lbl('sv')
+        al = lbl('sa')
+        if speed_is_normal:
             filter_parts = [
                 f"[{input_offset}:v]setpts=PTS-STARTPTS{color_suffix}[{vl}]",
                 f"[{input_offset}:a]asetpts=PTS-STARTPTS[{al}]",
             ]
-            return main_pre_args, [], filter_parts, vl, al, 1
-        return main_pre_args, [], [], f'{input_offset}:v', f'{input_offset}:a', 1
+        else:
+            filter_parts = [
+                f"[{input_offset}:v]setpts=PTS*(1/{speed:.6f}){color_suffix}[{vl}]",
+                f"[{input_offset}:a]asetpts=PTS*(1/{speed:.6f})[{al}]",
+            ]
+        return main_pre_args, [], filter_parts, vl, al, 1
 
-    # Multiple segments: each gets its own -i entry with input-level seek
+    # Multiple sub-segments: each gets its own -i entry with input-level seek
     filter_parts = []
     vlabels = []
     alabels = []
     extra_vid_inputs = []
+    main_pre_args = []
 
-    for i, seg in enumerate(segs):
-        ss = float(seg.get('sourceStart', 0))
-        se = float(seg.get('sourceEnd',   0))
-        c  = seg.get('color', {})
+    for i, sub in enumerate(all_subsegs):
+        ss    = sub['sourceStart']
+        se    = sub['sourceEnd']
+        speed = sub['speed']
+        c     = sub['color']
         pre_args = ["-ss", str(ss), "-to", str(se)]
         if i == 0:
             main_pre_args = pre_args
@@ -114,16 +177,21 @@ def build_segment_inputs(video_path: str, segments: list, input_offset: int = 0)
         vl = lbl('sv')
         al = lbl('sa')
         color_suffix = _color_filter_suffix(c)
-        filter_parts.append(f"[{stream_i}:v]setpts=PTS-STARTPTS{color_suffix}[{vl}]")
-        filter_parts.append(f"[{stream_i}:a]asetpts=PTS-STARTPTS[{al}]")
+        speed_is_normal = abs(speed - 1.0) <= 0.001
+        if speed_is_normal:
+            filter_parts.append(f"[{stream_i}:v]setpts=PTS-STARTPTS{color_suffix}[{vl}]")
+            filter_parts.append(f"[{stream_i}:a]asetpts=PTS-STARTPTS[{al}]")
+        else:
+            filter_parts.append(f"[{stream_i}:v]setpts=PTS*(1/{speed:.6f}){color_suffix}[{vl}]")
+            filter_parts.append(f"[{stream_i}:a]asetpts=PTS*(1/{speed:.6f})[{al}]")
         vlabels.append(vl)
         alabels.append(al)
 
     vout = lbl('vc')
-    filter_parts.append(''.join(f'[{l}]' for l in vlabels) + f'concat=n={n_segs}:v=1:a=0[{vout}]')
+    filter_parts.append(''.join(f'[{l}]' for l in vlabels) + f'concat=n={n_inputs}:v=1:a=0[{vout}]')
     aout = lbl('ac')
-    filter_parts.append(''.join(f'[{l}]' for l in alabels) + f'concat=n={n_segs}:v=0:a=1[{aout}]')
-    return main_pre_args, extra_vid_inputs, filter_parts, vout, aout, n_segs
+    filter_parts.append(''.join(f'[{l}]' for l in alabels) + f'concat=n={n_inputs}:v=0:a=1[{aout}]')
+    return main_pre_args, extra_vid_inputs, filter_parts, vout, aout, n_inputs
 
 
 def build_filter_graph(layers: list, cw: int, ch: int,

@@ -457,3 +457,46 @@ def test_export_video_empty_clips_raises():
     template = {"canvas": {"width": 1080, "height": 1920}, "layers": []}
     with pytest.raises(ValueError, match="clips must not be empty"):
         export_video(template=template, clips=[])
+
+
+import pytest
+from exporter import _speed_kfs_to_subsegs
+
+def test_speed_kfs_no_keyframes():
+    seg = {'sourceStart': 0, 'sourceEnd': 10, 'speedKeyframes': []}
+    result = _speed_kfs_to_subsegs(seg)
+    assert result == [(0.0, 10.0, 1.0)]
+
+def test_speed_kfs_single_keyframe():
+    seg = {'sourceStart': 0, 'sourceEnd': 10, 'speedKeyframes': [{'t': 0, 'speed': 0.5}]}
+    result = _speed_kfs_to_subsegs(seg)
+    assert len(result) == 1
+    assert result[0][2] == pytest.approx(0.5)
+
+def test_speed_kfs_two_keyframes():
+    # 1× for first 5s, 0.5× for last 5s
+    seg = {'sourceStart': 0, 'sourceEnd': 10,
+           'speedKeyframes': [{'t': 0, 'speed': 1.0}, {'t': 5, 'speed': 0.5}]}
+    result = _speed_kfs_to_subsegs(seg)
+    # First interval midpoint at 2.5s → speed 1.0; second midpoint at 7.5s → speed 0.5
+    assert any(abs(s[2] - 1.0) < 0.01 for s in result)
+    assert any(abs(s[2] - 0.5) < 0.01 for s in result)
+
+def test_speed_kfs_intervals_cover_full_range():
+    seg = {'sourceStart': 2, 'sourceEnd': 8,
+           'speedKeyframes': [{'t': 0, 'speed': 1.0}, {'t': 3, 'speed': 2.0}]}
+    result = _speed_kfs_to_subsegs(seg)
+    assert result[0][0] == pytest.approx(2.0)   # starts at sourceStart
+    assert result[-1][1] == pytest.approx(8.0)  # ends at sourceEnd
+
+def test_build_segment_inputs_speed_subclips():
+    seg = {
+        'sourceStart': 0, 'sourceEnd': 10, 'trackStart': 0,
+        'color': {},
+        'speedKeyframes': [{'t': 0, 'speed': 0.5}, {'t': 5, 'speed': 2.0}]
+    }
+    main_pre, extra, filter_parts, v_lbl, a_lbl, n = build_segment_inputs('vid.mp4', [seg])
+    # Should produce multiple inputs (sub-clips)
+    assert n > 1
+    # setpts should appear in filter for speed adjustment
+    assert any('setpts' in p for p in filter_parts)
