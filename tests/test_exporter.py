@@ -524,8 +524,7 @@ def test_atempo_chain_extreme_fast():
     assert 'atempo=2.0' in result
 
 # ── Easing tests ──────────────────────────────────────────────────────────────
-import pytest
-from exporter import _speed_kfs_to_subsegs, _eval_unit_bezier
+from exporter import _eval_unit_bezier
 
 def test_eval_unit_bezier_linear():
     # linear bezier (0,0,1,1) must map t→t exactly
@@ -557,7 +556,13 @@ def test_speed_kfs_easing_ease_in_out():
     assert result[0][2] == pytest.approx(1.0, abs=0.1)
 
 def test_speed_kfs_easing_ease_in_slows_start():
-    # ease-in: speed at first quarter should be less than linear (0.5 for speed 0→2)
+    # ease-in (0.42,0,1,1): slow start means at t=2.5 (quarter point of [0..10]),
+    # the eased fraction is less than 0.25, so speed is less than linear 0.5
+    # We verify by sampling _eval_unit_bezier directly
+    from exporter import _eval_unit_bezier
+    eased_frac = _eval_unit_bezier(0.42, 0, 1, 1, 0.25)  # quarter progress
+    assert eased_frac < 0.25  # ease-in means slower than linear at start
+    # Also verify _speed_kfs_to_subsegs produces valid output with ease-in
     seg = {
         'sourceStart': 0, 'sourceEnd': 10,
         'speedKeyframes': [
@@ -566,19 +571,6 @@ def test_speed_kfs_easing_ease_in_slows_start():
         ]
     }
     result = _speed_kfs_to_subsegs(seg)
-    # With ease-in, speed at t=2.5 (quarter point) should be below linear 0.5
-    # We check the first sub-segment midpoint if it falls in first quarter
-    # Instead, verify that the result is not the same as linear (regression check)
-    linear_seg = {
-        'sourceStart': 0, 'sourceEnd': 10,
-        'speedKeyframes': [
-            {'t': 0, 'speed': 0.0},
-            {'t': 10, 'speed': 2.0},
-        ]
-    }
-    linear_result = _speed_kfs_to_subsegs(linear_seg)
-    # Both produce 1 sub-segment; the speeds are midpoint-sampled so same —
-    # but verify the function runs without error and produces valid output
     assert len(result) >= 1
     assert all(s[2] >= 0.01 for s in result)
 
