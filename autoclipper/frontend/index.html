@@ -5446,7 +5446,7 @@ function tlTogglePlay() {
   if (!ENABLE_TIMELINE) return;
   if (_tlPlaying) {
     const vid = document.getElementById('preview-video');
-    if (vid) vid.pause();
+    if (vid) { vid.pause(); vid.playbackRate = 1; }
     _tlPlaying = false;
     _tlClipLoading = false;
     cancelAnimationFrame(_tlRafId);
@@ -5466,6 +5466,10 @@ function tlTogglePlay() {
       const activeSeg = clipSegs.find(s => vt >= s.sourceStart && vt < s.sourceEnd);
       if (activeSeg) {
         tlPlayheadTime = activeSeg.trackStart + (vt - activeSeg.sourceStart);
+        // Apply speed keyframes
+        const srcT = vt - activeSeg.sourceStart;
+        const rate = tlInterpolateSpeed(activeSeg.speedKeyframes || [], srcT);
+        if (Math.abs(vid.playbackRate - rate) > 0.01) vid.playbackRate = rate;
       } else {
         // Find the next segment by trackStart order across all clips
         const sorted = [...tlSegments].sort((a, b) => a.trackStart - b.trackStart);
@@ -5483,6 +5487,7 @@ function tlTogglePlay() {
         } else {
           // Past the last segment — stop playback
           vid.pause();
+          vid.playbackRate = 1;
           _tlPlaying = false;
           cancelAnimationFrame(_tlRafId);
           const btn = document.getElementById('tl-play-btn');
