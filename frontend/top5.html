@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Top 5 Moments</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0f0f0f; color: #eee; font-family: sans-serif; padding: 24px; }
+    h1 { font-size: 28px; margin-bottom: 20px; }
+    .row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    label { font-size: 13px; color: #aaa; min-width: 60px; }
+    input[type=text], input[type=number] {
+      background: #1e1e1e; border: 1px solid #333; color: #eee;
+      padding: 6px 10px; border-radius: 6px; font-size: 14px;
+    }
+    input[type=number] { width: 80px; }
+    input[type=text] { flex: 1; }
+    .slot-card {
+      background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 10px;
+      padding: 16px; margin-bottom: 12px;
+    }
+    .slot-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .slot-num { font-size: 22px; font-weight: 700; color: #FFD700; min-width: 28px; }
+    .clip-display { font-size: 13px; color: #aaa; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .btn { background: #2a2a2a; border: 1px solid #444; color: #eee; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+    .btn:hover { background: #333; }
+    .btn-primary { background: #FFD700; color: #000; border-color: #FFD700; font-weight: 700; font-size: 16px; padding: 10px 28px; }
+    .btn-primary:hover { background: #e6c200; }
+    .trim-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+    select { background: #1e1e1e; border: 1px solid #333; color: #eee; padding: 6px 10px; border-radius: 6px; font-size: 14px; }
+    .section { margin-bottom: 24px; }
+    .section-title { font-size: 15px; color: #aaa; margin-bottom: 10px; }
+    #status { margin-top: 16px; font-size: 14px; color: #aaa; }
+    #status.error { color: #f66; }
+    #status.done { color: #6f6; }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 24px; width: 500px; max-height: 80vh; overflow-y: auto; }
+    .modal h2 { margin-bottom: 16px; }
+    .clip-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; border: 1px solid #2a2a2a; border-radius: 8px; margin-bottom: 8px; cursor: pointer; }
+    .clip-item:hover { background: #252525; }
+    .clip-name { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 350px; }
+    .placeholder-ref { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 16px; margin-top: 12px; }
+    .placeholder-ref h3 { font-size: 14px; margin-bottom: 10px; color: #aaa; }
+    .token { font-family: monospace; font-size: 12px; color: #FFD700; display: block; margin: 2px 0; }
+  </style>
+</head>
+<body>
+
+<h1>Top 5 Moments</h1>
+
+<div class="section">
+  <div class="section-title">Template</div>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <select id="templateSelect"><option value="">Loading...</option></select>
+    <a href="#" onclick="openTemplateEditor(); return false;" class="btn">Edit / New Template</a>
+  </div>
+  <div class="placeholder-ref">
+    <h3>Available placeholders in templates:</h3>
+    <span class="token">&lt;current:rank&gt;  — rank number of playing clip</span>
+    <span class="token">&lt;current:title&gt; — title of playing clip</span>
+    <span class="token">&lt;slot1:rank&gt; … &lt;slot5:rank&gt;  — rank for each slot in order</span>
+    <span class="token">&lt;slot1:title&gt; … &lt;slot5:title&gt; — title (future slots show —)</span>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Clips (played in order, slot 1 first)</div>
+  <div id="slots"></div>
+</div>
+
+<button class="btn btn-primary" onclick="startExport()">Export Top 5</button>
+<div id="status"></div>
+
+<!-- Library modal -->
+<div class="modal-overlay" id="libraryModal">
+  <div class="modal">
+    <h2>Select Clip from Library</h2>
+    <div id="clipList"><em>Loading...</em></div>
+    <div style="margin-top:16px;"><button class="btn" onclick="closeLibrary()">Cancel</button></div>
+  </div>
+</div>
+
+<script>
+const NUM_SLOTS = 5;
+let slots = Array.from({length: NUM_SLOTS}, (_, i) => ({
+  path: "", title: "", rank: NUM_SLOTS - i, start: 0, end: 0
+}));
+let libraryTargetSlot = null;
+
+async function init() {
+  await loadTemplates();
+  renderSlots();
+}
+
+async function loadTemplates() {
+  const res = await fetch("/api/top5/templates");
+  const templates = await res.json();
+  const sel = document.getElementById("templateSelect");
+  sel.innerHTML = templates.length
+    ? templates.map(t => `<option value="${t.file}">${t.name}</option>`).join("")
+    : '<option value="">No templates — create one</option>';
+}
+
+function renderSlots() {
+  const container = document.getElementById("slots");
+  container.innerHTML = "";
+  slots.forEach((slot, i) => {
+    const div = document.createElement("div");
+    div.className = "slot-card";
+    div.innerHTML = `
+      <div class="slot-header">
+        <span class="slot-num">${i + 1}</span>
+        <span class="clip-display" id="clip-display-${i}">${slot.path ? slot.path.split(/[\\/]/).pop() : "No clip selected"}</span>
+        <button class="btn" onclick="triggerUpload(${i})">Upload</button>
+        <button class="btn" onclick="openLibrary(${i})">Library</button>
+      </div>
+      <div class="row">
+        <label>Rank</label>
+        <input type="number" min="1" max="99" value="${slot.rank}"
+          onchange="slots[${i}].rank = parseInt(this.value) || ${i+1}">
+        <label style="margin-left:16px;">Title</label>
+        <input type="text" placeholder="Clip title..." value="${slot.title}"
+          oninput="slots[${i}].title = this.value">
+      </div>
+      <div class="trim-row">
+        <label>Start (s)</label>
+        <input type="number" min="0" step="0.1" value="${slot.start}"
+          onchange="slots[${i}].start = parseFloat(this.value) || 0">
+        <label>End (s)</label>
+        <input type="number" min="0" step="0.1" value="${slot.end}"
+          onchange="slots[${i}].end = parseFloat(this.value) || 0">
+      </div>
+      <input type="file" id="file-input-${i}" accept="video/*" style="display:none"
+        onchange="handleFileUpload(${i}, this)">
+    `;
+    container.appendChild(div);
+  });
+}
+
+function triggerUpload(i) {
+  document.getElementById(`file-input-${i}`).click();
+}
+
+async function handleFileUpload(i, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const fd = new FormData();
+  fd.append("file", file);
+  setStatus("Uploading...");
+  const res = await fetch("/api/upload-video", {method: "POST", body: fd});
+  const data = await res.json();
+  if (data.error) { setStatus("Upload error: " + data.error, "error"); return; }
+  slots[i].path = data.path;
+  document.getElementById(`clip-display-${i}`).textContent = data.filename;
+  setStatus("");
+}
+
+async function openLibrary(i) {
+  libraryTargetSlot = i;
+  document.getElementById("libraryModal").classList.add("open");
+  const res = await fetch("/api/clips");
+  const clips = await res.json();
+  const list = document.getElementById("clipList");
+  if (!clips.length) {
+    list.innerHTML = "<em>No downloaded clips found.</em>";
+    return;
+  }
+  list.innerHTML = clips.map(c => `
+    <div class="clip-item" onclick="selectLibraryClip('${c.path.replace(/\\/g, '\\\\')}', '${c.filename}')">
+      <span class="clip-name">${c.filename}</span>
+      <span style="font-size:12px;color:#666;">${(c.size/1e6).toFixed(1)} MB</span>
+    </div>
+  `).join("");
+}
+
+function selectLibraryClip(path, filename) {
+  const i = libraryTargetSlot;
+  slots[i].path = path;
+  document.getElementById(`clip-display-${i}`).textContent = filename;
+  closeLibrary();
+}
+
+function closeLibrary() {
+  document.getElementById("libraryModal").classList.remove("open");
+  libraryTargetSlot = null;
+}
+
+function openTemplateEditor() {
+  alert("Template editor: use the main template editor, then save to templates/top5/ with /api/top5/templates.");
+}
+
+async function startExport() {
+  const templateFile = document.getElementById("templateSelect").value;
+  if (!templateFile) { setStatus("Select a template first.", "error"); return; }
+  for (let i = 0; i < NUM_SLOTS; i++) {
+    if (!slots[i].path) { setStatus(`Slot ${i+1} has no clip.`, "error"); return; }
+    if (!slots[i].title.trim()) { setStatus(`Slot ${i+1} needs a title.`, "error"); return; }
+    if (slots[i].end <= slots[i].start) { setStatus(`Slot ${i+1}: end must be after start.`, "error"); return; }
+  }
+
+  const tRes = await fetch(`/api/top5/templates/${templateFile}`);
+  const template = await tRes.json();
+  if (template.error) { setStatus("Could not load template.", "error"); return; }
+
+  setStatus("Starting export...");
+  const res = await fetch("/api/top5/export", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({template, clips: slots})
+  });
+  const {job_id, error} = await res.json();
+  if (error) { setStatus("Error: " + error, "error"); return; }
+
+  const es = new EventSource(`/api/top5/export/${job_id}/progress`);
+  es.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === "progress") {
+      setStatus(`Rendering slot ${msg.slot} of ${msg.total}...`);
+    } else if (msg.type === "done") {
+      es.close();
+      setStatus(`Done! <a href="/api/exports/${msg.filename}" download style="color:#FFD700">Download ${msg.filename}</a>`, "done");
+    } else if (msg.type === "error") {
+      es.close();
+      setStatus("Export failed: " + msg.message, "error");
+    }
+  };
+}
+
+function setStatus(msg, cls = "") {
+  const el = document.getElementById("status");
+  el.innerHTML = msg;
+  el.className = cls;
+}
+
+init();
+</script>
+</body>
+</html>
