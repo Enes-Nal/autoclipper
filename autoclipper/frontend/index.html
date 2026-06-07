@@ -1075,15 +1075,13 @@ function stripTogglePlay(){
   const btn = document.getElementById('strip-play-btn');
   if(!audioLayer || !stripAudio || !vidEl) return;
 
-  if(vidEl.paused){
-    vidEl.play().catch(()=>{});
+  if(stripAudio.paused){
     stripAudio.currentTime = vidEl.currentTime;
     stripAudio.play().catch(()=>{});
     document.getElementById('strip-play-icon').dataset.state='b';
     function raf(){ drawStripWaveform(); _stripRAF=requestAnimationFrame(raf); }
     _stripRAF=requestAnimationFrame(raf);
   } else {
-    vidEl.pause();
     stripAudio.pause();
     document.getElementById('strip-play-icon').dataset.state='a';
     if(_stripRAF){ cancelAnimationFrame(_stripRAF); _stripRAF=null; }
@@ -2703,13 +2701,21 @@ function addText(){
 function addImage(){document.getElementById('img-pick').click();}
 function onImgFile(e){
   const f=e.target.files[0];if(!f)return;
-  const url=URL.createObjectURL(f);
-  fabric.Image.fromURL(url,img=>{
-    const {w,h}=FMT[fmt];
-    img.scaleToWidth(sc(200));
-    img.set({left:w-sc(220),top:h-sc(100),_type:'image',_label:'Image / Logo'});
-    cv.add(img);cv.setActiveObject(img);cv.renderAll();
-  });
+  const blobUrl=URL.createObjectURL(f);
+  const fd=new FormData();fd.append('file',f);
+  fetch('/api/upload-image',{method:'POST',body:fd})
+    .then(r=>r.json())
+    .then(data=>{
+      if(data.error){showAlert(data.error,'Upload Failed');return;}
+      const serverPath=data.path;
+      fabric.Image.fromURL(blobUrl,img=>{
+        const {w,h}=FMT[fmt];
+        img.scaleToWidth(sc(200));
+        img.set({left:w-sc(220),top:h-sc(100),_type:'image',_label:'Image / Logo',_src:serverPath});
+        cv.add(img);cv.setActiveObject(img);cv.renderAll();syncLayers();saveHist();
+      });
+    })
+    .catch(()=>showAlert('Image upload failed','Upload Failed'));
   e.target.value='';
 }
 
@@ -5022,6 +5028,7 @@ let _tlVideoEl = null;
 let _tlSpeedDrag = null;
 let tlClips = [];           // [{id, path, url, caption, duration}]
 let _tlActiveClipId = null; // clipId currently loaded in preview-video src
+let tlEasingPresets = [];   // per-project custom easing presets [{name, bezier:[x1,y1,x2,y2]}]
 
 function tlClipById(clipId) {
   return tlClips.find(c => c.id === clipId) || null;
@@ -5054,6 +5061,40 @@ function tlNewSeg(sourceStart, sourceEnd, trackStart, color, clipId) {
   };
 }
 
+// ── Easing helpers ─────────────────────────────────────────────────────────
+const TL_EASING_PRESETS = {
+  'linear':      [0,    0,    1,    1   ],
+  'ease-in':     [0.42, 0,    1,    1   ],
+  'ease-out':    [0,    0,    0.58, 1   ],
+  'ease-in-out': [0.42, 0,    0.58, 1   ],
+};
+
+function evalUnitBezier(x1, y1, x2, y2, x) {
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
+  const cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx;
+  const cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
+  const sX = t => ((ax * t + bx) * t + cx) * t;
+  const sY = t => ((ay * t + by) * t + cy) * t;
+  const dX = t => (3 * ax * t + 2 * bx) * t + cx;
+  let t = x;
+  for (let i = 0; i < 8; i++) {
+    const err = sX(t) - x;
+    if (Math.abs(err) < 1e-7) break;
+    const d = dX(t);
+    if (Math.abs(d) < 1e-6) break;
+    t = Math.max(0, Math.min(1, t - err / d));
+  }
+  return sY(t);
+}
+
+function resolveBezier(easing) {
+  if (!easing) return TL_EASING_PRESETS['linear'];
+  if (easing.type === 'custom' && Array.isArray(easing.bezier) && easing.bezier.length === 4)
+    return easing.bezier;
+  return TL_EASING_PRESETS[easing.type] || TL_EASING_PRESETS['linear'];
+}
+
 function tlInterpolateSpeed(keyframes, t) {
   if (!keyframes || keyframes.length === 0) return 1;
   const sorted = [...keyframes].sort((a, b) => a.t - b.t);
@@ -5064,7 +5105,8 @@ function tlInterpolateSpeed(keyframes, t) {
     if (t >= a.t && t <= b.t) {
       const denom = b.t - a.t;
       const frac = denom === 0 ? 0 : (t - a.t) / denom;
-      return a.speed + frac * (b.speed - a.speed);
+      const easedFrac = evalUnitBezier(...resolveBezier(a.easeOut), frac);
+      return a.speed + easedFrac * (b.speed - a.speed);
     }
   }
   return 1;
