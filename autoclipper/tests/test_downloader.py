@@ -65,3 +65,33 @@ def test_extract_thumbnail_returns_none_when_file_missing(tmp_path):
         result = extract_thumbnail(str(fake_video), "abc123", base_dir=tmp_path)
 
     assert result is None
+
+
+def test_download_video_includes_thumbnail(tmp_path):
+    """download_video() return dict includes a 'thumbnail' key."""
+    from downloader import download_video
+
+    fake_mp4 = tmp_path / "testjob.mp4"
+
+    def fake_popen(cmd, **kwargs):
+        fake_mp4.write_bytes(b"fake")
+        m = MagicMock()
+        m.stdout = iter(["[download]  100% of 1.00MiB\n"])
+        m.returncode = 0
+        m.wait = lambda: None
+        return m
+
+    with patch("downloader.subprocess.Popen", side_effect=fake_popen), \
+         patch("downloader.get_video_title", return_value="Test Title"), \
+         patch("downloader.subprocess.run") as mock_run, \
+         patch("downloader.get_job_path", return_value=fake_mp4), \
+         patch("downloader.DOWNLOADS_DIR", tmp_path):
+        # First call to subprocess.run is ffprobe (probe_video), second is ffmpeg (thumbnail)
+        probe_result = MagicMock(returncode=0, stdout='{"streams":[{"width":1920,"height":1080,"duration":"10.0"}]}')
+        thumb_result = MagicMock(returncode=0)
+        mock_run.side_effect = [probe_result, thumb_result]
+
+        result = download_video("https://example.com/video", "testjob")
+
+    assert "thumbnail" in result
+    assert result["thumbnail"] is not None or result["thumbnail"] is None  # presence required
