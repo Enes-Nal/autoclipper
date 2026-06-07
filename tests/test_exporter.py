@@ -496,7 +496,29 @@ def test_build_segment_inputs_speed_subclips():
         'speedKeyframes': [{'t': 0, 'speed': 0.5}, {'t': 5, 'speed': 2.0}]
     }
     main_pre, extra, filter_parts, v_lbl, a_lbl, n = build_segment_inputs('vid.mp4', [seg])
-    # Should produce multiple inputs (sub-clips)
     assert n > 1
-    # setpts should appear in filter for speed adjustment
     assert any('setpts' in p for p in filter_parts)
+    # Audio must use atempo, not asetpts, for speed-changed sub-clips
+    audio_filters = [p for p in filter_parts if ':a]' in p or p.startswith('[') and 'atempo' in p]
+    assert any('atempo' in p for p in filter_parts), "Audio must use atempo for speed != 1"
+
+def test_atempo_chain_normal_speed():
+    from exporter import _atempo_chain
+    assert _atempo_chain(1.0) == ''
+
+def test_atempo_chain_slow():
+    from exporter import _atempo_chain
+    result = _atempo_chain(0.5)
+    assert 'atempo=0.5' in result
+
+def test_atempo_chain_fast():
+    from exporter import _atempo_chain
+    result = _atempo_chain(2.0)
+    assert 'atempo=2.0' in result
+
+def test_atempo_chain_extreme_fast():
+    from exporter import _atempo_chain
+    # 4× speed requires two atempo stages
+    result = _atempo_chain(4.0)
+    assert result.count('atempo') == 2
+    assert 'atempo=2.0' in result
