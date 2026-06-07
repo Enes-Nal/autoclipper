@@ -5028,7 +5028,7 @@ let _tlVideoEl = null;
 let _tlSpeedDrag = null;
 let tlClips = [];           // [{id, path, url, caption, duration}]
 let _tlActiveClipId = null; // clipId currently loaded in preview-video src
-let tlEasingPresets = [];   // per-project custom easing presets [{name, bezier:[x1,y1,x2,y2]}]
+let tlEasingPresets = [];   // per-project custom easing presets [{name, bezier:[x1,y1,x2,y2]}] — persisted in Task 6
 
 function tlClipById(clipId) {
   return tlClips.find(c => c.id === clipId) || null;
@@ -5090,8 +5090,10 @@ function evalUnitBezier(x1, y1, x2, y2, x) {
 
 function resolveBezier(easing) {
   if (!easing) return TL_EASING_PRESETS['linear'];
-  if (easing.type === 'custom' && Array.isArray(easing.bezier) && easing.bezier.length === 4)
-    return easing.bezier;
+  if (easing.type === 'custom' && Array.isArray(easing.bezier) && easing.bezier.length === 4) {
+    const [x1, y1, x2, y2] = easing.bezier;
+    return [Math.max(0, Math.min(1, x1)), y1, Math.max(0, Math.min(1, x2)), y2];
+  }
   return TL_EASING_PRESETS[easing.type] || TL_EASING_PRESETS['linear'];
 }
 
