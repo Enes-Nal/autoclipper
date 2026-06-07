@@ -2616,7 +2616,7 @@ function doUndo(){
   const canvasJSON=entry&&entry.canvas!=null?entry.canvas:entry;
   audioLayer=entry&&entry.audioLayer!=null?entry.audioLayer:null;
   tlEasingPresets=entry&&Array.isArray(entry.tlEasingPresets)?entry.tlEasingPresets:[];
-  cv.loadFromJSON(canvasJSON,()=>{try{fixAllTextStyles();cv.renderAll();syncLayers();refreshVideoLayers();updatePreviewStrip();}finally{histLock=false;}});
+  cv.loadFromJSON(canvasJSON,()=>{try{fixAllTextStyles();cv.renderAll();syncLayers();refreshVideoLayers();updatePreviewStrip();if(tlSpeedOpen&&typeof tlRenderSpeedStrip==='function')tlRenderSpeedStrip();}finally{histLock=false;}});
 }
 function doRedo(){
   if(histIdx>=hist.length-1||histLock)return;histIdx++;
@@ -2625,7 +2625,7 @@ function doRedo(){
   const canvasJSON=entry&&entry.canvas!=null?entry.canvas:entry;
   audioLayer=entry&&entry.audioLayer!=null?entry.audioLayer:null;
   tlEasingPresets=entry&&Array.isArray(entry.tlEasingPresets)?entry.tlEasingPresets:[];
-  cv.loadFromJSON(canvasJSON,()=>{try{fixAllTextStyles();cv.renderAll();syncLayers();refreshVideoLayers();updatePreviewStrip();}finally{histLock=false;}});
+  cv.loadFromJSON(canvasJSON,()=>{try{fixAllTextStyles();cv.renderAll();syncLayers();refreshVideoLayers();updatePreviewStrip();if(tlSpeedOpen&&typeof tlRenderSpeedStrip==='function')tlRenderSpeedStrip();}finally{histLock=false;}});
 }
 
 // ── ZOOM ───────────────────────────────────────────────────────────────────
@@ -5043,7 +5043,7 @@ let _tlVideoEl = null;
 let _tlSpeedDrag = null;
 let tlClips = [];           // [{id, path, url, caption, duration}]
 let _tlActiveClipId = null; // clipId currently loaded in preview-video src
-let tlEasingPresets = [];   // per-project custom easing presets [{name, bezier:[x1,y1,x2,y2]}] — persisted in Task 6
+let tlEasingPresets = [];   // per-project custom easing presets [{name, bezier:[x1,y1,x2,y2]}]
 
 function tlClipById(clipId) {
   return tlClips.find(c => c.id === clipId) || null;
