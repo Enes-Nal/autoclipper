@@ -51,6 +51,72 @@ def _color_filter_suffix(c: dict) -> str:
     return suffix
 
 
+# Built-in easing preset bezier values [x1, y1, x2, y2]
+_EASING_PRESETS = {
+    'linear':       [0.0,  0.0,  1.0,  1.0],
+    'ease-in':      [0.42, 0.0,  1.0,  1.0],
+    'ease-out':     [0.0,  0.0,  0.58, 1.0],
+    'ease-in-out':  [0.42, 0.0,  0.58, 1.0],
+}
+
+
+def _eval_unit_bezier(x1: float, y1: float, x2: float, y2: float, x: float) -> float:
+    """
+    Evaluate a CSS cubic-bezier timing function at progress x ∈ [0,1].
+    Control points: (0,0), (x1,y1), (x2,y2), (1,1).
+    Uses Newton's method to solve for the parametric t where Bx(t)=x,
+    then returns By(t).
+    """
+    if x <= 0.0:
+        return 0.0
+    if x >= 1.0:
+        return 1.0
+
+    cx = 3.0 * x1
+    bx = 3.0 * (x2 - x1) - cx
+    ax = 1.0 - cx - bx
+
+    cy = 3.0 * y1
+    by_ = 3.0 * (y2 - y1) - cy
+    ay = 1.0 - cy - by_
+
+    def sample_x(t: float) -> float:
+        return ((ax * t + bx) * t + cx) * t
+
+    def sample_y(t: float) -> float:
+        return ((ay * t + by_) * t + cy) * t
+
+    def sample_deriv_x(t: float) -> float:
+        return (3.0 * ax * t + 2.0 * bx) * t + cx
+
+    # Newton's method
+    t = x
+    for _ in range(8):
+        err = sample_x(t) - x
+        if abs(err) < 1e-7:
+            break
+        d = sample_deriv_x(t)
+        if abs(d) < 1e-6:
+            break
+        t -= err / d
+        t = max(0.0, min(1.0, t))
+
+    return sample_y(t)
+
+
+def _resolve_bezier(easing: dict | None) -> list[float]:
+    """Return [x1, y1, x2, y2] for an easing dict {type, bezier?}."""
+    if not easing:
+        return _EASING_PRESETS['linear']
+    t = easing.get('type', 'linear')
+    if t == 'custom':
+        b = easing.get('bezier')
+        if b and len(b) == 4:
+            return [float(v) for v in b]
+        return _EASING_PRESETS['linear']
+    return _EASING_PRESETS.get(t, _EASING_PRESETS['linear'])
+
+
 def _speed_kfs_to_subsegs(seg: dict) -> list[tuple[float, float, float]]:
     """
     Convert a segment's speedKeyframes into constant-speed intervals.
@@ -76,7 +142,9 @@ def _speed_kfs_to_subsegs(seg: dict) -> list[tuple[float, float, float]]:
             if at <= t_rel <= bt:
                 denom = bt - at
                 frac = 0.0 if denom == 0 else (t_rel - at) / denom
-                return float(a['speed']) + frac * (float(b['speed']) - float(a['speed']))
+                bezier = _resolve_bezier(a.get('easeOut'))
+                eased_frac = _eval_unit_bezier(*bezier, frac)
+                return float(a['speed']) + eased_frac * (float(b['speed']) - float(a['speed']))
         return float(sorted_kfs[-1]['speed'])
 
     # Breakpoints: segment start, each keyframe (absolute), segment end
@@ -335,8 +403,17 @@ def build_filter_graph(layers: list, cw: int, ch: int,
         elif t in ("image", "emoji") and i in image_inputs:
             idx = image_inputs[i]
             x, y = layer.get("x", 0), layer.get("y", 0)
+            w, h = layer.get("width", 0), layer.get("height", 0)
+            scaled = lbl()
             out = lbl()
-            parts.append(f"[{current}][{idx}:v]overlay=x={int(x)}:y={int(y)}[{out}]")
+            if w > 0 and h > 0:
+                parts.append(
+                    f"[{idx}:v]scale={int(w)}:{int(h)}:force_original_aspect_ratio=disable,"
+                    f"format=rgba[{scaled}]"
+                )
+            else:
+                parts.append(f"[{idx}:v]format=rgba[{scaled}]")
+            parts.append(f"[{current}][{scaled}]overlay=x={int(x)}:y={int(y)}[{out}]")
             current = out
 
         elif t == "shape":
