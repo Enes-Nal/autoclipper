@@ -4410,6 +4410,7 @@ function startDownload(){
             url: '/api/downloads/' + encodeURIComponent(filename),
             caption: msg.title || '',
             duration: msg.duration,
+            thumbnail: msg.thumbnail || null,
           };
           if (window._dlMode === 'append' && tlClips.length > 0) {
             tlAddClip(clip);
@@ -5169,25 +5170,29 @@ function tlRenderClipList() {
   const list = document.getElementById('clip-list');
   if (!list) return;
   if (!tlClips.length) { list.innerHTML = ''; return; }
-  const colors = ['#22c55e','#6366f1','#f59e0b'];
-  list.innerHTML = tlClips.map((clip, i) => {
-    const dot = colors[i % colors.length];
+  list.innerHTML = tlClips.map(clip => {
     const dur = Math.round(clip.duration);
+    const thumbHtml = clip.thumbnail
+      ? `<img class="clip-thumb" src="${clip.thumbnail}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+        + `<div class="clip-thumb-placeholder" style="display:none"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2"/><polygon points="10,8 16,12 10,16"/></svg></div>`
+      : `<div class="clip-thumb-placeholder"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2"/><polygon points="10,8 16,12 10,16"/></svg></div>`;
     return `<div class="clip-card">
-      <div class="clip-card-dot" style="background:${dot}"></div>
-      <div class="clip-card-body">
-        <div class="clip-card-name"></div>
-        <div class="clip-card-meta">${dur}s</div>
+      <div class="clip-thumb-wrap">
+        ${thumbHtml}
+        <span class="clip-dur-badge">${dur}s</span>
       </div>
-      <button class="clip-card-rm" onclick="tlRemoveClip('${clip.id}')" title="Remove clip">
-        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+      <div class="clip-info">
+        <div class="clip-title"></div>
+        <button class="clip-card-rm" onclick="tlRemoveClip('${clip.id}')" title="Remove clip">
+          <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
     </div>`;
   }).join('');
-  // Set filenames safely via textContent (prevents XSS)
+  // Set titles safely via textContent (prevents XSS)
   Array.from(list.children).forEach((card, i) => {
-    const nameEl = card.querySelector('.clip-card-name');
-    if (nameEl) nameEl.textContent = tlClips[i].path.split(/[\\/]/).pop();
+    const titleEl = card.querySelector('.clip-title');
+    if (titleEl) titleEl.textContent = tlClips[i].caption || tlClips[i].path.split(/[\\/]/).pop();
   });
 }
 
