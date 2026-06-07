@@ -468,6 +468,14 @@ button,input,select{font-family:inherit}
 .tl-speed-kf-easing{display:flex;align-items:center;gap:4px;padding:0 2px}
 .tl-speed-kf-easing label{font-size:8px;color:var(--sub);min-width:22px}
 .tl-speed-kf-easing select{font-size:9px;background:var(--s2);color:var(--fg);border:1px solid var(--b1);border-radius:3px;padding:1px 3px;cursor:pointer}
+.tl-bezier-editor{background:var(--s2);border:1px solid var(--b1);border-radius:5px;padding:8px;margin-top:4px;display:flex;flex-direction:column;gap:8px}
+.tl-bezier-svg{background:var(--s1);border-radius:3px;touch-action:none;cursor:crosshair}
+.tl-bezier-inputs{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.tl-bezier-inputs label{font-size:8px;color:var(--sub)}
+.tl-bezier-inputs input[type=number]{width:46px;font-size:9px;background:var(--s1);color:var(--fg);border:1px solid var(--b1);border-radius:3px;padding:2px 4px;text-align:center}
+.tl-bezier-save{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.tl-bezier-save input[type=text]{flex:1;min-width:80px;font-size:9px;background:var(--s1);color:var(--fg);border:1px solid var(--b1);border-radius:3px;padding:2px 6px}
+.tl-bezier-save button{font-size:9px;padding:2px 8px;border-radius:3px;border:none;background:var(--accent,#6366f1);color:#fff;cursor:pointer}
 .tl-speed-kf-t{font-size:9px;color:var(--sub);width:34px;flex-shrink:0}
 .tl-speed-kf-sl{flex:1;accent-color:var(--acc)}
 .tl-speed-kf-val{font-size:10px;font-weight:700;font-family:monospace;width:36px;text-align:right;color:var(--tx)}
@@ -5776,6 +5784,155 @@ function tlSpeedKfEasingChange(segId, kfT, which, value, selectEl) {
   }
   tlRender();
   if (typeof saveHist === 'function') saveHist();
+}
+
+function tlOpenBezierEditor(segId, kfT, which, selectEl) {
+  // Remove any existing editor
+  document.querySelectorAll('.tl-bezier-editor').forEach(el => {
+    el._cleanup?.();
+    el.remove();
+  });
+
+  const seg = tlSegments.find(s => s.id === segId);
+  const kf  = seg?.speedKeyframes.find(k => Math.abs(k.t - kfT) < 0.001);
+  if (!kf) return;
+
+  // Starting bezier values from current easing (or linear)
+  const current = kf[which] || { type: 'linear' };
+  const [ix1, iy1, ix2, iy2] = resolveBezier(current);
+
+  const W = 160, H = 160, PAD = 16;
+  const IW = W - PAD * 2, IH = H - PAD * 2;
+
+  const toSvgX = v => PAD + v * IW;
+  const toSvgY = v => PAD + (1 - v) * IH;  // y=0 at bottom, y=1 at top
+  const fromSvgX = px => Math.max(0, Math.min(1, (px - PAD) / IW));
+  const fromSvgY = py => Math.max(-2, Math.min(2, 1 - (py - PAD) / IH));
+
+  // State
+  let bz = [ix1, iy1, ix2, iy2];
+
+  const editorEl = document.createElement('div');
+  editorEl.className = 'tl-bezier-editor';
+  editorEl.innerHTML = `
+    <svg class="tl-bezier-svg" width="${W}" height="${H}" id="tlBzSvg">
+      <line id="tlBzLine1" stroke="rgba(99,102,241,0.4)" stroke-width="1"/>
+      <line id="tlBzLine2" stroke="rgba(99,102,241,0.4)" stroke-width="1"/>
+      <path id="tlBzCurve" fill="none" stroke="var(--accent,#6366f1)" stroke-width="2"/>
+      <circle id="tlBzH1" r="6" fill="#6366f1" stroke="#fff" stroke-width="1.5" style="cursor:grab"/>
+      <circle id="tlBzH2" r="6" fill="#6366f1" stroke="#fff" stroke-width="1.5" style="cursor:grab"/>
+      <circle cx="${toSvgX(0)}" cy="${toSvgY(0)}" r="3" fill="var(--fg)"/>
+      <circle cx="${toSvgX(1)}" cy="${toSvgY(1)}" r="3" fill="var(--fg)"/>
+    </svg>
+    <div class="tl-bezier-inputs">
+      <label>x1</label><input type="number" id="tlBzX1" step="0.01" min="0" max="1">
+      <label>y1</label><input type="number" id="tlBzY1" step="0.01" min="-2" max="2">
+      <label>x2</label><input type="number" id="tlBzX2" step="0.01" min="0" max="1">
+      <label>y2</label><input type="number" id="tlBzY2" step="0.01" min="-2" max="2">
+    </div>
+    <div class="tl-bezier-save">
+      <input type="text" id="tlBzName" placeholder="Preset name…">
+      <button onclick="tlSaveBezierPreset()">Save preset</button>
+      <button onclick="tlApplyBezier('${segId}',${kfT},'${which}')">Apply</button>
+    </div>`;
+
+  // Insert after the keyframe row containing the select that triggered this
+  const row = selectEl.closest('.tl-speed-kf-row');
+  row.appendChild(editorEl);
+
+  const svg = document.getElementById('tlBzSvg');
+  const h1 = document.getElementById('tlBzH1');
+  const h2 = document.getElementById('tlBzH2');
+
+  function renderBezier() {
+    const [x1, y1, x2, y2] = bz;
+    const ax = toSvgX(0), ay = toSvgY(0);
+    const dx = toSvgX(1), dy = toSvgY(1);
+    const c1x = toSvgX(x1), c1y = toSvgY(y1);
+    const c2x = toSvgX(x2), c2y = toSvgY(y2);
+    h1.setAttribute('cx', c1x); h1.setAttribute('cy', c1y);
+    h2.setAttribute('cx', c2x); h2.setAttribute('cy', c2y);
+    document.getElementById('tlBzLine1').setAttribute('x1', ax);
+    document.getElementById('tlBzLine1').setAttribute('y1', ay);
+    document.getElementById('tlBzLine1').setAttribute('x2', c1x);
+    document.getElementById('tlBzLine1').setAttribute('y2', c1y);
+    document.getElementById('tlBzLine2').setAttribute('x1', dx);
+    document.getElementById('tlBzLine2').setAttribute('y1', dy);
+    document.getElementById('tlBzLine2').setAttribute('x2', c2x);
+    document.getElementById('tlBzLine2').setAttribute('y2', c2y);
+    document.getElementById('tlBzCurve').setAttribute('d',
+      `M ${ax},${ay} C ${c1x},${c1y} ${c2x},${c2y} ${dx},${dy}`);
+    document.getElementById('tlBzX1').value = x1.toFixed(3);
+    document.getElementById('tlBzY1').value = y1.toFixed(3);
+    document.getElementById('tlBzX2').value = x2.toFixed(3);
+    document.getElementById('tlBzY2').value = y2.toFixed(3);
+  }
+
+  // Drag logic
+  let dragging = null;
+  function onMove(e) {
+    if (!dragging) return;
+    const rect = svg.getBoundingClientRect();
+    const px = (e.clientX ?? e.touches?.[0]?.clientX) - rect.left;
+    const py = (e.clientY ?? e.touches?.[0]?.clientY) - rect.top;
+    if (dragging === 1) { bz[0] = fromSvgX(px); bz[1] = fromSvgY(py); }
+    else                { bz[2] = fromSvgX(px); bz[3] = fromSvgY(py); }
+    renderBezier();
+  }
+  function onUp() { dragging = null; }
+  h1.addEventListener('mousedown', e => { e.preventDefault(); dragging = 1; });
+  h2.addEventListener('mousedown', e => { e.preventDefault(); dragging = 2; });
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onUp);
+  editorEl._cleanup = () => {
+    window.removeEventListener('mousemove', onMove);
+    window.removeEventListener('mouseup', onUp);
+  };
+
+  // Numeric input → handle sync
+  ['tlBzX1','tlBzY1','tlBzX2','tlBzY2'].forEach((id, i) => {
+    document.getElementById(id).addEventListener('input', function() {
+      const v = parseFloat(this.value);
+      if (!isNaN(v)) { bz[i] = v; renderBezier(); }
+    });
+  });
+
+  // Expose bezier state for apply/save
+  editorEl._getBz = () => bz;
+
+  renderBezier();
+
+  // Reset select to previous value so it doesn't stay on "__custom__"
+  const prevType = (current.type !== 'custom') ? current.type : 'linear';
+  selectEl.value = prevType;
+}
+
+function tlApplyBezier(segId, kfT, which) {
+  const seg = tlSegments.find(s => s.id === segId);
+  const kf  = seg?.speedKeyframes.find(k => Math.abs(k.t - kfT) < 0.001);
+  const editor = document.querySelector('.tl-bezier-editor');
+  if (!kf || !editor) return;
+  const bz = editor._getBz();
+  kf[which] = { type: 'custom', bezier: bz.map(v => parseFloat(v.toFixed(4))) };
+  editor._cleanup?.();
+  editor.remove();
+  tlRender();
+  tlRenderSpeedStrip();
+  if (typeof saveHist === 'function') saveHist();
+}
+
+function tlSaveBezierPreset() {
+  const editor = document.querySelector('.tl-bezier-editor');
+  if (!editor) return;
+  const name = document.getElementById('tlBzName')?.value?.trim();
+  if (!name) { alert('Enter a preset name first.'); return; }
+  const bz = editor._getBz().map(v => parseFloat(v.toFixed(4)));
+  const existing = tlEasingPresets.findIndex(p => p.name === name);
+  if (existing >= 0) { tlEasingPresets[existing].bezier = bz; }
+  else { tlEasingPresets.push({ name, bezier: bz }); }
+  if (typeof saveHist === 'function') saveHist();
+  // Refresh dropdowns so new preset appears
+  tlRenderSpeedStrip();
 }
 
 function tlSpeedKfDelete(segId, kfT) {
