@@ -67,7 +67,7 @@ def build_segment_inputs(video_path: str, segments: list, input_offset: int = 0)
         n_video_inputs  – total video -i entries added (always ≥1)
     """
     if not segments:
-        return [], [], [], '0:v', '0:a', 1
+        return [], [], [], f'{input_offset}:v', f'{input_offset}:a', 1
 
     segs = sorted(segments, key=lambda s: s.get('trackStart', 0))
     n_segs = len(segs)
@@ -378,6 +378,8 @@ def export_video(video_path: str = None, template: dict = None, title: str = "",
     # Normalize to clips format for multi-source support
     if clips is None:
         clips = [{"video_path": video_path, "segments": segments or []}]
+    if not clips:
+        raise ValueError("clips must not be empty")
     job_id = uuid.uuid4().hex[:8]
     all_layers = [dict(l) for l in template["layers"]]
     cw = template["canvas"]["width"]
