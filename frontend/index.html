@@ -2498,7 +2498,7 @@ function align(type){
 // ── HISTORY ────────────────────────────────────────────────────────────────
 function saveHist(){
   if(histLock)return;
-  const entry={canvas:JSON.stringify(cv.toJSON(['_type','_label','_blur','_fit','_isTitle','_audioVolume','_audioMuted','_maskShape','_maskRadius','_maskPoints','_maskX','_maskY','_maskW','_maskH','_overflow','_frameW','_frameH','_autoHeight','_verticalAlign','_emojiOffset','paintFirst'])),audioLayer:audioLayer?{...audioLayer}:null};
+  const entry={canvas:JSON.stringify(cv.toJSON(['_type','_label','_blur','_fit','_isTitle','_audioVolume','_audioMuted','_maskShape','_maskRadius','_maskPoints','_maskX','_maskY','_maskW','_maskH','_overflow','_frameW','_frameH','_autoHeight','_verticalAlign','_emojiOffset','paintFirst'])),audioLayer:audioLayer?{...audioLayer}:null,tlEasingPresets:tlEasingPresets.map(p=>({...p,bezier:[...p.bezier]}))};
   const j=JSON.stringify(entry);
   hist=hist.slice(0,histIdx+1);hist.push(entry);histIdx=hist.length-1;
   if(hist.length>50){hist=hist.slice(hist.length-50);histIdx=hist.length-1;}
@@ -2615,6 +2615,7 @@ function doUndo(){
   const entry=hist[histIdx];
   const canvasJSON=entry&&entry.canvas!=null?entry.canvas:entry;
   audioLayer=entry&&entry.audioLayer!=null?entry.audioLayer:null;
+  tlEasingPresets=entry&&Array.isArray(entry.tlEasingPresets)?entry.tlEasingPresets:[];
   cv.loadFromJSON(canvasJSON,()=>{try{fixAllTextStyles();cv.renderAll();syncLayers();refreshVideoLayers();updatePreviewStrip();}finally{histLock=false;}});
 }
 function doRedo(){
@@ -2623,6 +2624,7 @@ function doRedo(){
   const entry=hist[histIdx];
   const canvasJSON=entry&&entry.canvas!=null?entry.canvas:entry;
   audioLayer=entry&&entry.audioLayer!=null?entry.audioLayer:null;
+  tlEasingPresets=entry&&Array.isArray(entry.tlEasingPresets)?entry.tlEasingPresets:[];
   cv.loadFromJSON(canvasJSON,()=>{try{fixAllTextStyles();cv.renderAll();syncLayers();refreshVideoLayers();updatePreviewStrip();}finally{histLock=false;}});
 }
 
@@ -4704,6 +4706,7 @@ function startExport(){
     const _bootEntry=hist[histIdx];
     const _bootCanvas=_bootEntry&&_bootEntry.canvas!=null?_bootEntry.canvas:_bootEntry;
     audioLayer=_bootEntry&&_bootEntry.audioLayer!=null?_bootEntry.audioLayer:null;
+    tlEasingPresets=_bootEntry&&Array.isArray(_bootEntry.tlEasingPresets)?_bootEntry.tlEasingPresets:[];
     cv.loadFromJSON(_bootCanvas,()=>{
       try{fixAllTextStyles();cv.renderAll();syncLayers();refreshVideoLayers();updatePreviewStrip();}finally{histLock=false;}
     });
