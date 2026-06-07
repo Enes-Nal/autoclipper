@@ -5843,6 +5843,9 @@ function tlOpenBezierEditor(segId, kfT, which, selectEl) {
   const svg = document.getElementById('tlBzSvg');
   const h1 = document.getElementById('tlBzH1');
   const h2 = document.getElementById('tlBzH2');
+  const line1 = document.getElementById('tlBzLine1');
+  const line2 = document.getElementById('tlBzLine2');
+  const curve  = document.getElementById('tlBzCurve');
 
   function renderBezier() {
     const [x1, y1, x2, y2] = bz;
@@ -5852,16 +5855,15 @@ function tlOpenBezierEditor(segId, kfT, which, selectEl) {
     const c2x = toSvgX(x2), c2y = toSvgY(y2);
     h1.setAttribute('cx', c1x); h1.setAttribute('cy', c1y);
     h2.setAttribute('cx', c2x); h2.setAttribute('cy', c2y);
-    document.getElementById('tlBzLine1').setAttribute('x1', ax);
-    document.getElementById('tlBzLine1').setAttribute('y1', ay);
-    document.getElementById('tlBzLine1').setAttribute('x2', c1x);
-    document.getElementById('tlBzLine1').setAttribute('y2', c1y);
-    document.getElementById('tlBzLine2').setAttribute('x1', dx);
-    document.getElementById('tlBzLine2').setAttribute('y1', dy);
-    document.getElementById('tlBzLine2').setAttribute('x2', c2x);
-    document.getElementById('tlBzLine2').setAttribute('y2', c2y);
-    document.getElementById('tlBzCurve').setAttribute('d',
-      `M ${ax},${ay} C ${c1x},${c1y} ${c2x},${c2y} ${dx},${dy}`);
+    line1.setAttribute('x1', ax);
+    line1.setAttribute('y1', ay);
+    line1.setAttribute('x2', c1x);
+    line1.setAttribute('y2', c1y);
+    line2.setAttribute('x1', dx);
+    line2.setAttribute('y1', dy);
+    line2.setAttribute('x2', c2x);
+    line2.setAttribute('y2', c2y);
+    curve.setAttribute('d', `M ${ax},${ay} C ${c1x},${c1y} ${c2x},${c2y} ${dx},${dy}`);
     document.getElementById('tlBzX1').value = x1.toFixed(3);
     document.getElementById('tlBzY1').value = y1.toFixed(3);
     document.getElementById('tlBzX2').value = x2.toFixed(3);
@@ -5873,8 +5875,8 @@ function tlOpenBezierEditor(segId, kfT, which, selectEl) {
   function onMove(e) {
     if (!dragging) return;
     const rect = svg.getBoundingClientRect();
-    const px = (e.clientX ?? e.touches?.[0]?.clientX) - rect.left;
-    const py = (e.clientY ?? e.touches?.[0]?.clientY) - rect.top;
+    const px = e.clientX - rect.left;
+    const py = e.clientY - rect.top;
     if (dragging === 1) { bz[0] = fromSvgX(px); bz[1] = fromSvgY(py); }
     else                { bz[2] = fromSvgX(px); bz[3] = fromSvgY(py); }
     renderBezier();
@@ -5931,6 +5933,9 @@ function tlSaveBezierPreset() {
   if (existing >= 0) { tlEasingPresets[existing].bezier = bz; }
   else { tlEasingPresets.push({ name, bezier: bz }); }
   if (typeof saveHist === 'function') saveHist();
+  const editorAfterSave = document.querySelector('.tl-bezier-editor');
+  editorAfterSave?._cleanup?.();
+  editorAfterSave?.remove();
   // Refresh dropdowns so new preset appears
   tlRenderSpeedStrip();
 }
