@@ -1,0 +1,82 @@
+{
+  "name": "Bottom Bar",
+  "format": "9:16",
+  "canvas": { "width": 1080, "height": 1920 },
+  "layers": [
+    {
+      "id": "video",
+      "type": "video",
+      "x": 0, "y": 0,
+      "width": 1080, "height": 1920,
+      "fit": "cover"
+    },
+    {
+      "id": "bar_bg",
+      "type": "shape",
+      "x": 0, "y": 1560,
+      "width": 1080, "height": 360,
+      "fill": "#000000",
+      "opacity": 0.82
+    },
+    {
+      "id": "slot1",
+      "type": "text",
+      "x": 30, "y": 1575,
+      "width": 1020,
+      "text": "<slot1:rank>  <slot1:title>",
+      "font_size": 48,
+      "fill": "#aaaaaa",
+      "text_align": "left"
+    },
+    {
+      "id": "slot2",
+      "type": "text",
+      "x": 30, "y": 1635,
+      "width": 1020,
+      "text": "<slot2:rank>  <slot2:title>",
+      "font_size": 48,
+      "fill": "#aaaaaa",
+      "text_align": "left"
+    },
+    {
+      "id": "slot3",
+      "type": "text",
+      "x": 30, "y": 1695,
+      "width": 1020,
+      "text": "<slot3:rank>  <slot3:title>",
+      "font_size": 48,
+      "fill": "#aaaaaa",
+      "text_align": "left"
+    },
+    {
+      "id": "slot4",
+      "type": "text",
+      "x": 30, "y": 1755,
+      "width": 1020,
+      "text": "<slot4:rank>  <slot4:title>",
+      "font_size": 48,
+      "fill": "#aaaaaa",
+      "text_align": "left"
+    },
+    {
+      "id": "slot5",
+      "type": "text",
+      "x": 30, "y": 1815,
+      "width": 1020,
+      "text": "<slot5:rank>  <slot5:title>",
+      "font_size": 48,
+      "fill": "#aaaaaa",
+      "text_align": "left"
+    },
+    {
+      "id": "current_badge",
+      "type": "text",
+      "x": 30, "y": 1480,
+      "width": 1020,
+      "text": "#<current:rank>  <current:title>",
+      "font_size": 64,
+      "fill": "#FFD700",
+      "text_align": "left"
+    }
+  ]
+}
