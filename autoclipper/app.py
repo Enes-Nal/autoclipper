@@ -193,12 +193,20 @@ def download_progress(job_id):
 @app.post("/api/export")
 def start_export():
     body = request.json or {}
+    clips        = body.get("clips", None)
     video_path   = body.get("video_path", "")
     template     = body.get("template", {})
     title        = body.get("title", "")
     emoji_source = body.get("emoji_source", "twemoji")
     segments     = body.get("segments", None)
-    if not video_path or not os.path.exists(video_path):
+
+    # Validate: need either clips or video_path
+    if clips:
+        for c in clips:
+            vp = c.get("video_path", "")
+            if not vp or not os.path.exists(vp):
+                return jsonify({"error": f"video_path not found: {vp}"}), 400
+    elif not video_path or not os.path.exists(video_path):
         return jsonify({"error": "video_path not found"}), 400
 
     job_id = uuid.uuid4().hex[:8]
@@ -210,7 +218,8 @@ def start_export():
             def on_progress(line):
                 q.put({"type": "progress", "line": line})
             out = export_video(video_path, template, title, on_progress,
-                               emoji_source=emoji_source, segments=segments)
+                               emoji_source=emoji_source, segments=segments,
+                               clips=clips)
             q.put({"type": "done", "output_path": out, "filename": Path(out).name})
         except Exception as e:
             q.put({"type": "error", "message": str(e)})
