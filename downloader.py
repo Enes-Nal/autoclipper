@@ -52,7 +52,14 @@ def download_video(url: str, job_id: str, on_progress=None) -> dict:
     if proc.returncode != 0:
         detail = "\n".join(output_lines[-20:])
         raise RuntimeError(f"yt-dlp exited {proc.returncode}\n{detail}")
-    return {"path": str(output), "title": title, **probe_video(str(output))}
+    info = {"path": str(output), "title": title, **probe_video(str(output))}
+    thumb = extract_thumbnail(str(output), job_id)
+    if thumb:
+        thumb_filename = Path(thumb).name
+        info["thumbnail"] = "/api/downloads/" + thumb_filename
+    else:
+        info["thumbnail"] = None
+    return info
 
 def probe_video(path: str) -> dict:
     """Return width, height, duration via ffprobe."""
