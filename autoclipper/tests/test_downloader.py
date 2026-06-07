@@ -1,5 +1,7 @@
 from downloader import parse_progress, get_job_path
 from pathlib import Path
+from unittest.mock import patch, MagicMock
+from downloader import extract_thumbnail, DOWNLOADS_DIR
 
 def test_parse_progress_percentage():
     line = "[download]  45.3% of 12.34MiB at 2.50MiB/s ETA 00:03"
@@ -21,11 +23,6 @@ def test_get_job_path():
     assert p.parent.name == "downloads"
 
 
-import pytest
-from unittest.mock import patch, MagicMock
-from downloader import extract_thumbnail, DOWNLOADS_DIR
-
-
 def test_extract_thumbnail_returns_path_on_success(tmp_path):
     """extract_thumbnail runs ffmpeg and returns the thumbnail path."""
     fake_video = tmp_path / "abc123.mp4"
@@ -34,6 +31,7 @@ def test_extract_thumbnail_returns_path_on_success(tmp_path):
 
     with patch("downloader.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(returncode=0)
+        expected_thumb.write_bytes(b"fake_thumb")  # simulate ffmpeg creating the file
         result = extract_thumbnail(str(fake_video), "abc123", base_dir=tmp_path)
 
     assert result == str(expected_thumb)
@@ -51,6 +49,19 @@ def test_extract_thumbnail_returns_none_on_failure(tmp_path):
 
     with patch("downloader.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(returncode=1)
+        result = extract_thumbnail(str(fake_video), "abc123", base_dir=tmp_path)
+
+    assert result is None
+
+
+def test_extract_thumbnail_returns_none_when_file_missing(tmp_path):
+    """extract_thumbnail returns None if ffmpeg exits 0 but produces no file."""
+    fake_video = tmp_path / "abc123.mp4"
+    fake_video.write_bytes(b"fake")
+
+    with patch("downloader.subprocess.run") as mock_run:
+        mock_run.return_value = MagicMock(returncode=0)
+        # Do NOT create the thumb file — simulates very short video
         result = extract_thumbnail(str(fake_video), "abc123", base_dir=tmp_path)
 
     assert result is None
