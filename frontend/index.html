@@ -5518,25 +5518,26 @@ function tlSplit() {
   if (splitVideoTime <= seg.sourceStart + 0.05 || splitVideoTime >= seg.sourceEnd - 0.05) return;
 
   const splitRelT = splitVideoTime - seg.sourceStart;
-  const speedAtSplit = tlInterpolateSpeed(seg.speedKeyframes || [], splitRelT);
-
-  // Left segment: keyframes with t < splitRelT, plus a closing keyframe at the split point
-  const leftKfs = (seg.speedKeyframes || [])
-    .filter(k => k.t < splitRelT - 0.001)
-    .map(k => ({ ...k }));
-  leftKfs.push({ t: parseFloat(splitRelT.toFixed(3)), speed: parseFloat(speedAtSplit.toFixed(3)) });
-
-  // Right segment: keyframes with t > splitRelT, re-zeroed relative to new segment start
-  const rightKfs = (seg.speedKeyframes || [])
-    .filter(k => k.t > splitRelT + 0.001)
-    .map(k => ({ t: parseFloat((k.t - splitRelT).toFixed(3)), speed: k.speed }));
-  rightKfs.unshift({ t: 0, speed: parseFloat(speedAtSplit.toFixed(3)) });
+  const hasKfs = (seg.speedKeyframes || []).length > 0;
 
   const left  = tlNewSeg(seg.sourceStart, splitVideoTime, seg.trackStart, Object.assign({}, seg.color), seg.clipId);
-  left.speedKeyframes = leftKfs;
   const rightTrackStart = seg.trackStart + (splitVideoTime - seg.sourceStart);
   const right = tlNewSeg(splitVideoTime, seg.sourceEnd, rightTrackStart, Object.assign({}, seg.color), seg.clipId);
-  right.speedKeyframes = rightKfs;
+
+  if (hasKfs) {
+    const speedAtSplit = tlInterpolateSpeed(seg.speedKeyframes, splitRelT);
+    const leftKfs = seg.speedKeyframes
+      .filter(k => k.t < splitRelT - 0.001)
+      .map(k => ({ ...k }));
+    leftKfs.push({ t: parseFloat(splitRelT.toFixed(3)), speed: parseFloat(speedAtSplit.toFixed(3)) });
+    const rightKfs = seg.speedKeyframes
+      .filter(k => k.t > splitRelT + 0.001)
+      .map(k => ({ t: parseFloat((k.t - splitRelT).toFixed(3)), speed: k.speed }));
+    rightKfs.unshift({ t: 0, speed: parseFloat(speedAtSplit.toFixed(3)) });
+    left.speedKeyframes = leftKfs;
+    right.speedKeyframes = rightKfs;
+  }
+  // If no keyframes, left.speedKeyframes and right.speedKeyframes remain [] from tlNewSeg
 
   const idx = tlSegments.indexOf(seg);
   tlSegments.splice(idx, 1, left, right);
