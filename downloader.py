@@ -83,4 +83,6 @@ def extract_thumbnail(video_path: str, job_id: str, base_dir: Path | None = None
     result = subprocess.run(cmd, capture_output=True)
     if result.returncode != 0:
         return None
+    if not thumb_path.exists():
+        return None
     return str(thumb_path)
