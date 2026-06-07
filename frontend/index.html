@@ -5287,6 +5287,19 @@ function tlRenderRuler() {
   inner.innerHTML = html;
 }
 
+function tlSpeedBadge(seg) {
+  const kfs = seg.speedKeyframes || [];
+  if (kfs.length === 0) return '';
+  const speeds = kfs.map(k => k.speed);
+  const allSame = speeds.every(s => Math.abs(s - speeds[0]) < 0.01);
+  const v = allSame ? speeds[0] : null;
+  const isNormal = allSame && Math.abs(speeds[0] - 1) < 0.01;
+  if (isNormal) return '';
+  const label = v !== null ? `${v.toFixed(2).replace(/\.?0+$/, '')}×` : '~';
+  const color = v === null ? '#f59e0b' : (v < 1 ? '#f59e0b' : '#ef4444');
+  return `<span style="background:${color}22;border:1px solid ${color}55;border-radius:3px;padding:1px 4px;font-size:9px;font-weight:700;color:${color};flex-shrink:0">${label}</span>`;
+}
+
 function tlRenderTrack(trackId, clips) {
   const row = document.getElementById(trackId);
   if (!row) return;
@@ -5297,11 +5310,13 @@ function tlRenderTrack(trackId, clips) {
     const w = Math.max(4, tlSecsToX(seg.sourceEnd - seg.sourceStart));
     const sel = seg.id === tlSelectedSegId;
     const color = tlClipColor(seg.clipId);
+    const badge = tlSpeedBadge(seg);
     return `<div class="tl-clip${sel ? ' sel' : ''}" data-seg="${seg.id}"
       style="left:${x}px;width:${w}px;background:${color};border:1.5px solid ${sel ? '#fff' : color}"
       onmousedown="tlClipMousedown(event,'${seg.id}')">
       <div class="tl-handle tl-handle-l" onmousedown="tlHandleMousedown(event,'${seg.id}','l')"></div>
       <span style="pointer-events:none;padding-left:4px;opacity:.85;overflow:hidden;flex:1">${tlFmt(seg.sourceStart)}-${tlFmt(seg.sourceEnd)}</span>
+      ${badge}
       <div class="tl-handle tl-handle-r" onmousedown="tlHandleMousedown(event,'${seg.id}','r')"></div>
     </div>`;
   }).join('');
