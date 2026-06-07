@@ -5171,9 +5171,9 @@ function tlRenderClipList() {
   if (!list) return;
   if (!tlClips.length) { list.innerHTML = ''; return; }
   list.innerHTML = tlClips.map(clip => {
-    const dur = Math.round(clip.duration);
+    const dur = Math.round(clip.duration) || 0;
     const thumbHtml = clip.thumbnail
-      ? `<img class="clip-thumb" src="${clip.thumbnail}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+      ? `<img class="clip-thumb" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
         + `<div class="clip-thumb-placeholder" style="display:none"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2"/><polygon points="10,8 16,12 10,16"/></svg></div>`
       : `<div class="clip-thumb-placeholder"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2"/><polygon points="10,8 16,12 10,16"/></svg></div>`;
     return `<div class="clip-card">
@@ -5189,10 +5189,13 @@ function tlRenderClipList() {
       </div>
     </div>`;
   }).join('');
-  // Set titles safely via textContent (prevents XSS)
+  // Set titles and thumbnail src via DOM properties (prevents XSS)
   Array.from(list.children).forEach((card, i) => {
+    const clip = tlClips[i];
     const titleEl = card.querySelector('.clip-title');
-    if (titleEl) titleEl.textContent = tlClips[i].caption || tlClips[i].path.split(/[\\/]/).pop();
+    if (titleEl) titleEl.textContent = clip.caption || clip.path.split(/[\\/]/).pop();
+    const imgEl = card.querySelector('.clip-thumb');
+    if (imgEl && clip.thumbnail) imgEl.src = clip.thumbnail;
   });
 }
 
