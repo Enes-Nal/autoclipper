@@ -287,30 +287,37 @@ def test_export_video_strips_mask_from_canvas_layers():
         img = Image.open(extra_inputs[0]).convert("L")
         assert img.getpixel((540, 304)) == 255  # centre of circle is white
 
-from exporter import build_segment_filter
+from exporter import build_segment_inputs
+
+FAKE_PATH = "/fake/video.mp4"
 
 def test_no_segments_returns_passthrough():
-    parts, vlabel, alabel = build_segment_filter([])
+    pre, extra_vids, parts, vlabel, alabel, n_vid = build_segment_inputs(FAKE_PATH, [])
+    assert pre == []
+    assert extra_vids == []
     assert parts == []
     assert vlabel == '0:v'
     assert alabel == '0:a'
+    assert n_vid == 1
 
-def test_single_segment_with_no_color_still_trims():
+def test_single_segment_uses_input_level_seek():
     segs = [{'sourceStart': 0, 'sourceEnd': 30, 'trackStart': 0,
              'color': {'brightness': 0, 'contrast': 0, 'saturation': 0, 'hue': 0}}]
-    parts, vlabel, alabel = build_segment_filter(segs)
-    # Single segment always emits trim filter so sourceEnd trimming is respected
-    assert any('trim' in p for p in parts), f"Expected trim, got: {parts}"
-    assert vlabel != '0:v'
-    assert alabel != '0:a'
+    pre, extra_vids, parts, vlabel, alabel, n_vid = build_segment_inputs(FAKE_PATH, segs)
+    # Seek is expressed as -ss/-to args on the input, not a trim filter
+    assert '-ss' in pre and '-to' in pre, f"Expected -ss/-to in pre_args, got: {pre}"
+    assert not any('trim' in p for p in parts), f"Unexpected trim filter: {parts}"
+    assert n_vid == 1
+    assert extra_vids == []
 
-def test_single_segment_with_trim_emits_filter():
+def test_single_segment_seek_values():
     segs = [{'sourceStart': 5, 'sourceEnd': 20, 'trackStart': 0,
              'color': {'brightness': 0, 'contrast': 0, 'saturation': 0, 'hue': 0}}]
-    parts, vlabel, alabel = build_segment_filter(segs)
-    assert any('trim=start=5' in p for p in parts), f"Expected trim=start=5, got: {parts}"
-    assert vlabel != '0:v'
-    assert alabel != '0:a'
+    pre, _, _, _, _, _ = build_segment_inputs(FAKE_PATH, segs)
+    ss_idx = pre.index('-ss')
+    to_idx = pre.index('-to')
+    assert pre[ss_idx + 1] == '5.0', f"Expected ss=5.0, got: {pre[ss_idx+1]}"
+    assert pre[to_idx + 1] == '20.0', f"Expected to=20.0, got: {pre[to_idx+1]}"
 
 def test_two_segments_generates_concat():
     segs = [
@@ -319,9 +326,11 @@ def test_two_segments_generates_concat():
         {'sourceStart': 8,  'sourceEnd': 15, 'trackStart': 5,
          'color': {'brightness': 0, 'contrast': 0, 'saturation': 0, 'hue': 0}},
     ]
-    parts, vlabel, alabel = build_segment_filter(segs)
-    assert any('trim' in p for p in parts), f"Expected trim filter, got: {parts}"
+    pre, extra_vids, parts, vlabel, alabel, n_vid = build_segment_inputs(FAKE_PATH, segs)
+    assert n_vid == 2
+    assert len(extra_vids) == 1, f"Expected 1 extra video input, got: {extra_vids}"
     assert any('concat' in p for p in parts), f"Expected concat filter, got: {parts}"
+    assert not any('trim' in p for p in parts), f"Unexpected trim filter: {parts}"
     assert vlabel != '0:v'
     assert alabel != '0:a'
 
@@ -332,7 +341,7 @@ def test_color_grading_adds_eq_filter():
         {'sourceStart': 10, 'sourceEnd': 20, 'trackStart': 10,
          'color': {'brightness': 0, 'contrast': 0, 'saturation': 0, 'hue': 0}},
     ]
-    parts, vlabel, alabel = build_segment_filter(segs)
+    _, _, parts, _, _, _ = build_segment_inputs(FAKE_PATH, segs)
     assert any('eq=' in p for p in parts), f"Expected eq filter, got: {parts}"
 
 def test_hue_grading_adds_hue_filter():
@@ -342,5 +351,109 @@ def test_hue_grading_adds_hue_filter():
         {'sourceStart': 10, 'sourceEnd': 20, 'trackStart': 10,
          'color': {'brightness': 0, 'contrast': 0, 'saturation': 0, 'hue': 0}},
     ]
-    parts, vlabel, alabel = build_segment_filter(segs)
+    _, _, parts, _, _, _ = build_segment_inputs(FAKE_PATH, segs)
     assert any('hue=' in p for p in parts), f"Expected hue filter, got: {parts}"
+
+def test_single_segment_color_grading_emits_filter():
+    segs = [{'sourceStart': 0, 'sourceEnd': 30, 'trackStart': 0,
+             'color': {'brightness': 50, 'contrast': 0, 'saturation': 0, 'hue': 0}}]
+    pre, _, parts, vlabel, alabel, n_vid = build_segment_inputs(FAKE_PATH, segs)
+    assert '-ss' in pre
+    assert any('eq=' in p for p in parts), f"Expected eq filter for single seg color, got: {parts}"
+    assert vlabel != '0:v'
+
+
+def test_build_segment_inputs_with_offset_no_color():
+    """input_offset shifts raw stream labels for a single no-color segment."""
+    segs = [{"sourceStart": 0, "sourceEnd": 10, "color": {}}]
+    pre, extra, parts, vl, al, n = build_segment_inputs("clip.mp4", segs, input_offset=3)
+    assert vl == "3:v"
+    assert al == "3:a"
+    assert n == 1
+    assert extra == []
+    assert parts == []
+
+
+def test_build_segment_inputs_with_offset_with_color():
+    """input_offset shifts filter stream references for a single segment with color grading."""
+    segs = [{"sourceStart": 0, "sourceEnd": 5, "color": {"brightness": 10}}]
+    pre, extra, parts, vl, al, n = build_segment_inputs("clip.mp4", segs, input_offset=2)
+    assert n == 1
+    assert "[2:v]" in parts[0]
+    assert "[2:a]" in parts[1]
+
+
+def test_build_segment_inputs_with_offset_multi_segment():
+    """input_offset shifts all stream references in a multi-segment clip."""
+    segs = [
+        {"sourceStart": 0, "sourceEnd": 5, "color": {}},
+        {"sourceStart": 10, "sourceEnd": 15, "color": {}},
+    ]
+    pre, extra, parts, vl, al, n = build_segment_inputs("clip.mp4", segs, input_offset=4)
+    assert n == 2
+    # Filter parts reference streams 4 and 5 (not 0 and 1)
+    assert "[4:v]" in parts[0]
+    assert "[4:a]" in parts[1]
+    assert "[5:v]" in parts[2]
+    assert "[5:a]" in parts[3]
+
+
+def test_build_segment_inputs_zero_segments_with_offset():
+    """Zero-segment case uses input_offset for stream labels."""
+    pre, extra, parts, vl, al, n = build_segment_inputs("clip.mp4", [], input_offset=2)
+    assert vl == "2:v"
+    assert al == "2:a"
+    assert n == 1
+    assert pre == []
+    assert parts == []
+
+
+def test_export_video_multi_clip_cmd(monkeypatch, tmp_path):
+    """export_video with clips= builds a cmd referencing both source files with a concat filter."""
+    import subprocess
+    from exporter import export_video
+
+    calls = []
+
+    class FakePopen:
+        returncode = 0
+        stderr = iter([])
+
+        def __init__(self, cmd, **kw):
+            calls.append(cmd)
+
+        def wait(self):
+            pass
+
+    monkeypatch.setattr(subprocess, "Popen", FakePopen)
+
+    # Also monkeypatch render_text_layer to avoid I/O
+    monkeypatch.setattr("exporter.render_text_layer", lambda *a, **kw: None)
+
+    clips = [
+        {"video_path": "uploads/a.mp4", "segments": [{"sourceStart": 0, "sourceEnd": 5, "color": {}}]},
+        {"video_path": "uploads/b.mp4", "segments": [{"sourceStart": 0, "sourceEnd": 3, "color": {}}]},
+    ]
+    template = {"canvas": {"width": 1080, "height": 1920}, "layers": []}
+
+    try:
+        export_video(template=template, title="test", clips=clips)
+    except Exception:
+        pass  # FFmpeg not available in test env; we only inspect the built cmd
+
+    assert calls, "export_video should have called subprocess.Popen (ffmpeg)"
+    cmd = calls[0]
+    cmd_str = " ".join(str(x) for x in cmd)
+    assert "uploads/a.mp4" in cmd_str
+    assert "uploads/b.mp4" in cmd_str
+    # concat filter must appear
+    assert "concat=n=2" in cmd_str
+
+
+def test_export_video_empty_clips_raises():
+    """export_video raises ValueError when clips is an empty list."""
+    import pytest
+    from exporter import export_video
+    template = {"canvas": {"width": 1080, "height": 1920}, "layers": []}
+    with pytest.raises(ValueError, match="clips must not be empty"):
+        export_video(template=template, clips=[])
