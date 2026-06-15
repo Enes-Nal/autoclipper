@@ -220,7 +220,8 @@ async function startExport() {
       setStatus(`Rendering slot ${msg.slot} of ${msg.total}...`);
     } else if (msg.type === "done") {
       es.close();
-      setStatus(`Done! <a href="/api/exports/${msg.filename}" download style="color:#FFD700">Download ${msg.filename}</a>`, "done");
+      const dlUrl = msg.download_url || `/api/exports/${msg.filename}`;
+      setStatus(`Done! <a href="${dlUrl}" download="${msg.filename}" style="color:#FFD700">Download ${msg.filename}</a>`, "done");
     } else if (msg.type === "error") {
       es.close();
       setStatus("Export failed: " + msg.message, "error");
