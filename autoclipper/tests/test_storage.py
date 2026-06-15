@@ -115,6 +115,20 @@ def test_delete_template_calls_delete_object(monkeypatch):
     )
 
 
+def test_delete_template_noop_when_not_configured(monkeypatch):
+    for var in ("R2_ENDPOINT_URL", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET_NAME"):
+        monkeypatch.delenv(var, raising=False)
+    import importlib
+    import storage
+    importlib.reload(storage)
+
+    # After reload with no env vars, _client is None and is_configured() is False.
+    # Patch boto3.client to ensure no real call is ever attempted.
+    with patch("boto3.client") as mock_boto3:
+        storage.delete_template("templates/my-template.json")  # must not raise
+        mock_boto3.assert_not_called()
+
+
 # ── upload_export ─────────────────────────────────────────────────────────────
 
 def test_upload_export_returns_presigned_url(tmp_path, monkeypatch):
@@ -152,3 +166,20 @@ def test_upload_export_returns_none_when_not_configured(tmp_path, monkeypatch):
     result = storage.upload_export(export_file)
     assert result is None
     assert export_file.exists()  # not deleted when R2 unconfigured
+
+
+def test_upload_export_raises_on_r2_error(tmp_path, monkeypatch):
+    _make_storage_env(monkeypatch)
+    import importlib
+    import storage
+    importlib.reload(storage)
+
+    export_file = tmp_path / "output.mp4"
+    export_file.write_bytes(b"fake video")
+
+    fake_client = MagicMock()
+    fake_client.upload_file.side_effect = Exception("upload failed")
+
+    with patch.object(storage, "_client", fake_client):
+        with pytest.raises(Exception, match="upload failed"):
+            storage.upload_export(export_file)
