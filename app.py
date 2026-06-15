@@ -275,7 +275,12 @@ def start_export():
                 segments=segments if clips is None else None,
                 clips=clips,
             )
-            q.put({"type": "done", "output_path": out, "filename": Path(out).name})
+            out_path = Path(out)
+            download_url = storage.upload_export(out_path)
+            if download_url:
+                q.put({"type": "done", "filename": out_path.name, "download_url": download_url})
+            else:
+                q.put({"type": "done", "output_path": out, "filename": out_path.name})
         except Exception as e:
             q.put({"type": "error", "message": str(e)})
 
@@ -468,7 +473,12 @@ def start_top5_export():
             def on_progress(event):
                 q.put({"type": "progress", **event})
             out = export_top5(slots, template, job_id, on_progress=on_progress)
-            q.put({"type": "done", "output_path": out, "filename": Path(out).name})
+            out_path = Path(out)
+            download_url = storage.upload_export(out_path)
+            if download_url:
+                q.put({"type": "done", "filename": out_path.name, "download_url": download_url})
+            else:
+                q.put({"type": "done", "output_path": out, "filename": out_path.name})
         except Exception as e:
             q.put({"type": "error", "message": str(e)})
 
@@ -551,7 +561,12 @@ def start_express_export():
                 on_progress=on_exp,
                 segments=segments,
             )
-            q.put({"type": "done", "output_path": out, "filename": Path(out).name})
+            out_path = Path(out)
+            download_url = storage.upload_export(out_path)
+            if download_url:
+                q.put({"type": "done", "filename": out_path.name, "download_url": download_url})
+            else:
+                q.put({"type": "done", "output_path": out, "filename": out_path.name})
         except Exception as e:
             q.put({"type": "error", "message": str(e)})
 
