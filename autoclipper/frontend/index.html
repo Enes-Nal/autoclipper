@@ -4726,10 +4726,11 @@ function startExport(){
         if(msg.type==='progress'){pct=Math.min(pct+1,95);pf.style.width=pct+'%';}
         else if(msg.type==='done'){
           es.close();pf.style.width='100%';pl.textContent='Done';
-          st.innerHTML=`Exported: <a href="/api/exports/${msg.filename}" style="color:var(--acc)" download>${msg.filename}</a>`;
+          const dlUrl = msg.download_url || `/api/exports/${msg.filename}`;
+          st.innerHTML=`Exported: <a href="${dlUrl}" style="color:var(--acc)" download="${msg.filename}">${msg.filename}</a>`;
           st.style.color='var(--ok)';
           if(updateTpl) saveExpTemplateStyles(tpl);
-          const a=document.createElement('a');a.href=`/api/exports/${msg.filename}`;a.download=msg.filename;document.body.appendChild(a);a.click();document.body.removeChild(a);
+          const a=document.createElement('a');a.href=dlUrl;a.download=msg.filename;document.body.appendChild(a);a.click();document.body.removeChild(a);
         } else if(msg.type==='error'){
           es.close();st.textContent='Error: '+msg.message;st.style.color='var(--danger)';pw.style.display='none';
         }
@@ -6384,10 +6385,11 @@ async function startExpressExport() {
       }
     } else if (msg.type === 'done') {
       es.close();
-      _eqOutputPath = msg.output_path;
+      _eqOutputPath = msg.output_path || msg.download_url;
+      const dlUrl = msg.download_url || `/api/exports/${msg.filename}`;
       statusEl.textContent = 'Done — your clip is ready';
       actionsEl.style.display = 'flex';
-      document.getElementById('eq-download-link').href = `/api/exports/${msg.filename}`;
+      document.getElementById('eq-download-link').href = dlUrl;
       document.getElementById('eq-download-link').download = msg.filename;
       btn.disabled = false;
       btn.textContent = 'Download & Export';
