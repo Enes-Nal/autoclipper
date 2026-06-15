@@ -5,6 +5,7 @@ from flask_cors import CORS
 from downloader import download_video
 from exporter import export_video
 from top5_exporter import export_top5
+import storage
 
 app = Flask(__name__, static_folder="frontend", static_url_path="")
 CORS(app)
@@ -27,6 +28,15 @@ SFX_LIB_PATH = BASE_DIR / "sfx_library.json"
 _sfx_lib_lock = threading.Lock()
 SFX_DIR.mkdir(exist_ok=True)
 ALLOWED_SFX_EXTS = {'.mp3', '.wav', '.ogg'}
+
+_startup_done = False
+
+@app.before_request
+def _startup():
+    global _startup_done
+    if not _startup_done:
+        _startup_done = True
+        storage.sync_templates_from_r2(TEMPLATES_DIR)
 
 # In-memory job store: job_id -> Queue of SSE event dicts
 _jobs: dict[str, queue.Queue] = {}
