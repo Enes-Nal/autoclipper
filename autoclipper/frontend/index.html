@@ -6385,7 +6385,7 @@ async function startExpressExport() {
       }
     } else if (msg.type === 'done') {
       es.close();
-      _eqOutputPath = msg.output_path || msg.download_url;
+      _eqOutputPath = msg.output_path || null;
       const dlUrl = msg.download_url || `/api/exports/${msg.filename}`;
       statusEl.textContent = 'Done — your clip is ready';
       actionsEl.style.display = 'flex';
