@@ -32,6 +32,35 @@ ALLOWED_SFX_EXTS = {'.mp3', '.wav', '.ogg'}
 _jobs: dict[str, queue.Queue] = {}
 
 
+def _parse_time_to_seconds(t) -> float | None:
+    """Parse '00:30', '1:00:00', or '45' into seconds. Returns None if empty/None."""
+    if not t:
+        return None
+    t = str(t).strip()
+    if not t:
+        return None
+    parts = t.split(":")
+    try:
+        if len(parts) == 1:
+            return float(parts[0])
+        if len(parts) == 2:
+            return int(parts[0]) * 60 + float(parts[1])
+        if len(parts) == 3:
+            return int(parts[0]) * 3600 + int(parts[1]) * 60 + float(parts[2])
+    except ValueError:
+        return None
+    return None
+
+
+def _load_template_by_name(name: str) -> dict | None:
+    """Load a template JSON by file stem, searching builtin then user templates."""
+    for base in (TEMPLATES_DIR / "builtin", TEMPLATES_DIR):
+        p = base / f"{name}.json"
+        if p.exists():
+            return json.loads(p.read_text(encoding="utf-8"))
+    return None
+
+
 # ── Static ──────────────────────────────────────────────────────────────────
 @app.get("/")
 def index():
@@ -289,6 +318,23 @@ def upload_audio():
     return jsonify({"path": f"uploads/{filename}"})
 
 
+@app.post("/api/upload-image")
+def upload_image():
+    f = request.files.get("file")
+    if not f:
+        return jsonify({"error": "file required"}), 400
+    if not f.filename:
+        return jsonify({"error": "no filename provided"}), 400
+    ext = Path(f.filename).suffix.lower()
+    if ext not in {".png", ".jpg", ".jpeg", ".webp", ".gif"}:
+        return jsonify({"error": f"extension {ext} not allowed"}), 400
+    uid = uuid.uuid4().hex[:8]
+    filename = f"{uid}{ext}"
+    dest = UPLOADS_DIR / filename
+    f.save(str(dest))
+    return jsonify({"path": f"/api/uploads/{filename}"})
+
+
 @app.get("/api/uploads/<filename>")
 def serve_upload(filename):
     return send_from_directory(str(UPLOADS_DIR.resolve()), filename)
@@ -431,6 +477,89 @@ def start_top5_export():
 
 @app.get("/api/top5/export/<job_id>/progress")
 def top5_export_progress(job_id):
+    q = _jobs.get(job_id)
+    if not q:
+        return jsonify({"error": "unknown job"}), 404
+
+    def stream():
+        while True:
+            msg = q.get()
+            yield f"data: {json.dumps(msg)}\n\n"
+            if msg["type"] in ("done", "error"):
+                break
+
+    return Response(
+        stream(),
+        mimetype="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+# ── Express Export ────────────────────────────────────────────────────────────
+@app.post("/api/express-export")
+def start_express_export():
+    body = request.json or {}
+    url           = body.get("url", "").strip()
+    template_name = body.get("template_name", "").strip()
+    title         = body.get("title", "")
+    start_raw     = body.get("start_time", "")
+    duration_raw  = body.get("duration", "")
+
+    if not url:
+        return jsonify({"error": "url required"}), 400
+    if not template_name:
+        return jsonify({"error": "template_name required"}), 400
+
+    template = _load_template_by_name(template_name)
+    if template is None:
+        return jsonify({"error": f"template not found: {template_name}"}), 404
+
+    start_sec    = _parse_time_to_seconds(start_raw)
+    duration_sec = _parse_time_to_seconds(duration_raw)
+
+    job_id = uuid.uuid4().hex[:8]
+    q: queue.Queue = queue.Queue()
+    _jobs[job_id] = q
+
+    def run():
+        try:
+            # Phase 1: download
+            def on_dl(p):
+                q.put({"type": "progress", "phase": "download", **p})
+
+            info = download_video(url, job_id, on_dl)
+            video_path = info.get("video_path") or str(DOWNLOADS_DIR / f"{job_id}.mp4")
+            q.put({"type": "progress", "phase": "download", "percent": 100, "status": "done"})
+
+            # Build segment if start/duration supplied
+            segments = None
+            if start_sec is not None:
+                source_start = start_sec
+                source_end   = (start_sec + duration_sec) if duration_sec else None
+                if source_end:
+                    segments = [{"sourceStart": source_start, "sourceEnd": source_end}]
+
+            # Phase 2: export
+            def on_exp(line):
+                q.put({"type": "progress", "phase": "export", "line": line})
+
+            out = export_video(
+                video_path=video_path,
+                template=template,
+                title=title,
+                on_progress=on_exp,
+                segments=segments,
+            )
+            q.put({"type": "done", "output_path": out, "filename": Path(out).name})
+        except Exception as e:
+            q.put({"type": "error", "message": str(e)})
+
+    threading.Thread(target=run, daemon=True).start()
+    return jsonify({"job_id": job_id})
+
+
+@app.get("/api/express-export/<job_id>/progress")
+def express_export_progress(job_id):
     q = _jobs.get(job_id)
     if not q:
         return jsonify({"error": "unknown job"}), 404
