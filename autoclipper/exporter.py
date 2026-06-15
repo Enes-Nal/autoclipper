@@ -125,7 +125,8 @@ def _speed_kfs_to_subsegs(seg: dict) -> list[tuple[float, float, float]]:
     """
     kfs = seg.get('speedKeyframes', []) or []
     ss  = float(seg.get('sourceStart', 0))
-    se  = float(seg.get('sourceEnd',   0))
+    _se_raw = seg.get('sourceEnd')
+    se  = float(_se_raw) if _se_raw is not None else None
 
     if not kfs:
         return [(ss, se, 1.0)]
@@ -232,7 +233,7 @@ def build_segment_inputs(video_path: str, segments: list, input_offset: int = 0)
         se = sub['sourceEnd']
         speed = sub['speed']
         c = sub['color']
-        main_pre_args = ["-ss", str(ss), "-to", str(se)]
+        main_pre_args = ["-ss", str(ss)] + (["-to", str(se)] if se is not None else [])
         color_suffix = _color_filter_suffix(c)
         speed_is_normal = abs(speed - 1.0) <= 0.001
         if speed_is_normal and not color_suffix:

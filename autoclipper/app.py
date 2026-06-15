@@ -318,22 +318,6 @@ def upload_audio():
     return jsonify({"path": f"uploads/{filename}"})
 
 
-@app.post("/api/upload-image")
-def upload_image():
-    f = request.files.get("file")
-    if not f:
-        return jsonify({"error": "file required"}), 400
-    if not f.filename:
-        return jsonify({"error": "no filename provided"}), 400
-    ext = Path(f.filename).suffix.lower()
-    if ext not in {".png", ".jpg", ".jpeg", ".webp", ".gif"}:
-        return jsonify({"error": f"extension {ext} not allowed"}), 400
-    uid = uuid.uuid4().hex[:8]
-    filename = f"{uid}{ext}"
-    dest = UPLOADS_DIR / filename
-    f.save(str(dest))
-    return jsonify({"path": f"/api/uploads/{filename}"})
-
 
 @app.get("/api/uploads/<filename>")
 def serve_upload(filename):
@@ -531,13 +515,13 @@ def start_express_export():
             video_path = info.get("video_path") or str(DOWNLOADS_DIR / f"{job_id}.mp4")
             q.put({"type": "progress", "phase": "download", "percent": 100, "status": "done"})
 
-            # Build segment if start/duration supplied
+            # Build segment if start time is supplied
             segments = None
             if start_sec is not None:
-                source_start = start_sec
-                source_end   = (start_sec + duration_sec) if duration_sec else None
-                if source_end:
-                    segments = [{"sourceStart": source_start, "sourceEnd": source_end}]
+                seg = {"sourceStart": start_sec}
+                if duration_sec is not None:
+                    seg["sourceEnd"] = start_sec + duration_sec
+                segments = [seg]
 
             # Phase 2: export
             def on_exp(line):

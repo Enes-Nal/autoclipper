@@ -51,6 +51,30 @@ def test_express_export_returns_job_id():
     assert "job_id" in r.get_json()
 
 
+def test_express_export_start_only_creates_segment():
+    """start_time without duration should still trim from start to end of video."""
+    captured = {}
+
+    def _fake_export_capture(*args, **kwargs):
+        captured['segments'] = kwargs.get('segments')
+        return "/fake/exports/out.mp4"
+
+    with patch("app.download_video", side_effect=_fake_download), \
+         patch("app.export_video", side_effect=_fake_export_capture), \
+         patch("app._load_template_by_name", side_effect=_fake_load_template):
+        client.post("/api/express-export", json={
+            "url": "https://x.com/v/1",
+            "template_name": "blur-stack",
+            "title": "My clip",
+            "start_time": "00:30",
+        })
+
+    import time; time.sleep(0.2)  # let background thread run
+    assert captured.get('segments') is not None
+    assert captured['segments'][0]['sourceStart'] == 30.0
+    assert 'sourceEnd' not in captured['segments'][0]
+
+
 def test_parse_time_seconds():
     from app import _parse_time_to_seconds
     assert _parse_time_to_seconds("01:30") == 90.0
