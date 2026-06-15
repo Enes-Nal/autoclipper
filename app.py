@@ -116,6 +116,7 @@ def save_template():
     TEMPLATES_DIR.mkdir(exist_ok=True)
     path = TEMPLATES_DIR / f"{name}.json"
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    threading.Thread(target=storage.push_template, args=(path, TEMPLATES_DIR), daemon=True).start()
     return jsonify({"saved": name})
 
 
@@ -133,6 +134,8 @@ def rename_template(name):
     new_p.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
     if new_p != p:
         p.unlink()
+        threading.Thread(target=storage.delete_template, args=(f"templates/{name}.json",), daemon=True).start()
+    threading.Thread(target=storage.push_template, args=(new_p, TEMPLATES_DIR), daemon=True).start()
     return jsonify({"renamed": new_name})
 
 
@@ -142,6 +145,7 @@ def delete_template(name):
     if not p.exists() or "builtin" in str(p):
         return jsonify({"error": "not found"}), 404
     p.unlink()
+    threading.Thread(target=storage.delete_template, args=(f"templates/{name}.json",), daemon=True).start()
     return jsonify({"deleted": name})
 
 
@@ -173,6 +177,7 @@ def save_top5_template():
     name = data.get("name", "untitled").replace(" ", "-").lower()
     path = TOP5_TEMPLATES_DIR / f"{name}.json"
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    threading.Thread(target=storage.push_template, args=(path, TEMPLATES_DIR), daemon=True).start()
     return jsonify({"saved": name})
 
 
@@ -182,6 +187,8 @@ def delete_top5_template(name):
     if not p.exists():
         return jsonify({"error": "not found"}), 404
     p.unlink()
+    rel_key = f"templates/top5/{name}.json"
+    threading.Thread(target=storage.delete_template, args=(rel_key,), daemon=True).start()
     return jsonify({"deleted": name})
 
 
