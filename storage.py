@@ -81,12 +81,12 @@ def upload_export(local_path: Path) -> str | None:
     key = f"exports/{local_path.name}"
     try:
         _client.upload_file(str(local_path), _BUCKET, key)
-        local_path.unlink()
         url = _client.generate_presigned_url(
             "get_object",
             Params={"Bucket": _BUCKET, "Key": key},
             ExpiresIn=3600,
         )
+        local_path.unlink()
         return url
     except Exception:
         logger.error("R2 export upload failed: %s", local_path, exc_info=True)
