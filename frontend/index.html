@@ -499,7 +499,7 @@ button,input,select{font-family:inherit}
     <div class="sb-logo-text">Cutly</div>
   </div>
   <div class="sb-nav">
-    <div class="sb-nav-item active" title="Editor" onclick="showPanel('editor')">
+    <div class="sb-nav-item active" id="nav-editor" title="Editor" onclick="showPanel('editor')">
       <span class="sb-nav-icon hover-icon" id="nav-icon-editor">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" width="16" height="16"><path class="edit-pen" stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Z"/></svg>
       </span>
@@ -731,6 +731,7 @@ button,input,select{font-family:inherit}
     <div style="width:100%;max-width:480px">
       <h2 style="font-size:18px;font-weight:800;margin-bottom:6px;color:var(--tx)">Quick Export</h2>
       <p style="font-size:12px;color:var(--sub);margin-bottom:24px">Paste a URL, pick a template, and get a finished clip — no editor needed.</p>
+      <div id="eq-editor-notice" style="display:none;padding:10px 12px;border-radius:var(--rs);background:var(--accdim);color:var(--acc);font-size:12px;margin-bottom:8px"></div>
 
       <div style="display:flex;flex-direction:column;gap:12px">
         <!-- URL -->
@@ -6288,7 +6289,7 @@ function showPanel(name) {
     }
   } else {
     // Mark editor nav item active (first .sb-nav-item without id="nav-express")
-    const editorNav = document.querySelector('.sb-nav-item:not(#nav-express):not(a)');
+    const editorNav = document.getElementById('nav-editor');
     if (editorNav) editorNav.classList.add('active');
   }
 }
@@ -6411,8 +6412,11 @@ async function startExpressExport() {
 function openInEditor() {
   if (_eqOutputPath) {
     showPanel('editor');
-    if (typeof loadVideoFile === 'function') {
-      loadVideoFile(_eqOutputPath);
+    // Show a dismissible notice pointing to the exported file
+    const notice = document.getElementById('eq-editor-notice');
+    if (notice) {
+      notice.textContent = `Exported clip is ready — find it in your exports folder.`;
+      notice.style.display = 'block';
     }
   }
 }
