@@ -82,6 +82,11 @@ def top5_page():
     return send_from_directory("frontend", "top5.html")
 
 
+@app.get("/mobile")
+def mobile_page():
+    return send_from_directory("frontend", "mobile.html")
+
+
 # ── Templates ───────────────────────────────────────────────────────────────
 @app.get("/api/templates")
 def list_templates():
