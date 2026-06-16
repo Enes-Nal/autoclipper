@@ -148,6 +148,9 @@ button,input,select{font-family:inherit}
 .tthumb{height:108px;position:relative;overflow:hidden}
 .tcard-name{padding:5px 7px;font-size:10px;font-weight:700;color:var(--sub)}
 .tcard:hover .tcard-name{color:var(--tx)}
+.tcard-share{position:absolute;top:5px;right:5px;padding:3px 7px;border-radius:5px;font-size:10px;font-weight:700;background:rgba(9,9,11,.75);color:var(--sub);border:none;cursor:pointer;opacity:0;transition:.12s;z-index:2}
+.tcard:hover .tcard-share{opacity:1}
+.tcard-share:hover{background:var(--acc);color:var(--bg)}
 .tt-bg{position:absolute;inset:0}
 .tt-vid{position:absolute;border-radius:2px}
 .tt-txt{position:absolute;left:0;right:0;text-align:center;font-size:5.5px;font-weight:900;color:#fff;line-height:1.3;padding:0 4px;text-shadow:0 1px 2px #000}
@@ -4149,6 +4152,7 @@ async function renderTplGrid(filter){
         <div class="tcard" data-tpl-file="${t.file}" data-tpl-name="${t.name.replace(/"/g,'&quot;')}" onclick="applySavedTpl('${t.file}')">
           <div class="tthumb tthumb-saved"><span class="tthumb-icon">📄</span><span class="tthumb-fmt">${t.format||'9:16'}</span></div>
           <div class="tcard-name" id="tcard-name-${t.file}">${t.name}</div>
+          <button class="tcard-share" onclick="event.stopPropagation();shareTemplate('${t.file}')" title="Copy share code">Share</button>
         </div>`).join('');
     }
   }catch(e){}
@@ -4157,6 +4161,17 @@ async function renderTplGrid(filter){
   if(downloadedVideoURL) document.querySelectorAll('.tpl-vid').forEach(v=>{v.play().catch(()=>{});});
 }
 function filterTpls(v){renderTplGrid(v);}
+async function shareTemplate(file) {
+  try {
+    const tpl = await fetch(`/api/templates/${file}`).then(r => r.json());
+    const code = 'CutlyV1:' + btoa(JSON.stringify(tpl));
+    await navigator.clipboard.writeText(code);
+    const btn = document.querySelector(`.tcard[data-tpl-file="${file}"] .tcard-share`);
+    if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Share'; }, 1800); }
+  } catch(e) {
+    alert('Could not copy share code: ' + e.message);
+  }
+}
 function updateTplPreviews(url){
   downloadedVideoURL=url;
   const vidEl=document.getElementById('preview-video');
