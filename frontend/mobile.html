@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Cutly Mobile</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#09090b;--s1:#0d0d0f;--s2:#111113;--s3:#161618;
+  --b1:rgba(255,255,255,0.07);--b2:rgba(255,255,255,0.11);--b3:rgba(255,255,255,0.16);
+  --acc:#22c55e;--acc2:#16a34a;--accdim:rgba(34,197,94,.08);
+  --tx:#f0f0f5;--sub:#52526a;--mut:rgba(255,255,255,0.06);
+  --danger:#f43f5e;--r:12px;--rs:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;font-family:'Inter',sans-serif;font-size:15px;background:var(--bg);color:var(--tx);-webkit-font-smoothing:antialiased}
+button,input{font-family:inherit;font-size:inherit}
+
+/* ── Header ── */
+.m-header{display:flex;align-items:center;gap:10px;padding:16px 18px 12px;border-bottom:1px solid var(--b1)}
+.m-logo-icon{width:32px;height:32px;border-radius:8px;overflow:hidden;background:#f0f0f5;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.m-logo-icon img{width:100%;height:100%;object-fit:contain}
+.m-logo-text{font-size:16px;font-weight:900;letter-spacing:-.5px}
+.m-badge{margin-left:auto;font-size:10px;font-weight:700;background:var(--accdim);color:var(--acc);border:1px solid rgba(34,197,94,.2);border-radius:20px;padding:3px 9px}
+
+/* ── Step container ── */
+.m-body{padding:18px;display:flex;flex-direction:column;gap:20px;max-width:480px;margin:0 auto}
+
+/* ── Step card ── */
+.m-step{border-radius:var(--r);border:1px solid var(--b1);background:var(--s1);overflow:hidden;transition:.2s}
+.m-step.locked{opacity:.45;pointer-events:none}
+.m-step-head{display:flex;align-items:center;gap:12px;padding:14px 16px}
+.m-step-num{width:26px;height:26px;border-radius:50%;background:var(--s3);border:1px solid var(--b2);font-size:12px;font-weight:800;color:var(--sub);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.m-step.active .m-step-num{background:var(--acc);border-color:var(--acc);color:var(--bg)}
+.m-step.done .m-step-num{background:var(--acc);border-color:var(--acc);color:var(--bg)}
+.m-step-title{font-size:14px;font-weight:700;color:var(--sub)}
+.m-step.active .m-step-title,.m-step.done .m-step-title{color:var(--tx)}
+.m-step-check{margin-left:auto;color:var(--acc);font-size:18px;display:none}
+.m-step.done .m-step-check{display:block}
+.m-step-body{padding:0 16px 16px;display:none}
+.m-step.active .m-step-body{display:block}
+
+/* ── Inputs ── */
+.m-input{width:100%;background:var(--s2);border:1px solid var(--b2);color:var(--tx);border-radius:var(--rs);padding:12px 14px;outline:none;font-size:14px;transition:.12s}
+.m-input:focus{border-color:var(--acc)}
+.m-input::placeholder{color:var(--sub)}
+
+/* ── Buttons ── */
+.m-btn{width:100%;padding:13px;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;border:none;transition:.12s;display:flex;align-items:center;justify-content:center;gap:8px}
+.m-btn-primary{background:var(--acc);color:var(--bg)}
+.m-btn-primary:hover{background:var(--acc2)}
+.m-btn-primary:disabled{background:var(--s3);color:var(--sub);cursor:not-allowed}
+.m-btn-ghost{background:transparent;border:1px solid var(--b2);color:var(--sub)}
+.m-btn-ghost:hover{border-color:var(--b3);color:var(--tx)}
+
+/* ── Or divider ── */
+.m-or{display:flex;align-items:center;gap:10px;margin:10px 0;color:var(--sub);font-size:12px}
+.m-or::before,.m-or::after{content:'';flex:1;height:1px;background:var(--b1)}
+
+/* ── File pick area ── */
+.m-file-zone{border:1px dashed var(--b2);border-radius:var(--rs);padding:18px;text-align:center;color:var(--sub);font-size:13px;cursor:pointer;transition:.12s;background:var(--s2);display:block}
+.m-file-zone:hover{border-color:var(--acc);color:var(--tx)}
+.m-file-zone input{display:none}
+
+/* ── Progress bar ── */
+.m-progress{margin-top:12px;display:none}
+.m-progress.show{display:block}
+.m-progress-bar-wrap{height:6px;background:var(--s3);border-radius:3px;overflow:hidden;margin-top:8px}
+.m-progress-bar{height:100%;background:var(--acc);border-radius:3px;width:0%;transition:width .3s}
+.m-progress-label{font-size:12px;color:var(--sub)}
+
+/* ── Error ── */
+.m-error{margin-top:10px;padding:10px 12px;border-radius:var(--rs);background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.2);color:var(--danger);font-size:13px;display:none}
+.m-error.show{display:block}
+
+/* ── Template grid ── */
+.m-tpl-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.m-tpl-label{font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.8px}
+.m-paste-btn{padding:7px 12px;border-radius:var(--rs);background:var(--s2);border:1px solid var(--b2);color:var(--sub);font-size:12px;font-weight:600;cursor:pointer;transition:.12s}
+.m-paste-btn:hover{border-color:var(--acc);color:var(--acc)}
+.m-tpl-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.m-tcard{border:2px solid var(--b1);border-radius:10px;overflow:hidden;cursor:pointer;transition:.15s;background:var(--s2)}
+.m-tcard:hover{border-color:var(--b3)}
+.m-tcard.selected{border-color:var(--acc);background:var(--s3)}
+.m-tcard-thumb{height:80px;background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:24px}
+.m-tcard-name{padding:8px 10px;font-size:12px;font-weight:700;color:var(--sub)}
+.m-tcard.selected .m-tcard-name{color:var(--acc)}
+.m-tpl-loading{text-align:center;color:var(--sub);font-size:13px;padding:20px 0;grid-column:1/-1}
+
+/* ── Paste code modal ── */
+.m-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:none;align-items:flex-end;justify-content:center}
+.m-modal-overlay.open{display:flex}
+.m-modal{background:var(--s1);border:1px solid var(--b2);border-radius:var(--r) var(--r) 0 0;padding:20px 18px 32px;width:100%;max-width:480px}
+.m-modal-title{font-size:15px;font-weight:800;margin-bottom:6px}
+.m-modal-sub{font-size:13px;color:var(--sub);margin-bottom:14px}
+.m-modal-error{margin-top:8px;font-size:13px;color:var(--danger);display:none}
+.m-modal-error.show{display:block}
+.m-modal-actions{display:flex;gap:8px;margin-top:14px}
+.m-modal-actions .m-btn{width:auto;flex:1}
+
+/* ── Download tip ── */
+.m-tip{margin-top:12px;padding:12px;border-radius:var(--rs);background:var(--s2);border:1px solid var(--b1);font-size:12px;color:var(--sub);line-height:1.6;display:none}
+.m-tip.show{display:block}
+.m-tip strong{color:var(--tx)}
+
+/* ── Download link ── */
+.m-download-link{display:none;margin-top:12px}
+.m-download-link.show{display:block}
+.m-download-link a{display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border-radius:var(--rs);background:var(--acc);color:var(--bg);font-size:14px;font-weight:700;text-decoration:none;transition:.12s}
+.m-download-link a:hover{background:var(--acc2)}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="m-header">
+  <div class="m-logo-icon"><img src="logo.png" alt="Cutly"></div>
+  <div class="m-logo-text">Cutly</div>
+  <div class="m-badge">Mobile</div>
+</div>
+
+<div class="m-body">
+
+  <!-- Step 1: Video -->
+  <div class="m-step active" id="step1">
+    <div class="m-step-head">
+      <div class="m-step-num">1</div>
+      <div class="m-step-title">Get your video</div>
+      <div class="m-step-check">✓</div>
+    </div>
+    <div class="m-step-body">
+      <input class="m-input" id="url-input" type="url" placeholder="Paste YouTube or video URL…" autocomplete="off" autocorrect="off" spellcheck="false">
+      <div style="margin-top:10px">
+        <button class="m-btn m-btn-primary" id="dl-btn" onclick="startDownload()">Download</button>
+      </div>
+      <div class="m-or">or</div>
+      <label class="m-file-zone" id="file-zone">
+        <input type="file" id="file-input" accept="video/*" onchange="handleFileUpload(this)">
+        📂 Tap to pick a video from your device
+      </label>
+      <div class="m-progress" id="dl-progress">
+        <div class="m-progress-label" id="dl-progress-label">Downloading…</div>
+        <div class="m-progress-bar-wrap"><div class="m-progress-bar" id="dl-progress-bar"></div></div>
+      </div>
+      <div class="m-error" id="dl-error"></div>
+    </div>
+  </div>
+
+  <!-- Step 2: Template -->
+  <div class="m-step locked" id="step2">
+    <div class="m-step-head">
+      <div class="m-step-num">2</div>
+      <div class="m-step-title">Choose a template</div>
+      <div class="m-step-check">✓</div>
+    </div>
+    <div class="m-step-body">
+      <div class="m-tpl-header">
+        <div class="m-tpl-label">Templates</div>
+        <button class="m-paste-btn" onclick="openPasteModal()">📋 Paste Code</button>
+      </div>
+      <div class="m-tpl-grid" id="tpl-grid">
+        <div class="m-tpl-loading">Loading templates…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3: Export -->
+  <div class="m-step locked" id="step3">
+    <div class="m-step-head">
+      <div class="m-step-num">3</div>
+      <div class="m-step-title">Export</div>
+      <div class="m-step-check">✓</div>
+    </div>
+    <div class="m-step-body">
+      <button class="m-btn m-btn-primary" id="export-btn" onclick="startExport()">Export Video</button>
+      <div class="m-progress" id="export-progress">
+        <div class="m-progress-label" id="export-progress-label">Exporting…</div>
+        <div class="m-progress-bar-wrap"><div class="m-progress-bar" id="export-progress-bar"></div></div>
+      </div>
+      <div class="m-error" id="export-error"></div>
+      <div class="m-download-link" id="download-link">
+        <a id="download-anchor" href="#" download>⬇ Download Video</a>
+      </div>
+      <div class="m-tip" id="ios-tip">
+        <strong>On iPhone:</strong> tap the download button above, then open the <strong>Files</strong> app, tap the video, tap <strong>Share → Save Video</strong> to add it to your Photos library.
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.m-body -->
+
+<!-- Paste Code Modal -->
+<div class="m-modal-overlay" id="paste-modal" onclick="closePasteModal(event)">
+  <div class="m-modal">
+    <div class="m-modal-title">Import Template</div>
+    <div class="m-modal-sub">Paste the share code you copied from desktop.</div>
+    <textarea class="m-input" id="paste-input" rows="3" placeholder="CutlyV1:…" style="resize:none"></textarea>
+    <div class="m-modal-error" id="paste-error">Invalid code — please check and try again.</div>
+    <div class="m-modal-actions">
+      <button class="m-btn m-btn-ghost" onclick="closePasteModal()">Cancel</button>
+      <button class="m-btn m-btn-primary" onclick="importCode()">Import</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────
+let _videoPath = null;        // server path after download/upload
+let _selectedTemplate = null; // full template JSON object
+let _importedTemplate = null; // decoded from share code
+let _allTemplates = [];       // cached list from /api/templates
+
+// ── Step helpers ───────────────────────────────────────────────
+function setStepDone(stepEl) {
+  stepEl.classList.remove('active', 'locked');
+  stepEl.classList.add('done');
+}
+function setStepActive(stepEl) {
+  stepEl.classList.remove('locked', 'done');
+  stepEl.classList.add('active');
+}
+function unlockStep(stepEl) {
+  stepEl.classList.remove('locked');
+  setStepActive(stepEl);
+}
+
+// ── Step 1: Download ───────────────────────────────────────────
+async function startDownload() {
+  const url = document.getElementById('url-input').value.trim();
+  if (!url) { showError('dl-error', 'Please enter a video URL.'); return; }
+
+  hideError('dl-error');
+  showProgress('dl-progress', 'dl-progress-bar', 'dl-progress-label', 0, 'Starting download…');
+  document.getElementById('dl-btn').disabled = true;
+
+  let res;
+  try {
+    res = await fetch('/api/download', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({url})
+    }).then(r => r.json());
+  } catch(e) {
+    showError('dl-error', 'Network error — please try again.');
+    document.getElementById('dl-btn').disabled = false;
+    hideProgress('dl-progress');
+    return;
+  }
+
+  if (res.error) {
+    showError('dl-error', res.error);
+    document.getElementById('dl-btn').disabled = false;
+    hideProgress('dl-progress');
+    return;
+  }
+
+  listenSSE(
+    `/api/download/${res.job_id}/progress`,
+    (msg) => {
+      if (msg.type === 'progress') {
+        const pct = msg.percent ?? 0;
+        showProgress('dl-progress', 'dl-progress-bar', 'dl-progress-label', pct, `Downloading… ${Math.round(pct)}%`);
+      } else if (msg.type === 'done') {
+        _videoPath = msg.video_path;
+        hideProgress('dl-progress');
+        document.getElementById('dl-btn').disabled = false;
+        setStepDone(document.getElementById('step1'));
+        unlockStep(document.getElementById('step2'));
+        loadTemplates();
+      } else if (msg.type === 'error') {
+        showError('dl-error', msg.message || 'Download failed.');
+        hideProgress('dl-progress');
+        document.getElementById('dl-btn').disabled = false;
+      }
+    }
+  );
+}
+
+async function handleFileUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  hideError('dl-error');
+  showProgress('dl-progress', 'dl-progress-bar', 'dl-progress-label', 0, 'Uploading…');
+
+  const fd = new FormData();
+  fd.append('file', file);
+
+  let res;
+  try {
+    res = await fetch('/api/upload-video', {method: 'POST', body: fd}).then(r => r.json());
+  } catch(e) {
+    showError('dl-error', 'Upload failed — please try again.');
+    hideProgress('dl-progress');
+    return;
+  }
+
+  if (res.error) {
+    showError('dl-error', res.error);
+    hideProgress('dl-progress');
+    return;
+  }
+
+  _videoPath = res.path;
+  hideProgress('dl-progress');
+  const zone = document.getElementById('file-zone');
+  zone.innerHTML = '✓ ' + file.name;
+  setStepDone(document.getElementById('step1'));
+  unlockStep(document.getElementById('step2'));
+  loadTemplates();
+}
+
+// ── Step 2: Templates ──────────────────────────────────────────
+async function loadTemplates() {
+  const grid = document.getElementById('tpl-grid');
+  grid.innerHTML = '<div class="m-tpl-loading">Loading templates…</div>';
+
+  try {
+    _allTemplates = await fetch('/api/templates').then(r => r.json());
+  } catch(e) {
+    grid.innerHTML = '<div class="m-tpl-loading">Failed to load templates.</div>';
+    return;
+  }
+
+  renderTemplateGrid();
+}
+
+function renderTemplateGrid() {
+  const grid = document.getElementById('tpl-grid');
+  let html = '';
+
+  // Imported template at top if present
+  if (_importedTemplate) {
+    const isSelected = _selectedTemplate === _importedTemplate;
+    html += `<div class="m-tcard${isSelected ? ' selected' : ''}" id="tcard-imported" onclick="selectTemplate(null, 'imported')">
+      <div class="m-tcard-thumb">⬇</div>
+      <div class="m-tcard-name">Imported</div>
+    </div>`;
+  }
+
+  _allTemplates.forEach(t => {
+    const emoji = t.builtin ? '🎬' : '📄';
+    html += `<div class="m-tcard" id="tcard-${t.file}" onclick="selectTemplate('${t.file}', null)">
+      <div class="m-tcard-thumb">${emoji}</div>
+      <div class="m-tcard-name">${t.name}</div>
+    </div>`;
+  });
+
+  grid.innerHTML = html || '<div class="m-tpl-loading">No templates found.</div>';
+}
+
+async function selectTemplate(file, special) {
+  // Deselect all
+  document.querySelectorAll('.m-tcard').forEach(c => c.classList.remove('selected'));
+
+  if (special === 'imported' && _importedTemplate) {
+    _selectedTemplate = _importedTemplate;
+    document.getElementById('tcard-imported')?.classList.add('selected');
+  } else {
+    try {
+      const data = await fetch(`/api/templates/${file}`).then(r => r.json());
+      if (data.error) return;
+      _selectedTemplate = data;
+      document.getElementById(`tcard-${file}`)?.classList.add('selected');
+    } catch(e) {
+      return;
+    }
+  }
+
+  unlockStep(document.getElementById('step3'));
+}
+
+// ── Share code: paste modal ────────────────────────────────────
+function openPasteModal() {
+  document.getElementById('paste-modal').classList.add('open');
+  document.getElementById('paste-input').value = '';
+  document.getElementById('paste-error').classList.remove('show');
+  setTimeout(() => document.getElementById('paste-input').focus(), 100);
+}
+
+function closePasteModal(e) {
+  if (e && e.target !== document.getElementById('paste-modal')) return;
+  document.getElementById('paste-modal').classList.remove('open');
+}
+
+async function importCode() {
+  const raw = document.getElementById('paste-input').value.trim();
+  const errEl = document.getElementById('paste-error');
+  errEl.classList.remove('show');
+
+  if (!raw.startsWith('CutlyV1:')) {
+    errEl.classList.add('show');
+    return;
+  }
+
+  let tpl;
+  try {
+    tpl = JSON.parse(atob(raw.slice('CutlyV1:'.length)));
+    if (!tpl || typeof tpl !== 'object') throw new Error('not an object');
+  } catch(e) {
+    errEl.classList.add('show');
+    return;
+  }
+
+  _importedTemplate = tpl;
+  document.getElementById('paste-modal').classList.remove('open');
+
+  // Re-render grid with imported at top, then auto-select it
+  renderTemplateGrid();
+  selectTemplate(null, 'imported');
+}
+
+// ── Step 3: Export ─────────────────────────────────────────────
+async function startExport() {
+  if (!_videoPath || !_selectedTemplate) return;
+
+  hideError('export-error');
+  document.getElementById('download-link').classList.remove('show');
+  document.getElementById('ios-tip').classList.remove('show');
+  showProgress('export-progress', 'export-progress-bar', 'export-progress-label', 0, 'Starting export…');
+  document.getElementById('export-btn').disabled = true;
+
+  let res;
+  try {
+    res = await fetch('/api/export', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({video_path: _videoPath, template: _selectedTemplate})
+    }).then(r => r.json());
+  } catch(e) {
+    showError('export-error', 'Network error — please try again.');
+    hideProgress('export-progress');
+    document.getElementById('export-btn').disabled = false;
+    return;
+  }
+
+  if (res.error) {
+    showError('export-error', res.error);
+    hideProgress('export-progress');
+    document.getElementById('export-btn').disabled = false;
+    return;
+  }
+
+  let exportDone = false;
+  listenSSE(
+    `/api/export/${res.job_id}/progress`,
+    (msg) => {
+      if (msg.type === 'progress') {
+        // ffmpeg lines don't carry a percent; animate bar to show activity
+        const pct = msg.percent ?? 60;
+        showProgress('export-progress', 'export-progress-bar', 'export-progress-label', pct, 'Exporting…');
+      } else if (msg.type === 'done') {
+        exportDone = true;
+        hideProgress('export-progress');
+        document.getElementById('export-btn').disabled = false;
+
+        const url = msg.download_url || `/api/exports/${msg.filename}`;
+        const anchor = document.getElementById('download-anchor');
+        anchor.href = url;
+        anchor.download = msg.filename || 'export.mp4';
+        document.getElementById('download-link').classList.add('show');
+        document.getElementById('ios-tip').classList.add('show');
+        setStepDone(document.getElementById('step3'));
+      } else if (msg.type === 'error') {
+        hideProgress('export-progress');
+        showError('export-error', msg.message || 'Export failed.');
+        document.getElementById('export-btn').disabled = false;
+      }
+    },
+    () => {
+      if (!exportDone) {
+        showProgress('export-progress', 'export-progress-bar', 'export-progress-label', 70, 'Still processing… please wait.');
+      }
+    }
+  );
+}
+
+// ── SSE helper ─────────────────────────────────────────────────
+function listenSSE(url, onMsg, onClose) {
+  const es = new EventSource(url);
+  es.onmessage = (e) => {
+    let msg;
+    try { msg = JSON.parse(e.data); } catch { return; }
+    onMsg(msg);
+    if (msg.type === 'done' || msg.type === 'error') {
+      es.close();
+      if (onClose) onClose();
+    }
+  };
+  es.onerror = () => { es.close(); if (onClose) onClose(); };
+}
+
+// ── UI helpers ─────────────────────────────────────────────────
+function showProgress(wrapId, barId, labelId, pct, label) {
+  document.getElementById(wrapId).classList.add('show');
+  document.getElementById(barId).style.width = pct + '%';
+  document.getElementById(labelId).textContent = label;
+}
+function hideProgress(wrapId) {
+  document.getElementById(wrapId).classList.remove('show');
+}
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function hideError(id) {
+  document.getElementById(id).classList.remove('show');
+}
+</script>
+</body>
+</html>
